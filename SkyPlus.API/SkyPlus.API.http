@@ -1,0 +1,6 @@
+@SkyPlus.API_HostAddress = http://localhost:5004
+
+GET {{SkyPlus.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
