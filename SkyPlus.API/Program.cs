@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using SkyPlus.API.Services;
 using SkyPlus.Infrastructure.Data;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -12,18 +13,23 @@ builder.Services.AddDbContext<SkyPlusDbContext>(options =>
     )
 );
 
-// Add services to the container.
+builder.Services.AddScoped<IAuthService, AuthService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 
+// Servicios
 builder.Services.AddControllers();
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+
+// Swagger
+builder.Services.AddEndpointsApiExplorer();
+builder.Services.AddSwaggerGen();
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
+// Swagger
 if (app.Environment.IsDevelopment())
 {
-    app.MapOpenApi();
+    app.UseSwagger();
+    app.UseSwaggerUI();
 }
 
 app.UseHttpsRedirection();
