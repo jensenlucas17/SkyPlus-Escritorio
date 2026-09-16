@@ -61,20 +61,20 @@
             // lblRolActual
             // 
             lblRolActual.AutoSize = true;
-            lblRolActual.Location = new Point(314, 48);
+            lblRolActual.Location = new Point(348, 24);
             lblRolActual.Name = "lblRolActual";
-            lblRolActual.Size = new Size(38, 15);
+            lblRolActual.Size = new Size(59, 15);
             lblRolActual.TabIndex = 1;
-            lblRolActual.Text = "label1";
+            lblRolActual.Text = "Rol actual";
             // 
             // lblUsuarioActual
             // 
             lblUsuarioActual.AutoSize = true;
-            lblUsuarioActual.Location = new Point(309, 22);
+            lblUsuarioActual.Location = new Point(183, 24);
             lblUsuarioActual.Name = "lblUsuarioActual";
-            lblUsuarioActual.Size = new Size(38, 15);
+            lblUsuarioActual.Size = new Size(82, 15);
             lblUsuarioActual.TabIndex = 0;
-            lblUsuarioActual.Text = "label1";
+            lblUsuarioActual.Text = "Usuario actual";
             // 
             // pnlMenu
             // 

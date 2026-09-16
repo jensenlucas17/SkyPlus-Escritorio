@@ -108,7 +108,7 @@
             // 
             // btnEliminar
             // 
-            btnEliminar.Location = new Point(432, 34);
+            btnEliminar.Location = new Point(537, 37);
             btnEliminar.Name = "btnEliminar";
             btnEliminar.Size = new Size(75, 23);
             btnEliminar.TabIndex = 3;
@@ -118,7 +118,7 @@
             // 
             // btnDesactivarReactivar
             // 
-            btnDesactivarReactivar.Location = new Point(312, 34);
+            btnDesactivarReactivar.Location = new Point(417, 37);
             btnDesactivarReactivar.Name = "btnDesactivarReactivar";
             btnDesactivarReactivar.Size = new Size(75, 23);
             btnDesactivarReactivar.TabIndex = 2;
@@ -128,7 +128,7 @@
             // 
             // btnEditar
             // 
-            btnEditar.Location = new Point(183, 34);
+            btnEditar.Location = new Point(288, 37);
             btnEditar.Name = "btnEditar";
             btnEditar.Size = new Size(75, 23);
             btnEditar.TabIndex = 1;
@@ -138,7 +138,7 @@
             // 
             // btnNuevo
             // 
-            btnNuevo.Location = new Point(48, 34);
+            btnNuevo.Location = new Point(153, 37);
             btnNuevo.Name = "btnNuevo";
             btnNuevo.Size = new Size(75, 23);
             btnNuevo.TabIndex = 0;

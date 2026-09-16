@@ -60,13 +60,23 @@ namespace SkyPlus.Desktop
         {
             pnlContenido.Controls.Clear();
 
-            if (nombreModulo == "Usuarios")
+            Form? formulario = nombreModulo switch
             {
-                var frmUsuarios = new frmUsuarios { TopLevel = false, FormBorderStyle = FormBorderStyle.None, Dock = DockStyle.Fill };
-                pnlContenido.Controls.Add(frmUsuarios);
-                frmUsuarios.Show();
+                "Usuarios" => new frmUsuarios(),
+                "Lugares" => new frmLugares(),
+                _ => null
+            };
+
+            if (formulario != null)
+            {
+                formulario.TopLevel = false;
+                formulario.FormBorderStyle = FormBorderStyle.None;
+                formulario.Dock = DockStyle.Fill;
+                pnlContenido.Controls.Add(formulario);
+                formulario.Show();
                 return;
             }
+
             var lbl = new Label
             {
                 Text = $"Módulo: {nombreModulo}\n(pantalla en construcción)",
@@ -75,7 +85,6 @@ namespace SkyPlus.Desktop
                 TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
                 Font = new System.Drawing.Font("Segoe UI", 14)
             };
-
             pnlContenido.Controls.Add(lbl);
         }
 

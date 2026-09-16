@@ -35,17 +35,20 @@
             chkVerPassword = new CheckBox();
             btnIniciarSesion = new Button();
             lblMensaje = new Label();
+            label1 = new Label();
+            label3 = new Label();
             SuspendLayout();
             // 
             // lblTitulo
             // 
             lblTitulo.AutoSize = true;
-            lblTitulo.Location = new Point(358, 9);
+            lblTitulo.Font = new Font("Nirmala Text", 15.75F, FontStyle.Regular, GraphicsUnit.Point, 0);
+            lblTitulo.ForeColor = SystemColors.Highlight;
+            lblTitulo.Location = new Point(344, 41);
             lblTitulo.Name = "lblTitulo";
-            lblTitulo.Size = new Size(47, 15);
+            lblTitulo.Size = new Size(82, 30);
             lblTitulo.TabIndex = 0;
             lblTitulo.Text = "SkyPlus";
-           
             // 
             // label2
             // 
@@ -57,48 +60,68 @@
             // 
             // txtEmail
             // 
-            txtEmail.Location = new Point(330, 133);
+            txtEmail.Location = new Point(293, 158);
             txtEmail.Name = "txtEmail";
-            txtEmail.Size = new Size(100, 23);
+            txtEmail.Size = new Size(174, 23);
             txtEmail.TabIndex = 2;
             // 
             // txtPassword
             // 
-            txtPassword.Location = new Point(330, 181);
+            txtPassword.Location = new Point(293, 214);
             txtPassword.Name = "txtPassword";
             txtPassword.PasswordChar = '●';
-            txtPassword.Size = new Size(100, 23);
+            txtPassword.Size = new Size(174, 23);
             txtPassword.TabIndex = 3;
             // 
             // chkVerPassword
             // 
             chkVerPassword.AutoSize = true;
-            chkVerPassword.Location = new Point(333, 221);
+            chkVerPassword.Location = new Point(332, 256);
             chkVerPassword.Name = "chkVerPassword";
             chkVerPassword.Size = new Size(103, 19);
             chkVerPassword.TabIndex = 4;
             chkVerPassword.Text = "Ver contraseña";
             chkVerPassword.UseVisualStyleBackColor = true;
+            chkVerPassword.CheckedChanged += chkVerPassword_CheckedChanged;
             // 
             // btnIniciarSesion
             // 
-            btnIniciarSesion.Location = new Point(320, 246);
+            btnIniciarSesion.Location = new Point(319, 281);
             btnIniciarSesion.Name = "btnIniciarSesion";
             btnIniciarSesion.Size = new Size(125, 23);
             btnIniciarSesion.TabIndex = 5;
             btnIniciarSesion.Text = "Iniciar Sesion";
             btnIniciarSesion.UseVisualStyleBackColor = true;
+            btnIniciarSesion.Click += btnIniciarSesion_Click;
             // 
             // lblMensaje
             // 
             lblMensaje.AutoSize = true;
             lblMensaje.ForeColor = Color.Red;
-            lblMensaje.Location = new Point(358, 272);
+            lblMensaje.Location = new Point(301, 307);
             lblMensaje.Name = "lblMensaje";
             lblMensaje.Size = new Size(38, 15);
             lblMensaje.TabIndex = 6;
             lblMensaje.Text = "label1";
             lblMensaje.Visible = false;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(297, 140);
+            label1.Name = "label1";
+            label1.Size = new Size(47, 15);
+            label1.TabIndex = 7;
+            label1.Text = "Usuario";
+            // 
+            // label3
+            // 
+            label3.AutoSize = true;
+            label3.Location = new Point(297, 195);
+            label3.Name = "label3";
+            label3.Size = new Size(67, 15);
+            label3.TabIndex = 8;
+            label3.Text = "Contraseña";
             // 
             // frmLogin
             // 
@@ -106,6 +129,8 @@
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(label3);
+            Controls.Add(label1);
             Controls.Add(lblMensaje);
             Controls.Add(btnIniciarSesion);
             Controls.Add(chkVerPassword);
@@ -128,5 +153,7 @@
         private CheckBox chkVerPassword;
         private Button btnIniciarSesion;
         private Label lblMensaje;
+        private Label label1;
+        private Label label3;
     }
 }
