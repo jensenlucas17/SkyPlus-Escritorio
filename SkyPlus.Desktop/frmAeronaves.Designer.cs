@@ -1,6 +1,6 @@
 ﻿namespace SkyPlus.Desktop
 {
-    partial class frmLugares
+    partial class frmAeronaves
     {
         /// <summary>
         /// Required designer variable.
@@ -30,22 +30,22 @@
         {
             pnlFiltros = new Panel();
             label1 = new Label();
-            btnRefrescar = new Button();
+            btnBuscar = new Button();
             txtBuscar = new TextBox();
             pnlBotones = new Panel();
             btnEliminar = new Button();
             btnEditar = new Button();
             btnNuevo = new Button();
-            dgvLugares = new DataGridView();
+            dgvAeronaves = new DataGridView();
             pnlFiltros.SuspendLayout();
             pnlBotones.SuspendLayout();
-            ((System.ComponentModel.ISupportInitialize)dgvLugares).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)dgvAeronaves).BeginInit();
             SuspendLayout();
             // 
             // pnlFiltros
             // 
             pnlFiltros.Controls.Add(label1);
-            pnlFiltros.Controls.Add(btnRefrescar);
+            pnlFiltros.Controls.Add(btnBuscar);
             pnlFiltros.Controls.Add(txtBuscar);
             pnlFiltros.Dock = DockStyle.Top;
             pnlFiltros.Location = new Point(0, 0);
@@ -56,27 +56,27 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(200, 18);
+            label1.Location = new Point(199, 16);
             label1.Name = "label1";
-            label1.Size = new Size(170, 15);
+            label1.Size = new Size(101, 15);
             label1.TabIndex = 2;
-            label1.Text = "Ingrese nombre, pais o codigo:";
+            label1.Text = "Ingrese matricula:";
             // 
-            // btnRefrescar
+            // btnBuscar
             // 
-            btnRefrescar.Location = new Point(450, 36);
-            btnRefrescar.Name = "btnRefrescar";
-            btnRefrescar.Size = new Size(75, 23);
-            btnRefrescar.TabIndex = 1;
-            btnRefrescar.Text = "Buscar";
-            btnRefrescar.UseVisualStyleBackColor = true;
-            btnRefrescar.Click += btnRefrescar_Click;
+            btnBuscar.Location = new Point(459, 34);
+            btnBuscar.Name = "btnBuscar";
+            btnBuscar.Size = new Size(75, 23);
+            btnBuscar.TabIndex = 1;
+            btnBuscar.Text = "Buscar";
+            btnBuscar.UseVisualStyleBackColor = true;
+            btnBuscar.Click += this.btnBuscar_Click;
             // 
             // txtBuscar
             // 
-            txtBuscar.Location = new Point(196, 36);
+            txtBuscar.Location = new Point(195, 34);
             txtBuscar.Name = "txtBuscar";
-            txtBuscar.Size = new Size(182, 23);
+            txtBuscar.Size = new Size(187, 23);
             txtBuscar.TabIndex = 0;
             // 
             // pnlBotones
@@ -92,7 +92,7 @@
             // 
             // btnEliminar
             // 
-            btnEliminar.Location = new Point(492, 41);
+            btnEliminar.Location = new Point(497, 40);
             btnEliminar.Name = "btnEliminar";
             btnEliminar.Size = new Size(75, 23);
             btnEliminar.TabIndex = 2;
@@ -102,7 +102,7 @@
             // 
             // btnEditar
             // 
-            btnEditar.Location = new Point(324, 41);
+            btnEditar.Location = new Point(343, 40);
             btnEditar.Name = "btnEditar";
             btnEditar.Size = new Size(75, 23);
             btnEditar.TabIndex = 1;
@@ -112,7 +112,7 @@
             // 
             // btnNuevo
             // 
-            btnNuevo.Location = new Point(148, 41);
+            btnNuevo.Location = new Point(182, 40);
             btnNuevo.Name = "btnNuevo";
             btnNuevo.Size = new Size(75, 23);
             btnNuevo.TabIndex = 0;
@@ -120,45 +120,44 @@
             btnNuevo.UseVisualStyleBackColor = true;
             btnNuevo.Click += btnNuevo_Click;
             // 
-            // dgvLugares
+            // dgvAeronaves
             // 
-            dgvLugares.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvLugares.Dock = DockStyle.Fill;
-            dgvLugares.Location = new Point(0, 100);
-            dgvLugares.MultiSelect = false;
-            dgvLugares.Name = "dgvLugares";
-            dgvLugares.ReadOnly = true;
-            dgvLugares.Size = new Size(800, 250);
-            dgvLugares.TabIndex = 2;
+            dgvAeronaves.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvAeronaves.Dock = DockStyle.Fill;
+            dgvAeronaves.Location = new Point(0, 100);
+            dgvAeronaves.Name = "dgvAeronaves";
+            dgvAeronaves.ReadOnly = true;
+            dgvAeronaves.Size = new Size(800, 250);
+            dgvAeronaves.TabIndex = 2;
             // 
-            // frmLugares
+            // frmAeronaves
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
-            Controls.Add(dgvLugares);
+            Controls.Add(dgvAeronaves);
             Controls.Add(pnlBotones);
             Controls.Add(pnlFiltros);
-            Name = "frmLugares";
+            Name = "frmAeronaves";
             Text = "Form1";
-            Load += frmLugares_Load;
+            Load += frmAeronaves_Load;
             pnlFiltros.ResumeLayout(false);
             pnlFiltros.PerformLayout();
             pnlBotones.ResumeLayout(false);
-            ((System.ComponentModel.ISupportInitialize)dgvLugares).EndInit();
+            ((System.ComponentModel.ISupportInitialize)dgvAeronaves).EndInit();
             ResumeLayout(false);
         }
 
         #endregion
 
         private Panel pnlFiltros;
-        private Button btnRefrescar;
-        private TextBox txtBuscar;
         private Panel pnlBotones;
+        private DataGridView dgvAeronaves;
+        private TextBox txtBuscar;
+        private Button btnBuscar;
         private Button btnEliminar;
         private Button btnEditar;
         private Button btnNuevo;
-        private DataGridView dgvLugares;
         private Label label1;
     }
 }

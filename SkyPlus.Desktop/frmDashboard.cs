@@ -21,6 +21,7 @@ namespace SkyPlus.Desktop
             ("Boarding Pass",  new[] { "Agente de Check-in" }),
             ("Reportes",       new[] { "Administrador", "Gerente" }),
             ("Configuración",  new[] { "Administrador" }),
+            ("Aeronaves",      new[] { "Administrador", "Gerente" }),
         };
 
         public frmDashboard()
@@ -64,6 +65,8 @@ namespace SkyPlus.Desktop
             {
                 "Usuarios" => new frmUsuarios(),
                 "Lugares" => new frmLugares(),
+                "Aeronaves" => new frmAeronaves(),
+                "Vuelos" => new frmVuelos(),
                 _ => null
             };
 
