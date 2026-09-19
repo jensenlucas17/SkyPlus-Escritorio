@@ -1,43 +1,63 @@
-﻿// SkyPlus.Desktop/Services/AeronaveClientFake.cs
-// TODO: eliminar cuando exista el AeronaveClient real conectado a la API.
-
-using System.Collections.Generic;
-using System.Linq;
-using SkyPlus.Desktop.Models;
+﻿using SkyPlus.Desktop.Models;
 
 namespace SkyPlus.Desktop.Services
 {
-    public class AeronaveClientFake
+    public class AeronaveClient
     {
-        private static readonly List<AeronaveResponse> _aeronaves = new()
-        {
-            new AeronaveResponse { IdAeronave = 1, Matricula = "LV-ABC", Modelo = "Boeing 737-800" },
-            new AeronaveResponse { IdAeronave = 2, Matricula = "LV-DEF", Modelo = "Airbus A320" },
-            new AeronaveResponse { IdAeronave = 3, Matricula = "LV-GHI", Modelo = "Embraer E190" },
-            new AeronaveResponse { IdAeronave = 4, Matricula = "LV-JKL", Modelo = "Boeing 737 MAX 8" },
-        };
+        private readonly ApiClient _apiClient;
 
-        public List<AeronaveResponse> ObtenerTodos() => _aeronaves.ToList();
-
-        public void Crear(AeronaveResponse aeronave)
+        public AeronaveClient()
         {
-            aeronave.IdAeronave = _aeronaves.Count == 0 ? 1 : _aeronaves.Max(a => a.IdAeronave) + 1;
-            _aeronaves.Add(aeronave);
+            _apiClient = new ApiClient();
         }
 
-        public void Actualizar(AeronaveResponse aeronave)
+        public async Task<List<AeronaveResponse>?> ObtenerTodosAsync()
         {
-            var existente = _aeronaves.FirstOrDefault(a => a.IdAeronave == aeronave.IdAeronave);
-            if (existente == null) return;
-
-            existente.Matricula = aeronave.Matricula;
-            existente.Modelo = aeronave.Modelo;
+            return await _apiClient.GetAsync<List<AeronaveResponse>>(
+                "api/Aeronaves");
         }
 
-        public void Eliminar(int idAeronave)
+        public async Task<AeronaveResponse?> ObtenerPorIdAsync(int id)
         {
-            var existente = _aeronaves.FirstOrDefault(a => a.IdAeronave == idAeronave);
-            if (existente != null) _aeronaves.Remove(existente);
+            return await _apiClient.GetAsync<AeronaveResponse>(
+                $"api/Aeronaves/{id}");
+        }
+
+        public async Task<AeronaveResponse?> CrearAsync(
+            string matricula,
+            string modelo)
+        {
+            var request = new
+            {
+                Matricula = matricula,
+                Modelo = modelo
+            };
+
+            return await _apiClient.PostAsync<object, AeronaveResponse>(
+                "api/Aeronaves",
+                request);
+        }
+
+        public async Task<AeronaveResponse?> ActualizarAsync(
+            int id,
+            string matricula,
+            string modelo)
+        {
+            var request = new
+            {
+                Matricula = matricula,
+                Modelo = modelo
+            };
+
+            return await _apiClient.PutAsync<object, AeronaveResponse>(
+                $"api/Aeronaves/{id}",
+                request);
+        }
+
+        public async Task EliminarAsync(int id)
+        {
+            await _apiClient.DeleteAsync(
+                $"api/Aeronaves/{id}");
         }
     }
 }

@@ -1,6 +1,6 @@
-﻿// SkyPlus.Desktop/frmAeronaveABM.cs
-
-using System;
+﻿using System;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using SkyPlus.Desktop.Models;
 using SkyPlus.Desktop.Services;
@@ -9,72 +9,124 @@ namespace SkyPlus.Desktop
 {
     public partial class frmAeronaveABM : Form
     {
-        private readonly AeronaveClientFake _aeronaveClient = new AeronaveClientFake();
-        private readonly AeronaveResponse? _aeronaveEdicion;
+        private readonly AeronaveClient _aeronaveClient;
+        private readonly AeronaveResponse? _aeronave;
 
-        public frmAeronaveABM()
+        public frmAeronaveABM(
+            AeronaveClient aeronaveClient,
+            AeronaveResponse? aeronave)
         {
             InitializeComponent();
-            _aeronaveEdicion = null;
+
+            _aeronaveClient = aeronaveClient;
+            _aeronave = aeronave;
         }
 
-        public frmAeronaveABM(AeronaveResponse aeronaveExistente)
+        private void frmAeronaveABM_Load(
+            object sender,
+            EventArgs e)
         {
-            InitializeComponent();
-            _aeronaveEdicion = aeronaveExistente;
-
-            txtMatricula.Text = aeronaveExistente.Matricula;
-            txtModelo.Text = aeronaveExistente.Modelo;
-        }
-
-        private void frmAeronaveABM_Load(object sender, EventArgs e)
-        {
-            lblMensaje.Visible = false;
-            Text = _aeronaveEdicion == null ? "Nueva aeronave" : "Editar aeronave";
-        }
-
-        private void btnGuardar_Click(object sender, EventArgs e)
-        {
-            lblMensaje.Visible = false;
-
-            if (string.IsNullOrWhiteSpace(txtMatricula.Text) || string.IsNullOrWhiteSpace(txtModelo.Text))
+            if (_aeronave != null)
             {
-                MostrarError("Matrícula y modelo son obligatorios.");
+                txtMatricula.Text =
+                    _aeronave.Matricula;
+
+                txtModelo.Text =
+                    _aeronave.Modelo;
+            }
+        }
+
+        private async void btnGuardar_Click(
+            object sender,
+            EventArgs e)
+        {
+            var matricula =
+                txtMatricula.Text.Trim();
+
+            var modelo =
+                txtModelo.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(matricula))
+            {
+                MessageBox.Show(
+                    "Ingrese la matrícula.",
+                    "Validación",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+
+                txtMatricula.Focus();
                 return;
             }
 
-            if (_aeronaveEdicion == null)
+            if (string.IsNullOrWhiteSpace(modelo))
             {
-                _aeronaveClient.Crear(new AeronaveResponse
-                {
-                    Matricula = txtMatricula.Text.Trim().ToUpper(),
-                    Modelo = txtModelo.Text.Trim()
-                });
-            }
-            else
-            {
-                _aeronaveClient.Actualizar(new AeronaveResponse
-                {
-                    IdAeronave = _aeronaveEdicion.IdAeronave,
-                    Matricula = txtMatricula.Text.Trim().ToUpper(),
-                    Modelo = txtModelo.Text.Trim()
-                });
+                MessageBox.Show(
+                    "Ingrese el modelo.",
+                    "Validación",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+
+                txtModelo.Focus();
+                return;
             }
 
-            DialogResult = DialogResult.OK;
-            Close();
+            try
+            {
+                if (_aeronave == null)
+                {
+                    await _aeronaveClient.CrearAsync(
+                        matricula,
+                        modelo);
+
+                    MessageBox.Show(
+                        "Aeronave creada correctamente.",
+                        "Éxito",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+                else
+                {
+                    await _aeronaveClient.ActualizarAsync(
+                        _aeronave.IdAeronave,
+                        matricula,
+                        modelo);
+
+                    MessageBox.Show(
+                        "Aeronave actualizada correctamente.",
+                        "Éxito",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Information);
+                }
+
+                DialogResult = DialogResult.OK;
+                Close();
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show(
+                    "No se pudo conectar con la API.\n\n" +
+                    ex.Message,
+                    "Error de conexión",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Ocurrió un error al guardar la aeronave.\n\n" +
+                    ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
 
-        private void btnCancelar_Click(object sender, EventArgs e)
+        private void btnCancelar_Click(
+            object sender,
+            EventArgs e)
         {
             DialogResult = DialogResult.Cancel;
             Close();
-        }
-
-        private void MostrarError(string mensaje)
-        {
-            lblMensaje.Text = mensaje;
-            lblMensaje.Visible = true;
         }
     }
 }

@@ -187,7 +187,7 @@
             label8.AutoSize = true;
             label8.Location = new Point(153, 361);
             label8.Name = "label8";
-            label8.Size = new Size(39, 15);
+            label8.Size = new Size(38, 15);
             label8.TabIndex = 15;
             label8.Text = "Tarifa:";
             // 
@@ -199,6 +199,7 @@
             btnGuardar.TabIndex = 16;
             btnGuardar.Text = "Guardar";
             btnGuardar.UseVisualStyleBackColor = true;
+            btnGuardar.Click += btnGuardar_Click;
             // 
             // btnCancelar
             // 
@@ -208,6 +209,7 @@
             btnCancelar.TabIndex = 17;
             btnCancelar.Text = "Cancelar";
             btnCancelar.UseVisualStyleBackColor = true;
+            btnCancelar.Click += btnCancelar_Click;
             // 
             // lblMensaje
             // 

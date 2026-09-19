@@ -29,15 +29,15 @@
         private void InitializeComponent()
         {
             panel1 = new Panel();
+            btnRefrescar = new Button();
             cmbEstadoFiltro = new ComboBox();
             label1 = new Label();
             txtBuscar = new TextBox();
             panel2 = new Panel();
-            dgvVuelos = new DataGridView();
-            btnNuevo = new Button();
-            btnEditar = new Button();
             btnEliminar = new Button();
-            btnRefrescar = new Button();
+            btnEditar = new Button();
+            btnNuevo = new Button();
+            dgvVuelos = new DataGridView();
             panel1.SuspendLayout();
             panel2.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvVuelos).BeginInit();
@@ -54,6 +54,16 @@
             panel1.Name = "panel1";
             panel1.Size = new Size(800, 100);
             panel1.TabIndex = 0;
+            // 
+            // btnRefrescar
+            // 
+            btnRefrescar.Location = new Point(598, 38);
+            btnRefrescar.Name = "btnRefrescar";
+            btnRefrescar.Size = new Size(75, 23);
+            btnRefrescar.TabIndex = 3;
+            btnRefrescar.Text = "Buscar";
+            btnRefrescar.UseVisualStyleBackColor = true;
+            btnRefrescar.Click += btnRefrescar_Click;
             // 
             // cmbEstadoFiltro
             // 
@@ -90,23 +100,15 @@
             panel2.Size = new Size(800, 100);
             panel2.TabIndex = 1;
             // 
-            // dgvVuelos
+            // btnEliminar
             // 
-            dgvVuelos.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvVuelos.Dock = DockStyle.Fill;
-            dgvVuelos.Location = new Point(0, 100);
-            dgvVuelos.Name = "dgvVuelos";
-            dgvVuelos.Size = new Size(800, 250);
-            dgvVuelos.TabIndex = 2;
-            // 
-            // btnNuevo
-            // 
-            btnNuevo.Location = new Point(170, 40);
-            btnNuevo.Name = "btnNuevo";
-            btnNuevo.Size = new Size(75, 23);
-            btnNuevo.TabIndex = 0;
-            btnNuevo.Text = "Nuevo";
-            btnNuevo.UseVisualStyleBackColor = true;
+            btnEliminar.Location = new Point(471, 40);
+            btnEliminar.Name = "btnEliminar";
+            btnEliminar.Size = new Size(75, 23);
+            btnEliminar.TabIndex = 2;
+            btnEliminar.Text = "Eliminar";
+            btnEliminar.UseVisualStyleBackColor = true;
+            btnEliminar.Click += btnEliminar_Click;
             // 
             // btnEditar
             // 
@@ -116,24 +118,26 @@
             btnEditar.TabIndex = 1;
             btnEditar.Text = "Editar";
             btnEditar.UseVisualStyleBackColor = true;
+            btnEditar.Click += btnEditar_Click;
             // 
-            // btnEliminar
+            // btnNuevo
             // 
-            btnEliminar.Location = new Point(471, 40);
-            btnEliminar.Name = "btnEliminar";
-            btnEliminar.Size = new Size(75, 23);
-            btnEliminar.TabIndex = 2;
-            btnEliminar.Text = "Eliminar";
-            btnEliminar.UseVisualStyleBackColor = true;
+            btnNuevo.Location = new Point(170, 40);
+            btnNuevo.Name = "btnNuevo";
+            btnNuevo.Size = new Size(75, 23);
+            btnNuevo.TabIndex = 0;
+            btnNuevo.Text = "Nuevo";
+            btnNuevo.UseVisualStyleBackColor = true;
+            btnNuevo.Click += btnNuevo_Click;
             // 
-            // btnRefrescar
+            // dgvVuelos
             // 
-            btnRefrescar.Location = new Point(598, 38);
-            btnRefrescar.Name = "btnRefrescar";
-            btnRefrescar.Size = new Size(75, 23);
-            btnRefrescar.TabIndex = 3;
-            btnRefrescar.Text = "Buscar";
-            btnRefrescar.UseVisualStyleBackColor = true;
+            dgvVuelos.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
+            dgvVuelos.Dock = DockStyle.Fill;
+            dgvVuelos.Location = new Point(0, 100);
+            dgvVuelos.Name = "dgvVuelos";
+            dgvVuelos.Size = new Size(800, 250);
+            dgvVuelos.TabIndex = 2;
             // 
             // frmVuelos
             // 

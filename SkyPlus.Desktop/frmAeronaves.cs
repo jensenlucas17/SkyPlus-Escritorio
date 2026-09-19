@@ -1,8 +1,7 @@
-﻿// SkyPlus.Desktop/frmAeronaves.cs
-
-using System;
+﻿using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 using SkyPlus.Desktop.Models;
 using SkyPlus.Desktop.Services;
@@ -11,89 +10,177 @@ namespace SkyPlus.Desktop
 {
     public partial class frmAeronaves : Form
     {
-        private readonly AeronaveClientFake _aeronaveClient = new AeronaveClientFake();
-        private List<AeronaveResponse> _aeronavesCache = new();
+        private readonly AeronaveClient _aeronaveClient =
+            new AeronaveClient();
+
+        private List<AeronaveResponse> _aeronaves =
+            new List<AeronaveResponse>();
 
         public frmAeronaves()
         {
             InitializeComponent();
         }
 
-        private void frmAeronaves_Load(object sender, EventArgs e)
+        private async void frmAeronaves_Load(
+            object sender,
+            EventArgs e)
         {
-            ConfigurarColumnas();
-            CargarAeronaves();
+            await CargarAeronaves();
         }
 
-        private void ConfigurarColumnas()
+        private async Task CargarAeronaves()
         {
-            dgvAeronaves.AutoGenerateColumns = false;
-            dgvAeronaves.Columns.Clear();
-            dgvAeronaves.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(AeronaveResponse.Matricula), HeaderText = "Matrícula", Width = 150 });
-            dgvAeronaves.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(AeronaveResponse.Modelo), HeaderText = "Modelo", Width = 250 });
+            try
+            {
+                var aeronaves =
+                    await _aeronaveClient.ObtenerTodosAsync();
+
+                _aeronaves = aeronaves ??
+                    new List<AeronaveResponse>();
+
+                dgvAeronaves.DataSource = null;
+                dgvAeronaves.DataSource = _aeronaves;
+            }
+            catch (HttpRequestException)
+            {
+                MessageBox.Show(
+                    "No se pudo conectar con la API de SkyPlus.",
+                    "Error de conexión",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Ocurrió un error al cargar las aeronaves.\n\n" +
+                    ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
 
-        private void CargarAeronaves()
+        private async void btnNuevo_Click(
+            object sender,
+            EventArgs e)
         {
-            _aeronavesCache = _aeronaveClient.ObtenerTodos();
-            AplicarFiltros();
+            using (var formulario =
+                new frmAeronaveABM(
+                    _aeronaveClient,
+                    null))
+            {
+                if (formulario.ShowDialog() ==
+                    DialogResult.OK)
+                {
+                    await CargarAeronaves();
+                }
+            }
         }
 
-        private void AplicarFiltros()
+        private async void btnEditar_Click(
+            object sender,
+            EventArgs e)
         {
-            var texto = txtBuscar.Text.Trim().ToLower();
+            if (dgvAeronaves.CurrentRow == null)
+            {
+                MessageBox.Show(
+                    "Seleccione una aeronave.",
+                    "Aviso",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
 
-            var filtrados = _aeronavesCache.Where(a =>
-                string.IsNullOrEmpty(texto) ||
-                a.Matricula.ToLower().Contains(texto) ||
-                a.Modelo.ToLower().Contains(texto)
-            ).ToList();
+                return;
+            }
 
-            dgvAeronaves.DataSource = filtrados;
+            var aeronave =
+                dgvAeronaves.CurrentRow.DataBoundItem
+                as AeronaveResponse;
+
+            if (aeronave == null)
+                return;
+
+            using (var formulario =
+                new frmAeronaveABM(
+                    _aeronaveClient,
+                    aeronave))
+            {
+                if (formulario.ShowDialog() ==
+                    DialogResult.OK)
+                {
+                    await CargarAeronaves();
+                }
+            }
         }
 
-        private void txtBuscar_TextChanged(object sender, EventArgs e) => AplicarFiltros();
-
-        private void btnRefrescar_Click(object sender, EventArgs e) => CargarAeronaves();
-
-        private AeronaveResponse? ObtenerSeleccionado()
+        private async void btnEliminar_Click(
+            object sender,
+            EventArgs e)
         {
-            if (dgvAeronaves.CurrentRow?.DataBoundItem is AeronaveResponse aeronave)
-                return aeronave;
+            if (dgvAeronaves.CurrentRow == null)
+            {
+                MessageBox.Show(
+                    "Seleccione una aeronave.",
+                    "Aviso",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
 
-            MessageBox.Show("Seleccioná una aeronave de la lista primero.",
-                "Atención", MessageBoxButtons.OK, MessageBoxIcon.Warning);
-            return null;
+                return;
+            }
+
+            var aeronave =
+                dgvAeronaves.CurrentRow.DataBoundItem
+                as AeronaveResponse;
+
+            if (aeronave == null)
+                return;
+
+            var respuesta = MessageBox.Show(
+                $"¿Desea eliminar la aeronave " +
+                $"{aeronave.Matricula}?",
+                "Confirmar eliminación",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (respuesta != DialogResult.Yes)
+                return;
+
+            try
+            {
+                await _aeronaveClient
+                    .EliminarAsync(aeronave.IdAeronave);
+
+                MessageBox.Show(
+                    "Aeronave eliminada correctamente.",
+                    "Éxito",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                await CargarAeronaves();
+            }
+            catch (HttpRequestException)
+            {
+                MessageBox.Show(
+                    "No se pudo conectar con la API.",
+                    "Error de conexión",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No se pudo eliminar la aeronave.\n\n" +
+                    ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
 
-        private void btnNuevo_Click(object sender, EventArgs e)
+        private async void btnActualizar_Click(
+            object sender,
+            EventArgs e)
         {
-            using var form = new frmAeronaveABM();
-            if (form.ShowDialog() == DialogResult.OK) CargarAeronaves();
-        }
-
-        private void btnEditar_Click(object sender, EventArgs e)
-        {
-            var seleccionado = ObtenerSeleccionado();
-            if (seleccionado == null) return;
-
-            using var form = new frmAeronaveABM(seleccionado);
-            if (form.ShowDialog() == DialogResult.OK) CargarAeronaves();
-        }
-
-        private void btnEliminar_Click(object sender, EventArgs e)
-        {
-            var seleccionado = ObtenerSeleccionado();
-            if (seleccionado == null) return;
-
-            var confirmacion = MessageBox.Show(
-                $"¿Confirmás eliminar la aeronave {seleccionado.Matricula}?",
-                "Confirmar", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-            if (confirmacion != DialogResult.Yes) return;
-
-            _aeronaveClient.Eliminar(seleccionado.IdAeronave);
-            CargarAeronaves();
+            await CargarAeronaves();
         }
     }
 }
