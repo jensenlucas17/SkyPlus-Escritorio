@@ -1,66 +1,91 @@
-﻿// SkyPlus.Desktop/Services/VueloClientFake.cs
-// TODO: eliminar cuando exista el VueloClient real conectado a la API.
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using SkyPlus.Desktop.Models;
+﻿using SkyPlus.Desktop.Models;
 
 namespace SkyPlus.Desktop.Services
 {
-    public class VueloClientFake
+    public class VueloClient
     {
-        private readonly LugarClientFake _lugarClient = new();
-        private readonly AeronaveClientFake _aeronaveClient = new();
+        private readonly ApiClient _apiClient;
 
-        private static readonly List<VueloResponse> _vuelos = new()
+        public VueloClient()
         {
-            new VueloResponse { IdVuelo = 1, NumeroVuelo = "SP1001", IdAeronave = 1, IdLugarOrigen = 1, IdLugarDestino = 3, Salida = DateTime.Today.AddDays(1).AddHours(8), Llegada = DateTime.Today.AddDays(1).AddHours(10), EstadoVuelo = "Programado", Tarifa = 85000m, IdUsuarioOperador = 1 },
-            new VueloResponse { IdVuelo = 2, NumeroVuelo = "SP1002", IdAeronave = 2, IdLugarOrigen = 1, IdLugarDestino = 4, Salida = DateTime.Today.AddDays(1).AddHours(14), Llegada = DateTime.Today.AddDays(1).AddHours(16), EstadoVuelo = "Programado", Tarifa = 72000m, IdUsuarioOperador = 1 },
-            new VueloResponse { IdVuelo = 3, NumeroVuelo = "SP2001", IdAeronave = 3, IdLugarOrigen = 3, IdLugarDestino = 1, Salida = DateTime.Today.AddDays(2).AddHours(9), Llegada = DateTime.Today.AddDays(2).AddHours(11), EstadoVuelo = "Confirmado", Tarifa = 88000m, IdUsuarioOperador = 1 },
-        };
+            _apiClient = new ApiClient();
+        }
 
-        public List<VueloResponse> ObtenerTodos()
+        public async Task<List<VueloResponse>?> ObtenerTodosAsync()
         {
-            // Simula el join que haría la API entre vuelo, lugar y aeronave
-            var lugares = _lugarClient.ObtenerTodos();
-            var aeronaves = _aeronaveClient.ObtenerTodos();
+            return await _apiClient.GetAsync<List<VueloResponse>>(
+                "api/Vuelos");
+        }
 
-            foreach (var vuelo in _vuelos)
+        public async Task<VueloResponse?> ObtenerPorIdAsync(int id)
+        {
+            return await _apiClient.GetAsync<VueloResponse>(
+                $"api/Vuelos/{id}");
+        }
+
+        public async Task<VueloResponse?> CrearAsync(
+            string numeroVuelo,
+            int idAeronave,
+            int idUsuarioOperador,
+            int idLugarOrigen,
+            int idLugarDestino,
+            DateTime salida,
+            DateTime llegada,
+            string estadoVuelo,
+            decimal tarifa)
+        {
+            var request = new
             {
-                vuelo.LugarOrigen = lugares.FirstOrDefault(l => l.IdLugar == vuelo.IdLugarOrigen)?.IataCiudad ?? "?";
-                vuelo.LugarDestino = lugares.FirstOrDefault(l => l.IdLugar == vuelo.IdLugarDestino)?.IataCiudad ?? "?";
-                vuelo.Aeronave = aeronaves.FirstOrDefault(a => a.IdAeronave == vuelo.IdAeronave)?.MatriculaModelo ?? "?";
-            }
+                NumeroVuelo = numeroVuelo,
+                IdAeronave = idAeronave,
+                IdUsuarioOperador = idUsuarioOperador,
+                IdLugarOrigen = idLugarOrigen,
+                IdLugarDestino = idLugarDestino,
+                Salida = salida,
+                Llegada = llegada,
+                EstadoVuelo = estadoVuelo,
+                Tarifa = tarifa
+            };
 
-            return _vuelos.ToList();
+            return await _apiClient.PostAsync<object, VueloResponse>(
+                "api/Vuelos",
+                request);
         }
 
-        public void Crear(VueloResponse vuelo)
+        public async Task<VueloResponse?> ActualizarAsync(
+            int id,
+            string numeroVuelo,
+            int idAeronave,
+            int idUsuarioOperador,
+            int idLugarOrigen,
+            int idLugarDestino,
+            DateTime salida,
+            DateTime llegada,
+            string estadoVuelo,
+            decimal tarifa)
         {
-            vuelo.IdVuelo = _vuelos.Count == 0 ? 1 : _vuelos.Max(v => v.IdVuelo) + 1;
-            _vuelos.Add(vuelo);
+            var request = new
+            {
+                NumeroVuelo = numeroVuelo,
+                IdAeronave = idAeronave,
+                IdUsuarioOperador = idUsuarioOperador,
+                IdLugarOrigen = idLugarOrigen,
+                IdLugarDestino = idLugarDestino,
+                Salida = salida,
+                Llegada = llegada,
+                EstadoVuelo = estadoVuelo,
+                Tarifa = tarifa
+            };
+
+            return await _apiClient.PutAsync<object, VueloResponse>(
+                $"api/Vuelos/{id}",
+                request);
         }
 
-        public void Actualizar(VueloResponse vuelo)
+        public async Task EliminarAsync(int id)
         {
-            var existente = _vuelos.FirstOrDefault(v => v.IdVuelo == vuelo.IdVuelo);
-            if (existente == null) return;
-
-            existente.NumeroVuelo = vuelo.NumeroVuelo;
-            existente.IdAeronave = vuelo.IdAeronave;
-            existente.IdLugarOrigen = vuelo.IdLugarOrigen;
-            existente.IdLugarDestino = vuelo.IdLugarDestino;
-            existente.Salida = vuelo.Salida;
-            existente.Llegada = vuelo.Llegada;
-            existente.EstadoVuelo = vuelo.EstadoVuelo;
-            existente.Tarifa = vuelo.Tarifa;
-        }
-
-        public void Eliminar(int idVuelo)
-        {
-            var existente = _vuelos.FirstOrDefault(v => v.IdVuelo == idVuelo);
-            if (existente != null) _vuelos.Remove(existente);
+            await _apiClient.DeleteAsync(
+                $"api/Vuelos/{id}");
         }
     }
 }

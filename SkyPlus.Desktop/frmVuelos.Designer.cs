@@ -102,12 +102,13 @@
             // 
             // btnEliminar
             // 
-            btnEliminar.Location = new Point(473, 32);
+            btnEliminar.Location = new Point(471, 40);
             btnEliminar.Name = "btnEliminar";
-            btnEliminar.Size = new Size(132, 31);
+            btnEliminar.Size = new Size(75, 23);
             btnEliminar.TabIndex = 2;
-            btnEliminar.Text = "Cancelar vuelo";
+            btnEliminar.Text = "Eliminar";
             btnEliminar.UseVisualStyleBackColor = true;
+            btnEliminar.Click += btnEliminar_Click;
             // 
             // btnEditar
             // 

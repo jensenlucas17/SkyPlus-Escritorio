@@ -15,6 +15,9 @@ builder.Services.AddDbContext<SkyPlusDbContext>(options =>
 
 builder.Services.AddScoped<IAuthService, AuthService>();
 builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<ILugarService, LugarService>();
+builder.Services.AddScoped<IAeronaveService, AeronaveService>();
+builder.Services.AddScoped<IVueloService, VueloService>();
 
 // Servicios
 builder.Services.AddControllers();

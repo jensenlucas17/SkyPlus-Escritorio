@@ -1,49 +1,71 @@
-﻿// SkyPlus.Desktop/Services/LugarClientFake.cs
-// TODO: eliminar cuando exista el LugarClient real conectado a la API.
-
-using System.Collections.Generic;
-using System.Linq;
-using SkyPlus.Desktop.Models;
+﻿using SkyPlus.Desktop.Models;
 
 namespace SkyPlus.Desktop.Services
 {
-    public class LugarClientFake
+    public class LugarClient
     {
-        private static readonly List<LugarResponse> _lugares = new()
-        {
-            new LugarResponse { IdLugar = 1, CodigoIata = "EZE", Nombre = "Aeropuerto Internacional Ministro Pistarini", Ciudad = "Buenos Aires", Pais = "Argentina" },
-            new LugarResponse { IdLugar = 2, CodigoIata = "AEP", Nombre = "Aeroparque Jorge Newbery", Ciudad = "Buenos Aires", Pais = "Argentina" },
-            new LugarResponse { IdLugar = 3, CodigoIata = "COR", Nombre = "Aeropuerto Ingeniero Taravella", Ciudad = "Córdoba", Pais = "Argentina" },
-            new LugarResponse { IdLugar = 4, CodigoIata = "CNQ", Nombre = "Aeropuerto Doctor Fernando Piragine Niveyro", Ciudad = "Corrientes", Pais = "Argentina" },
-            new LugarResponse { IdLugar = 5, CodigoIata = "MDZ", Nombre = "Aeropuerto El Plumerillo", Ciudad = "Mendoza", Pais = "Argentina" },
-            new LugarResponse { IdLugar = 6, CodigoIata = "SCL", Nombre = "Aeropuerto Arturo Merino Benítez", Ciudad = "Santiago", Pais = "Chile" },
-            new LugarResponse { IdLugar = 7, CodigoIata = "MVD", Nombre = "Aeropuerto de Carrasco", Ciudad = "Montevideo", Pais = "Uruguay" },
-            new LugarResponse { IdLugar = 8, CodigoIata = "GRU", Nombre = "Aeropuerto de Guarulhos", Ciudad = "São Paulo", Pais = "Brasil" },
-        };
+        private readonly ApiClient _apiClient;
 
-        public List<LugarResponse> ObtenerTodos() => _lugares.ToList();
-
-        public void Crear(LugarResponse lugar)
+        public LugarClient()
         {
-            lugar.IdLugar = _lugares.Count == 0 ? 1 : _lugares.Max(l => l.IdLugar) + 1;
-            _lugares.Add(lugar);
+            _apiClient = new ApiClient();
         }
 
-        public void Actualizar(LugarResponse lugar)
+        public async Task<List<LugarResponse>?> ObtenerTodosAsync()
         {
-            var existente = _lugares.FirstOrDefault(l => l.IdLugar == lugar.IdLugar);
-            if (existente == null) return;
-
-            existente.CodigoIata = lugar.CodigoIata;
-            existente.Nombre = lugar.Nombre;
-            existente.Ciudad = lugar.Ciudad;
-            existente.Pais = lugar.Pais;
+            return await _apiClient.GetAsync<List<LugarResponse>>(
+                "api/Lugares");
         }
 
-        public void Eliminar(int idLugar)
+        public async Task<LugarResponse?> ObtenerPorIdAsync(int id)
         {
-            var existente = _lugares.FirstOrDefault(l => l.IdLugar == idLugar);
-            if (existente != null) _lugares.Remove(existente);
+            return await _apiClient.GetAsync<LugarResponse>(
+                $"api/Lugares/{id}");
+        }
+
+        public async Task<LugarResponse?> CrearAsync(
+            string codigoIata,
+            string nombre,
+            string ciudad,
+            string pais)
+        {
+            var request = new
+            {
+                CodigoIata = codigoIata,
+                Nombre = nombre,
+                Ciudad = ciudad,
+                Pais = pais
+            };
+
+            return await _apiClient.PostAsync<object, LugarResponse>(
+                "api/Lugares",
+                request);
+        }
+
+        public async Task<LugarResponse?> ActualizarAsync(
+            int id,
+            string codigoIata,
+            string nombre,
+            string ciudad,
+            string pais)
+        {
+            var request = new
+            {
+                CodigoIata = codigoIata,
+                Nombre = nombre,
+                Ciudad = ciudad,
+                Pais = pais
+            };
+
+            return await _apiClient.PutAsync<object, LugarResponse>(
+                $"api/Lugares/{id}",
+                request);
+        }
+
+        public async Task EliminarAsync(int id)
+        {
+            await _apiClient.DeleteAsync(
+                $"api/Lugares/{id}");
         }
     }
 }

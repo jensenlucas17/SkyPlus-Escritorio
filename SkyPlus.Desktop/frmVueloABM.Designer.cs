@@ -187,7 +187,7 @@
             label8.AutoSize = true;
             label8.Location = new Point(36, 355);
             label8.Name = "label8";
-            label8.Size = new Size(39, 15);
+            label8.Size = new Size(38, 15);
             label8.TabIndex = 15;
             label8.Text = "Tarifa:";
             // 

@@ -10,7 +10,7 @@ namespace SkyPlus.Desktop
 {
     public partial class frmLugarABM : Form
     {
-        private readonly LugarClientFake _lugarClient = new LugarClientFake();
+        private readonly LugarClient _lugarClient = new LugarClient();
         private readonly LugarResponse? _lugarEdicion;
 
         public frmLugarABM()
@@ -38,7 +38,7 @@ namespace SkyPlus.Desktop
             txtCodigoIata.CharacterCasing = CharacterCasing.Upper;
         }
 
-        private void btnGuardar_Click(object sender, EventArgs e)
+        private async void btnGuardar_Click(object sender, EventArgs e)
         {
             lblMensaje.Visible = false;
 
@@ -56,30 +56,39 @@ namespace SkyPlus.Desktop
                 return;
             }
 
-            if (_lugarEdicion == null)
+            try
             {
-                _lugarClient.Crear(new LugarResponse
+                if (_lugarEdicion == null)
                 {
-                    CodigoIata = txtCodigoIata.Text.Trim(),
-                    Nombre = txtNombre.Text.Trim(),
-                    Ciudad = txtCiudad.Text.Trim(),
-                    Pais = txtPais.Text.Trim()
-                });
-            }
-            else
-            {
-                _lugarClient.Actualizar(new LugarResponse
+                    await _lugarClient.CrearAsync(
+                        txtCodigoIata.Text.Trim(),
+                        txtNombre.Text.Trim(),
+                        txtCiudad.Text.Trim(),
+                        txtPais.Text.Trim()
+                    );
+                }
+                else
                 {
-                    IdLugar = _lugarEdicion.IdLugar,
-                    CodigoIata = txtCodigoIata.Text.Trim(),
-                    Nombre = txtNombre.Text.Trim(),
-                    Ciudad = txtCiudad.Text.Trim(),
-                    Pais = txtPais.Text.Trim()
-                });
-            }
+                    await _lugarClient.ActualizarAsync(
+                        _lugarEdicion.IdLugar,
+                        txtCodigoIata.Text.Trim(),
+                        txtNombre.Text.Trim(),
+                        txtCiudad.Text.Trim(),
+                        txtPais.Text.Trim()
+                    );
+                }
 
-            DialogResult = DialogResult.OK;
-            Close();
+                DialogResult = DialogResult.OK;
+                Close();
+            }
+            catch (HttpRequestException)
+            {
+                MostrarError("No se pudo conectar con la API de SkyPlus.");
+            }
+            catch (Exception ex)
+            {
+                MostrarError("Ocurrió un error: " + ex.Message);
+            }
         }
 
         private void btnCancelar_Click(object sender, EventArgs e)
