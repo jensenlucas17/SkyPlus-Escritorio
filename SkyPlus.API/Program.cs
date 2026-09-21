@@ -18,6 +18,7 @@ builder.Services.AddScoped<IUsuarioService, UsuarioService>();
 builder.Services.AddScoped<ILugarService, LugarService>();
 builder.Services.AddScoped<IAeronaveService, AeronaveService>();
 builder.Services.AddScoped<IVueloService, VueloService>();
+builder.Services.AddScoped<IPasajeroService, PasajeroService>();
 
 // Servicios
 builder.Services.AddControllers();
