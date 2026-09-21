@@ -70,6 +70,7 @@
             btnBuscar.TabIndex = 1;
             btnBuscar.Text = "Buscar";
             btnBuscar.UseVisualStyleBackColor = true;
+            btnBuscar.Click += btnActualizar_Click;
             // 
             // txtBuscar
             // 
