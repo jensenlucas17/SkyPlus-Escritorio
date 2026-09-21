@@ -53,6 +53,9 @@ namespace SkyPlus.Desktop
             cmbEstado.Visible = esEdicion;
 
             await CargarRolesAsync();
+
+            AppEstilos.EstilizarBotonPrimario(btnGuardar);
+            AppEstilos.EstilizarBotonSecundario(btnCancelar);
         }
 
         private async System.Threading.Tasks.Task CargarRolesAsync()

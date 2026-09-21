@@ -27,6 +27,11 @@ namespace SkyPlus.Desktop
             EventArgs e)
         {
             await CargarAeronaves();
+            AppEstilos.EstilizarGrid(dgvAeronaves);
+            AppEstilos.EstilizarBotonPrimario(btnNuevo);
+            AppEstilos.EstilizarBotonSecundario(btnEditar);
+            AppEstilos.EstilizarBotonSecundario(btnEliminar);
+            AppEstilos.EstilizarBotonSecundario(btnBuscar);
         }
 
         private async Task CargarAeronaves()

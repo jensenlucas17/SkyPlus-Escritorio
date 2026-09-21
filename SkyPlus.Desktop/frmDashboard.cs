@@ -34,7 +34,7 @@ namespace SkyPlus.Desktop
         {
             lblUsuarioActual.Text = $"{SesionUsuario.Nombre} {SesionUsuario.Apellido}";
             lblRolActual.Text = $"Rol: {SesionUsuario.Rol}";
-
+            AppEstilos.EstilizarBotonSecundario(btnCerrarSesion);
             CrearMenu();
         }
 
@@ -44,6 +44,7 @@ namespace SkyPlus.Desktop
 
             foreach (var modulo in _modulos)
             {
+
                 var boton = new Button
                 {
                     Text = modulo.Texto,
@@ -55,6 +56,7 @@ namespace SkyPlus.Desktop
 
                 boton.Click += (s, e) => CargarModulo(modulo.Texto);
                 pnlMenu.Controls.Add(boton);
+                AppEstilos.EstilizarBotonSecundario(boton);
             }
         }
 

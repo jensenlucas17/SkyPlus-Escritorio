@@ -35,6 +35,8 @@ namespace SkyPlus.Desktop
                 txtModelo.Text =
                     _aeronave.Modelo;
             }
+            AppEstilos.EstilizarBotonPrimario(btnGuardar);
+            AppEstilos.EstilizarBotonSecundario(btnCancelar);
         }
 
         private async void btnGuardar_Click(

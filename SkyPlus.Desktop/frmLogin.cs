@@ -18,6 +18,7 @@ namespace SkyPlus.Desktop
 
         private void frmLogin_Load(object sender, EventArgs e)
         {
+            AppEstilos.EstilizarBotonPrimario(btnIniciarSesion);
             lblMensaje.Visible = false;
             txtPassword.PasswordChar = '●';
         }

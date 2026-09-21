@@ -48,6 +48,11 @@ namespace SkyPlus.Desktop
             cmbEstadoFiltro.SelectedIndex = 0;
 
             await CargarVuelos();
+            AppEstilos.EstilizarGrid(dgvVuelos);
+            AppEstilos.EstilizarBotonPrimario(btnNuevo);
+            AppEstilos.EstilizarBotonSecundario(btnEditar);
+            AppEstilos.EstilizarBotonSecundario(btnEliminar);
+            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
         }
 
         private void ConfigurarColumnas()

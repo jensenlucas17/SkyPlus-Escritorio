@@ -25,6 +25,11 @@ namespace SkyPlus.Desktop
         {
             ConfigurarColumnas();
             await CargarLugares();
+            AppEstilos.EstilizarGrid(dgvLugares);
+            AppEstilos.EstilizarBotonPrimario(btnNuevo);
+            AppEstilos.EstilizarBotonSecundario(btnEditar);
+            AppEstilos.EstilizarBotonSecundario(btnEliminar);
+            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
         }
 
         private void ConfigurarColumnas()

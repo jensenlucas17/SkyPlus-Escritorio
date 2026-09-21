@@ -101,6 +101,8 @@ namespace SkyPlus.Desktop
                     "Ocurrió un error al cargar los datos: " +
                     ex.Message);
             }
+            AppEstilos.EstilizarBotonPrimario(btnGuardar);
+            AppEstilos.EstilizarBotonSecundario(btnCancelar);
         }
 
         private async Task CargarCombos()
