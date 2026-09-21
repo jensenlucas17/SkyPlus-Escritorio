@@ -34,7 +34,6 @@
             cmbRolFiltro = new ComboBox();
             txtBuscar = new TextBox();
             panel1 = new Panel();
-            btnEliminar = new Button();
             btnDesactivarReactivar = new Button();
             btnEditar = new Button();
             btnNuevo = new Button();
@@ -58,11 +57,11 @@
             // 
             // btnRefrescar
             // 
-            btnRefrescar.Location = new Point(510, 49);
+            btnRefrescar.Location = new Point(528, 48);
             btnRefrescar.Name = "btnRefrescar";
             btnRefrescar.Size = new Size(75, 23);
             btnRefrescar.TabIndex = 3;
-            btnRefrescar.Text = "button1";
+            btnRefrescar.Text = "Buscar";
             btnRefrescar.UseVisualStyleBackColor = true;
             btnRefrescar.Click += btnRefrescar_Click_1;
             // 
@@ -96,7 +95,6 @@
             // 
             // panel1
             // 
-            panel1.Controls.Add(btnEliminar);
             panel1.Controls.Add(btnDesactivarReactivar);
             panel1.Controls.Add(btnEditar);
             panel1.Controls.Add(btnNuevo);
@@ -106,23 +104,13 @@
             panel1.Size = new Size(800, 100);
             panel1.TabIndex = 1;
             // 
-            // btnEliminar
-            // 
-            btnEliminar.Location = new Point(537, 37);
-            btnEliminar.Name = "btnEliminar";
-            btnEliminar.Size = new Size(75, 23);
-            btnEliminar.TabIndex = 3;
-            btnEliminar.Text = "button4";
-            btnEliminar.UseVisualStyleBackColor = true;
-            btnEliminar.Click += btnEliminar_Click_1;
-            // 
             // btnDesactivarReactivar
             // 
             btnDesactivarReactivar.Location = new Point(417, 37);
             btnDesactivarReactivar.Name = "btnDesactivarReactivar";
-            btnDesactivarReactivar.Size = new Size(75, 23);
+            btnDesactivarReactivar.Size = new Size(102, 23);
             btnDesactivarReactivar.TabIndex = 2;
-            btnDesactivarReactivar.Text = "button3";
+            btnDesactivarReactivar.Text = "Desactivar";
             btnDesactivarReactivar.UseVisualStyleBackColor = true;
             btnDesactivarReactivar.Click += btnDesactivarReactivar_Click_1;
             // 
@@ -184,7 +172,6 @@
         private TextBox txtBuscar;
         private Button btnRefrescar;
         private Panel panel1;
-        private Button btnEliminar;
         private Button btnDesactivarReactivar;
         private Button btnEditar;
         private Button btnNuevo;

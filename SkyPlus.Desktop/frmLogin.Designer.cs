@@ -140,6 +140,7 @@
             Controls.Add(lblTitulo);
             Name = "frmLogin";
             Text = "SkyPlus ";
+            Load += frmLogin_Load_1;
             ResumeLayout(false);
             PerformLayout();
         }

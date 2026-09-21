@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows.Forms;
 using SkyPlus.Desktop.Models;
 using SkyPlus.Desktop.Services;
+using SkyPlus.Desktop.Estilos;
 
 namespace SkyPlus.Desktop
 {
@@ -92,18 +93,25 @@ namespace SkyPlus.Desktop
             if (form.ShowDialog() == DialogResult.OK) CargarVuelos();
         }
 
-        private void btnEliminar_Click(object sender, EventArgs e)
+        private void btnCancelarVuelo_Click(object sender, EventArgs e)
         {
             var seleccionado = ObtenerSeleccionado();
             if (seleccionado == null) return;
 
+            if (seleccionado.EstadoVuelo == "Cancelado")
+            {
+                MessageBox.Show("Este vuelo ya está cancelado.", "Atención", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
             var confirmacion = MessageBox.Show(
-                $"¿Confirmás eliminar el vuelo {seleccionado.NumeroVuelo}?",
-                "Confirmar", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+                $"¿Confirmás cancelar el vuelo {seleccionado.NumeroVuelo}? Esto no se puede deshacer y afecta a las reservas asociadas.",
+                "Confirmar cancelación", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
 
             if (confirmacion != DialogResult.Yes) return;
 
-            _vueloClient.Eliminar(seleccionado.IdVuelo);
+            seleccionado.EstadoVuelo = "Cancelado";
+            _vueloClient.Actualizar(seleccionado);
             CargarVuelos();
         }
     }

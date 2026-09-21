@@ -50,7 +50,7 @@
             // 
             // btnCerrarSesion
             // 
-            btnCerrarSesion.Location = new Point(709, 3);
+            btnCerrarSesion.Location = new Point(3, 3);
             btnCerrarSesion.Name = "btnCerrarSesion";
             btnCerrarSesion.Size = new Size(88, 23);
             btnCerrarSesion.TabIndex = 2;

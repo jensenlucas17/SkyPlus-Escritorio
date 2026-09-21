@@ -3,6 +3,7 @@ using System.Net.Http;
 using System.Windows.Forms;
 using SkyPlus.Desktop.Models;
 using SkyPlus.Desktop.Services;
+using SkyPlus.Desktop.Estilos;
 
 namespace SkyPlus.Desktop
 {
@@ -97,6 +98,11 @@ namespace SkyPlus.Desktop
         {
             lblMensaje.Text = mensaje;
             lblMensaje.Visible = true;
+        }
+
+        private void frmLogin_Load_1(object sender, EventArgs e)
+        {
+
         }
     }
 }

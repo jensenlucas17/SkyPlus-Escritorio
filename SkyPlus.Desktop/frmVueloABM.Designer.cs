@@ -51,7 +51,7 @@
             // 
             // txtNumeroVuelo
             // 
-            txtNumeroVuelo.Location = new Point(297, 21);
+            txtNumeroVuelo.Location = new Point(180, 15);
             txtNumeroVuelo.Name = "txtNumeroVuelo";
             txtNumeroVuelo.Size = new Size(132, 23);
             txtNumeroVuelo.TabIndex = 0;
@@ -59,7 +59,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(153, 21);
+            label1.Location = new Point(36, 15);
             label1.Name = "label1";
             label1.Size = new Size(102, 15);
             label1.TabIndex = 1;
@@ -69,7 +69,7 @@
             // 
             cmbOrigen.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbOrigen.FormattingEnabled = true;
-            cmbOrigen.Location = new Point(297, 67);
+            cmbOrigen.Location = new Point(180, 61);
             cmbOrigen.Name = "cmbOrigen";
             cmbOrigen.Size = new Size(132, 23);
             cmbOrigen.TabIndex = 2;
@@ -78,7 +78,7 @@
             // 
             cmbDestino.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbDestino.FormattingEnabled = true;
-            cmbDestino.Location = new Point(297, 118);
+            cmbDestino.Location = new Point(180, 112);
             cmbDestino.Name = "cmbDestino";
             cmbDestino.Size = new Size(132, 23);
             cmbDestino.TabIndex = 3;
@@ -87,7 +87,7 @@
             // 
             cmbAeronave.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbAeronave.FormattingEnabled = true;
-            cmbAeronave.Location = new Point(297, 170);
+            cmbAeronave.Location = new Point(180, 164);
             cmbAeronave.Name = "cmbAeronave";
             cmbAeronave.Size = new Size(132, 23);
             cmbAeronave.TabIndex = 4;
@@ -95,7 +95,7 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(153, 67);
+            label2.Location = new Point(36, 61);
             label2.Name = "label2";
             label2.Size = new Size(46, 15);
             label2.TabIndex = 5;
@@ -104,7 +104,7 @@
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(153, 118);
+            label3.Location = new Point(36, 112);
             label3.Name = "label3";
             label3.Size = new Size(50, 15);
             label3.TabIndex = 6;
@@ -113,7 +113,7 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(153, 170);
+            label4.Location = new Point(36, 164);
             label4.Name = "label4";
             label4.Size = new Size(60, 15);
             label4.TabIndex = 7;
@@ -123,7 +123,7 @@
             // 
             dtpSalida.CustomFormat = "dd/MM/yyyy HH:mm";
             dtpSalida.Format = DateTimePickerFormat.Custom;
-            dtpSalida.Location = new Point(295, 222);
+            dtpSalida.Location = new Point(178, 216);
             dtpSalida.Name = "dtpSalida";
             dtpSalida.ShowUpDown = true;
             dtpSalida.Size = new Size(200, 23);
@@ -133,7 +133,7 @@
             // 
             dtpLlegada.CustomFormat = "dd/MM/yyyy HH:mm";
             dtpLlegada.Format = DateTimePickerFormat.Custom;
-            dtpLlegada.Location = new Point(296, 268);
+            dtpLlegada.Location = new Point(179, 262);
             dtpLlegada.Name = "dtpLlegada";
             dtpLlegada.ShowUpDown = true;
             dtpLlegada.Size = new Size(200, 23);
@@ -142,7 +142,7 @@
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(153, 222);
+            label5.Location = new Point(36, 216);
             label5.Name = "label5";
             label5.Size = new Size(41, 15);
             label5.TabIndex = 10;
@@ -151,7 +151,7 @@
             // label6
             // 
             label6.AutoSize = true;
-            label6.Location = new Point(153, 268);
+            label6.Location = new Point(36, 262);
             label6.Name = "label6";
             label6.Size = new Size(51, 15);
             label6.TabIndex = 11;
@@ -161,14 +161,14 @@
             // 
             cmbEstado.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbEstado.FormattingEnabled = true;
-            cmbEstado.Location = new Point(297, 316);
+            cmbEstado.Location = new Point(180, 310);
             cmbEstado.Name = "cmbEstado";
             cmbEstado.Size = new Size(132, 23);
             cmbEstado.TabIndex = 12;
             // 
             // txtTarifa
             // 
-            txtTarifa.Location = new Point(297, 361);
+            txtTarifa.Location = new Point(180, 355);
             txtTarifa.Name = "txtTarifa";
             txtTarifa.Size = new Size(132, 23);
             txtTarifa.TabIndex = 13;
@@ -176,7 +176,7 @@
             // label7
             // 
             label7.AutoSize = true;
-            label7.Location = new Point(153, 316);
+            label7.Location = new Point(36, 310);
             label7.Name = "label7";
             label7.Size = new Size(45, 15);
             label7.TabIndex = 14;
@@ -185,7 +185,7 @@
             // label8
             // 
             label8.AutoSize = true;
-            label8.Location = new Point(153, 361);
+            label8.Location = new Point(36, 355);
             label8.Name = "label8";
             label8.Size = new Size(39, 15);
             label8.TabIndex = 15;
@@ -193,27 +193,29 @@
             // 
             // btnGuardar
             // 
-            btnGuardar.Location = new Point(289, 405);
+            btnGuardar.Location = new Point(172, 399);
             btnGuardar.Name = "btnGuardar";
             btnGuardar.Size = new Size(75, 23);
             btnGuardar.TabIndex = 16;
             btnGuardar.Text = "Guardar";
             btnGuardar.UseVisualStyleBackColor = true;
+            btnGuardar.Click += btnGuardar_Click;
             // 
             // btnCancelar
             // 
-            btnCancelar.Location = new Point(420, 405);
+            btnCancelar.Location = new Point(303, 399);
             btnCancelar.Name = "btnCancelar";
             btnCancelar.Size = new Size(75, 23);
             btnCancelar.TabIndex = 17;
             btnCancelar.Text = "Cancelar";
             btnCancelar.UseVisualStyleBackColor = true;
+            btnCancelar.Click += btnCancelar_Click;
             // 
             // lblMensaje
             // 
             lblMensaje.AutoSize = true;
             lblMensaje.ForeColor = Color.Red;
-            lblMensaje.Location = new Point(296, 387);
+            lblMensaje.Location = new Point(179, 381);
             lblMensaje.Name = "lblMensaje";
             lblMensaje.Size = new Size(38, 15);
             lblMensaje.TabIndex = 18;
@@ -224,7 +226,7 @@
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
-            ClientSize = new Size(800, 450);
+            ClientSize = new Size(476, 450);
             Controls.Add(lblMensaje);
             Controls.Add(btnCancelar);
             Controls.Add(btnGuardar);

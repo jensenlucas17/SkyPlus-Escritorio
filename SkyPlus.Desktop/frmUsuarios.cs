@@ -4,6 +4,7 @@ using System.Linq;
 using System.Windows.Forms;
 using SkyPlus.Desktop.Models;
 using SkyPlus.Desktop.Services;
+using SkyPlus.Desktop.Estilos;
 
 namespace SkyPlus.Desktop
 {
@@ -20,7 +21,11 @@ namespace SkyPlus.Desktop
         private void frmUsuarios_Load(object sender, EventArgs e)
         {
             ConfigurarColumnas();
-
+            AppEstilos.EstilizarGrid(dgvUsuarios);
+            AppEstilos.EstilizarBotonPrimario(btnNuevo);
+            AppEstilos.EstilizarBotonSecundario(btnEditar);
+            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
+            AppEstilos.EstilizarBotonSecundario(btnDesactivarReactivar);
             cmbEstadoFiltro.Items.AddRange(new object[] { "Todos", "Activo", "Inactivo" });
             cmbEstadoFiltro.SelectedIndex = 0;
 
@@ -139,29 +144,6 @@ namespace SkyPlus.Desktop
             catch (Exception ex)
             {
                 MessageBox.Show("No se pudo actualizar el estado: " + ex.Message,
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
-            }
-        }
-
-        private async void btnEliminar_Click(object sender, EventArgs e)
-        {
-            var seleccionado = ObtenerSeleccionado();
-            if (seleccionado == null) return;
-
-            var confirmacion = MessageBox.Show(
-                $"Esto elimina PERMANENTEMENTE a {seleccionado.Nombre} {seleccionado.Apellido}, sin posibilidad de recuperarlo. ¿Continuar?",
-                "Eliminar definitivamente", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
-
-            if (confirmacion != DialogResult.Yes) return;
-
-            try
-            {
-                await _usuarioClient.EliminarAsync(seleccionado.IdUsuario);
-                await CargarUsuariosAsync();
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show("No se pudo eliminar: " + ex.Message,
                     "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
             }
         }
