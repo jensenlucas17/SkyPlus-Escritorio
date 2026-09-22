@@ -11,10 +11,10 @@ namespace SkyPlus.Desktop
         {
             ApplicationConfiguration.Initialize();
             // SOLO PARA PROBAR - borrar antes de commitear
-            SesionUsuario.IdUsuario = 1;
+            /**SesionUsuario.IdUsuario = 1;
             SesionUsuario.Nombre = "Prueba";
             SesionUsuario.Apellido = "Local";
-            SesionUsuario.Rol = "Administrador";// probá también "Gerente", "Agente de Reservas", etc.
+            SesionUsuario.Rol = "Administrador";**/// probá también "Gerente", "Agente de Reservas", etc.
             Application.Run(new frmDashboard());
         }
     }
