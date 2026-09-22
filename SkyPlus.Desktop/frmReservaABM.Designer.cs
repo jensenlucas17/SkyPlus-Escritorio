@@ -165,6 +165,6 @@
         private Label label3;
         private Button btnGuardar;
         private Button btnCancelar;
-        private Button button3;
+        private Button btnRefrescar;
     }
 }

@@ -72,6 +72,8 @@ namespace SkyPlus.Desktop
                 "Vuelos" => new frmVuelos(),
                 "Pasajeros" => new frmPasajeros(),
                 "Reservas" => new frmReservas(),
+                "Ventas" => new frmVentas(),
+                "Reembolsos" => new frmReembolsos(),
                 _ => null
             };
 
@@ -80,8 +82,11 @@ namespace SkyPlus.Desktop
                 formulario.TopLevel = false;
                 formulario.FormBorderStyle = FormBorderStyle.None;
                 formulario.Dock = DockStyle.Fill;
+
                 pnlContenido.Controls.Add(formulario);
+
                 formulario.Show();
+
                 return;
             }
 
@@ -93,6 +98,7 @@ namespace SkyPlus.Desktop
                 TextAlign = System.Drawing.ContentAlignment.MiddleCenter,
                 Font = new System.Drawing.Font("Segoe UI", 14)
             };
+
             pnlContenido.Controls.Add(lbl);
         }
 
