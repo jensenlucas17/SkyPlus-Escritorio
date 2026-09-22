@@ -62,7 +62,6 @@ namespace SkyPlus.Desktop
             {
                 var asientos = await _asientoClient.ObtenerPorVueloAsync(idVuelo);
 
-                // TODO: confirmar con Lucas el valor exacto que usa para "libre" (podría ser "Libre", "Disponible", etc.)
                 var disponibles = (asientos ?? new System.Collections.Generic.List<AsientoResponse>())
                     .Where(a => a.Estado == "Libre")
                     .ToList();
