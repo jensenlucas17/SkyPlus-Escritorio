@@ -13,6 +13,7 @@ namespace SkyPlus.Desktop
         private readonly RolClient _rolClient = new RolClient();
 
         private readonly int? _idUsuarioEdicion; // null = alta, con valor = edición
+        private string _estadoInicial = "Activo";
 
         // Constructor para ALTA
         public frmUsuarioABM()
@@ -25,14 +26,16 @@ namespace SkyPlus.Desktop
         public frmUsuarioABM(UsuarioResponse usuarioExistente)
         {
             InitializeComponent();
+
             _idUsuarioEdicion = usuarioExistente.IdUsuario;
 
             txtNombre.Text = usuarioExistente.Nombre;
             txtApellido.Text = usuarioExistente.Apellido;
             txtEmail.Text = usuarioExistente.EmailCorporativo;
-            cmbEstado.SelectedItem = usuarioExistente.EstadoCuenta;
 
-            // El rol se termina de fijar en frmUsuarioABM_Load, una vez cargado el combo
+            _estadoInicial = usuarioExistente.EstadoCuenta;
+
+            // Se utiliza Tag para conservar el rol actual
             Tag = usuarioExistente.IdRol;
         }
 
@@ -44,13 +47,23 @@ namespace SkyPlus.Desktop
 
             Text = esEdicion ? "Editar usuario" : "Nuevo usuario";
 
-            // Password solo aplica al alta (RF#01); en edición se resetea aparte
+            // Contraseña solo se solicita al crear
             lblPassword.Visible = !esEdicion;
             txtPassword.Visible = !esEdicion;
 
-            // Estado solo tiene sentido en edición (un usuario nuevo nace Activo)
+            // Estado solo se muestra al editar
             lblEstado.Visible = esEdicion;
             cmbEstado.Visible = esEdicion;
+
+            // Opciones de estado
+            cmbEstado.Items.Clear();
+            cmbEstado.Items.Add("Activo");
+            cmbEstado.Items.Add("Inactivo");
+
+            if (esEdicion)
+            {
+                cmbEstado.SelectedItem = _estadoInicial;
+            }
 
             await CargarRolesAsync();
 
