@@ -78,6 +78,7 @@ namespace SkyPlus.Desktop
                 "Boarding Pass" => new frmBoardingPass(),
                 "Reportes" => new frmReportes(),
                 "Configuración" => new frmConfiguracion(),
+                "Cancelaciones" => new frmCancelaciones(),
                 _ => null
             };
 

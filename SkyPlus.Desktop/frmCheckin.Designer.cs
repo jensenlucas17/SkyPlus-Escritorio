@@ -59,6 +59,7 @@
             btnBuscar.TabIndex = 8;
             btnBuscar.Text = "Buscar";
             btnBuscar.UseVisualStyleBackColor = true;
+            btnBuscar.Click += btnBuscar_Click;
             // 
             // btnRefrescar
             // 
@@ -68,6 +69,7 @@
             btnRefrescar.TabIndex = 9;
             btnRefrescar.Text = "Refrescar";
             btnRefrescar.UseVisualStyleBackColor = true;
+            btnRefrescar.Click += btnRefrescar_Click;
             // 
             // txtBuscar
             // 
@@ -93,6 +95,7 @@
             btnRealizarCheckin.TabIndex = 0;
             btnRealizarCheckin.Text = "Realizar Checkin";
             btnRealizarCheckin.UseVisualStyleBackColor = true;
+            btnRealizarCheckin.Click += btnRealizarCheckin_Click;
             // 
             // dgvCheckin
             // 
@@ -114,6 +117,7 @@
             Controls.Add(pnlFiltros);
             Name = "frmCheckin";
             Text = "Form1";
+            Load += frmCheckin_Load;
             pnlFiltros.ResumeLayout(false);
             pnlFiltros.PerformLayout();
             pnlBotones.ResumeLayout(false);
