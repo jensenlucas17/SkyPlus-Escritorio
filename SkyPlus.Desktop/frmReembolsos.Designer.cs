@@ -36,13 +36,17 @@
             btnVerDetalle = new Button();
             lblCantidad = new Label();
             dgvReembolsos = new DataGridView();
+            pnlFiltros = new Panel();
+            pnlBotones = new Panel();
             ((System.ComponentModel.ISupportInitialize)dgvReembolsos).BeginInit();
+            pnlFiltros.SuspendLayout();
+            pnlBotones.SuspendLayout();
             SuspendLayout();
             // 
             // lblTitulo
             // 
             lblTitulo.AutoSize = true;
-            lblTitulo.Location = new Point(230, 9);
+            lblTitulo.Location = new Point(322, 7);
             lblTitulo.Name = "lblTitulo";
             lblTitulo.Size = new Size(80, 15);
             lblTitulo.TabIndex = 0;
@@ -51,7 +55,7 @@
             // lblBuscar
             // 
             lblBuscar.AutoSize = true;
-            lblBuscar.Location = new Point(12, 70);
+            lblBuscar.Location = new Point(104, 68);
             lblBuscar.Name = "lblBuscar";
             lblBuscar.Size = new Size(45, 15);
             lblBuscar.TabIndex = 1;
@@ -59,7 +63,7 @@
             // 
             // txtBuscar
             // 
-            txtBuscar.Location = new Point(95, 67);
+            txtBuscar.Location = new Point(187, 65);
             txtBuscar.Name = "txtBuscar";
             txtBuscar.Size = new Size(239, 23);
             txtBuscar.TabIndex = 2;
@@ -67,7 +71,7 @@
             // 
             // btnBuscar
             // 
-            btnBuscar.Location = new Point(354, 67);
+            btnBuscar.Location = new Point(446, 65);
             btnBuscar.Name = "btnBuscar";
             btnBuscar.Size = new Size(75, 23);
             btnBuscar.TabIndex = 3;
@@ -77,7 +81,7 @@
             // 
             // btnRefrescar
             // 
-            btnRefrescar.Location = new Point(444, 67);
+            btnRefrescar.Location = new Point(536, 65);
             btnRefrescar.Name = "btnRefrescar";
             btnRefrescar.Size = new Size(75, 23);
             btnRefrescar.TabIndex = 4;
@@ -87,7 +91,7 @@
             // 
             // btnVerDetalle
             // 
-            btnVerDetalle.Location = new Point(354, 123);
+            btnVerDetalle.Location = new Point(518, 34);
             btnVerDetalle.Name = "btnVerDetalle";
             btnVerDetalle.Size = new Size(75, 23);
             btnVerDetalle.TabIndex = 5;
@@ -98,7 +102,7 @@
             // lblCantidad
             // 
             lblCantidad.AutoSize = true;
-            lblCantidad.Location = new Point(19, 127);
+            lblCantidad.Location = new Point(183, 38);
             lblCantidad.Name = "lblCantidad";
             lblCantidad.Size = new Size(83, 15);
             lblCantidad.TabIndex = 6;
@@ -107,29 +111,52 @@
             // dgvReembolsos
             // 
             dgvReembolsos.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvReembolsos.Location = new Point(19, 170);
+            dgvReembolsos.Dock = DockStyle.Fill;
+            dgvReembolsos.Location = new Point(0, 0);
             dgvReembolsos.Name = "dgvReembolsos";
-            dgvReembolsos.Size = new Size(515, 150);
+            dgvReembolsos.Size = new Size(800, 450);
             dgvReembolsos.TabIndex = 7;
+            // 
+            // pnlFiltros
+            // 
+            pnlFiltros.Controls.Add(btnRefrescar);
+            pnlFiltros.Controls.Add(lblTitulo);
+            pnlFiltros.Controls.Add(lblBuscar);
+            pnlFiltros.Controls.Add(txtBuscar);
+            pnlFiltros.Controls.Add(btnBuscar);
+            pnlFiltros.Dock = DockStyle.Top;
+            pnlFiltros.Location = new Point(0, 0);
+            pnlFiltros.Name = "pnlFiltros";
+            pnlFiltros.Size = new Size(800, 100);
+            pnlFiltros.TabIndex = 8;
+            // 
+            // pnlBotones
+            // 
+            pnlBotones.Controls.Add(btnVerDetalle);
+            pnlBotones.Controls.Add(lblCantidad);
+            pnlBotones.Dock = DockStyle.Bottom;
+            pnlBotones.Location = new Point(0, 350);
+            pnlBotones.Name = "pnlBotones";
+            pnlBotones.Size = new Size(800, 100);
+            pnlBotones.TabIndex = 9;
             // 
             // frmReembolsos
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(pnlBotones);
+            Controls.Add(pnlFiltros);
             Controls.Add(dgvReembolsos);
-            Controls.Add(lblCantidad);
-            Controls.Add(btnVerDetalle);
-            Controls.Add(btnRefrescar);
-            Controls.Add(btnBuscar);
-            Controls.Add(txtBuscar);
-            Controls.Add(lblBuscar);
-            Controls.Add(lblTitulo);
             Name = "frmReembolsos";
             Text = "frmReembolsos";
+            Load += frmReembolsos_Load;
             ((System.ComponentModel.ISupportInitialize)dgvReembolsos).EndInit();
+            pnlFiltros.ResumeLayout(false);
+            pnlFiltros.PerformLayout();
+            pnlBotones.ResumeLayout(false);
+            pnlBotones.PerformLayout();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
@@ -142,5 +169,7 @@
         private Button btnVerDetalle;
         private Label lblCantidad;
         private DataGridView dgvReembolsos;
+        private Panel pnlFiltros;
+        private Panel pnlBotones;
     }
 }

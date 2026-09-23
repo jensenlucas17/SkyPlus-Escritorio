@@ -74,6 +74,10 @@ namespace SkyPlus.Desktop
                 "Reservas" => new frmReservas(),
                 "Ventas" => new frmVentas(),
                 "Reembolsos" => new frmReembolsos(),
+                "Check-in" => new frmCheckin(),
+                "Boarding Pass" => new frmBoardingPass(),
+                "Reportes" => new frmReportes(),
+                "Configuración" => new frmConfiguracion(),
                 _ => null
             };
 

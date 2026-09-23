@@ -36,22 +36,26 @@
             btnVerDetalle = new Button();
             lblCantidad = new Label();
             dgvVentas = new DataGridView();
+            pnlFiltros = new Panel();
+            pnlBotones = new Panel();
             ((System.ComponentModel.ISupportInitialize)dgvVentas).BeginInit();
+            pnlFiltros.SuspendLayout();
+            pnlBotones.SuspendLayout();
             SuspendLayout();
             // 
             // lblTitulo
             // 
             lblTitulo.AutoSize = true;
-            lblTitulo.Location = new Point(256, 9);
+            lblTitulo.Location = new Point(390, 1);
             lblTitulo.Name = "lblTitulo";
-            lblTitulo.Size = new Size(48, 15);
+            lblTitulo.Size = new Size(49, 15);
             lblTitulo.TabIndex = 0;
             lblTitulo.Text = "VENTAS";
             // 
             // lblBuscar
             // 
             lblBuscar.AutoSize = true;
-            lblBuscar.Location = new Point(12, 76);
+            lblBuscar.Location = new Point(146, 68);
             lblBuscar.Name = "lblBuscar";
             lblBuscar.Size = new Size(45, 15);
             lblBuscar.TabIndex = 1;
@@ -59,7 +63,7 @@
             // 
             // txtBuscar
             // 
-            txtBuscar.Location = new Point(63, 73);
+            txtBuscar.Location = new Point(197, 65);
             txtBuscar.Name = "txtBuscar";
             txtBuscar.Size = new Size(187, 23);
             txtBuscar.TabIndex = 2;
@@ -67,7 +71,7 @@
             // 
             // btnBuscar
             // 
-            btnBuscar.Location = new Point(285, 73);
+            btnBuscar.Location = new Point(419, 65);
             btnBuscar.Name = "btnBuscar";
             btnBuscar.Size = new Size(75, 23);
             btnBuscar.TabIndex = 3;
@@ -77,7 +81,7 @@
             // 
             // btnRefrescar
             // 
-            btnRefrescar.Location = new Point(388, 73);
+            btnRefrescar.Location = new Point(522, 65);
             btnRefrescar.Name = "btnRefrescar";
             btnRefrescar.Size = new Size(75, 23);
             btnRefrescar.TabIndex = 4;
@@ -87,7 +91,7 @@
             // 
             // btnVerDetalle
             // 
-            btnVerDetalle.Location = new Point(336, 133);
+            btnVerDetalle.Location = new Point(419, 7);
             btnVerDetalle.Name = "btnVerDetalle";
             btnVerDetalle.Size = new Size(75, 23);
             btnVerDetalle.TabIndex = 5;
@@ -98,7 +102,7 @@
             // lblCantidad
             // 
             lblCantidad.AutoSize = true;
-            lblCantidad.Location = new Point(12, 141);
+            lblCantidad.Location = new Point(146, 11);
             lblCantidad.Name = "lblCantidad";
             lblCantidad.Size = new Size(53, 15);
             lblCantidad.TabIndex = 6;
@@ -107,30 +111,53 @@
             // dgvVentas
             // 
             dgvVentas.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvVentas.Location = new Point(21, 180);
+            dgvVentas.Dock = DockStyle.Fill;
+            dgvVentas.Location = new Point(0, 0);
             dgvVentas.Name = "dgvVentas";
-            dgvVentas.Size = new Size(492, 150);
+            dgvVentas.ReadOnly = true;
+            dgvVentas.Size = new Size(800, 450);
             dgvVentas.TabIndex = 7;
+            // 
+            // pnlFiltros
+            // 
+            pnlFiltros.Controls.Add(btnBuscar);
+            pnlFiltros.Controls.Add(lblTitulo);
+            pnlFiltros.Controls.Add(lblBuscar);
+            pnlFiltros.Controls.Add(txtBuscar);
+            pnlFiltros.Controls.Add(btnRefrescar);
+            pnlFiltros.Dock = DockStyle.Top;
+            pnlFiltros.Location = new Point(0, 0);
+            pnlFiltros.Name = "pnlFiltros";
+            pnlFiltros.Size = new Size(800, 100);
+            pnlFiltros.TabIndex = 8;
+            // 
+            // pnlBotones
+            // 
+            pnlBotones.Controls.Add(lblCantidad);
+            pnlBotones.Controls.Add(btnVerDetalle);
+            pnlBotones.Dock = DockStyle.Bottom;
+            pnlBotones.Location = new Point(0, 350);
+            pnlBotones.Name = "pnlBotones";
+            pnlBotones.Size = new Size(800, 100);
+            pnlBotones.TabIndex = 9;
             // 
             // frmVentas
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
+            Controls.Add(pnlBotones);
+            Controls.Add(pnlFiltros);
             Controls.Add(dgvVentas);
-            Controls.Add(lblCantidad);
-            Controls.Add(btnVerDetalle);
-            Controls.Add(btnRefrescar);
-            Controls.Add(btnBuscar);
-            Controls.Add(txtBuscar);
-            Controls.Add(lblBuscar);
-            Controls.Add(lblTitulo);
             Name = "frmVentas";
             Text = "frmVentas";
             Load += frmVentas_Load;
             ((System.ComponentModel.ISupportInitialize)dgvVentas).EndInit();
+            pnlFiltros.ResumeLayout(false);
+            pnlFiltros.PerformLayout();
+            pnlBotones.ResumeLayout(false);
+            pnlBotones.PerformLayout();
             ResumeLayout(false);
-            PerformLayout();
         }
 
         #endregion
@@ -143,5 +170,7 @@
         private Button btnVerDetalle;
         private Label lblCantidad;
         private DataGridView dgvVentas;
+        private Panel pnlFiltros;
+        private Panel pnlBotones;
     }
 }

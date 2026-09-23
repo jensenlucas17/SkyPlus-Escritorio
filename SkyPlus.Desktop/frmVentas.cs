@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SkyPlus.Desktop.Estilos;
+using System;
 using System.Collections.Generic;
 using System.Drawing;
 using System.Linq;
@@ -21,15 +22,6 @@ namespace SkyPlus.Desktop
         }
 
         private readonly List<VentaDemo> _ventas = new();
-
-        public frmVentas()
-        {
-            InitializeComponent();
-
-            CargarDatosDemo();
-            ConfigurarTabla();
-            AplicarFiltros();
-        }
 
         private void CargarDatosDemo()
         {
@@ -216,7 +208,15 @@ namespace SkyPlus.Desktop
 
         private void frmVentas_Load(object sender, EventArgs e)
         {
-        }
+            InitializeComponent();
 
+            CargarDatosDemo();
+            ConfigurarTabla();
+            AplicarFiltros();
+            AppEstilos.EstilizarGrid(dgvVentas);
+            AppEstilos.EstilizarBotonPrimario(btnBuscar);
+            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
+            AppEstilos.EstilizarBotonSecundario(btnVerDetalle);
+        }
     }
 }

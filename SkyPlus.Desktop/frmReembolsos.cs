@@ -1,4 +1,5 @@
-﻿using System;
+﻿using SkyPlus.Desktop.Estilos;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Windows.Forms;
@@ -19,15 +20,6 @@ namespace SkyPlus.Desktop
         }
 
         private readonly List<ReembolsoDemo> _reembolsos = new();
-
-        public frmReembolsos()
-        {
-            InitializeComponent();
-
-            CargarDatosDemo();
-            ConfigurarTabla();
-            AplicarFiltros();
-        }
 
         private void CargarDatosDemo()
         {
@@ -201,9 +193,19 @@ namespace SkyPlus.Desktop
                 MessageBoxIcon.Information);
         }
 
-        private void frmVentas_Load(object sender, EventArgs e)
-        {
-        }
+        
 
+        private void frmReembolsos_Load(object sender, EventArgs e)
+        {
+            InitializeComponent();
+
+            CargarDatosDemo();
+            ConfigurarTabla();
+            AplicarFiltros();
+            AppEstilos.EstilizarGrid(dgvReembolsos);
+            AppEstilos.EstilizarBotonPrimario(btnBuscar);
+            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
+            AppEstilos.EstilizarBotonSecundario(btnVerDetalle);
+        }
     }
 }
