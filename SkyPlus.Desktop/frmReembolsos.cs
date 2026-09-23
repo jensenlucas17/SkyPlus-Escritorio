@@ -21,6 +21,24 @@ namespace SkyPlus.Desktop
 
         private readonly List<ReembolsoDemo> _reembolsos = new();
 
+        // IMPORTANTE: InitializeComponent va acá
+        public frmReembolsos()
+        {
+            InitializeComponent();
+        }
+
+        private void frmReembolsos_Load(object sender, EventArgs e)
+        {
+            CargarDatosDemo();
+            ConfigurarTabla();
+            AplicarFiltros();
+
+            AppEstilos.EstilizarGrid(dgvReembolsos);
+            AppEstilos.EstilizarBotonPrimario(btnBuscar);
+            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
+            AppEstilos.EstilizarBotonSecundario(btnVerDetalle);
+        }
+
         private void CargarDatosDemo()
         {
             _reembolsos.Clear();
@@ -75,12 +93,15 @@ namespace SkyPlus.Desktop
             dgvReembolsos.AutoGenerateColumns = false;
             dgvReembolsos.Columns.Clear();
 
+            dgvReembolsos.AutoSizeColumnsMode =
+                DataGridViewAutoSizeColumnsMode.Fill;
+
             dgvReembolsos.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "colReserva",
                 HeaderText = "Reserva",
                 DataPropertyName = "CodigoReserva",
-                Width = 90
+                FillWeight = 80
             });
 
             dgvReembolsos.Columns.Add(new DataGridViewTextBoxColumn
@@ -88,7 +109,7 @@ namespace SkyPlus.Desktop
                 Name = "colPasajero",
                 HeaderText = "Pasajero",
                 DataPropertyName = "Pasajero",
-                Width = 180
+                FillWeight = 150
             });
 
             dgvReembolsos.Columns.Add(new DataGridViewTextBoxColumn
@@ -96,7 +117,7 @@ namespace SkyPlus.Desktop
                 Name = "colVuelo",
                 HeaderText = "Vuelo",
                 DataPropertyName = "Vuelo",
-                Width = 80
+                FillWeight = 70
             });
 
             dgvReembolsos.Columns.Add(new DataGridViewTextBoxColumn
@@ -104,7 +125,7 @@ namespace SkyPlus.Desktop
                 Name = "colMonto",
                 HeaderText = "Monto",
                 DataPropertyName = "Monto",
-                Width = 110,
+                FillWeight = 100,
                 DefaultCellStyle = new DataGridViewCellStyle
                 {
                     Format = "C2"
@@ -116,7 +137,7 @@ namespace SkyPlus.Desktop
                 Name = "colMotivo",
                 HeaderText = "Motivo",
                 DataPropertyName = "Motivo",
-                Width = 190
+                FillWeight = 160
             });
 
             dgvReembolsos.Columns.Add(new DataGridViewTextBoxColumn
@@ -124,7 +145,7 @@ namespace SkyPlus.Desktop
                 Name = "colFecha",
                 HeaderText = "Fecha",
                 DataPropertyName = "Fecha",
-                Width = 100
+                FillWeight = 90
             });
 
             dgvReembolsos.Columns.Add(new DataGridViewTextBoxColumn
@@ -132,7 +153,7 @@ namespace SkyPlus.Desktop
                 Name = "colEstado",
                 HeaderText = "Estado",
                 DataPropertyName = "Estado",
-                Width = 100
+                FillWeight = 90
             });
         }
 
@@ -191,21 +212,6 @@ namespace SkyPlus.Desktop
                 "Detalle de reembolso",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
-        }
-
-        
-
-        private void frmReembolsos_Load(object sender, EventArgs e)
-        {
-            InitializeComponent();
-
-            CargarDatosDemo();
-            ConfigurarTabla();
-            AplicarFiltros();
-            AppEstilos.EstilizarGrid(dgvReembolsos);
-            AppEstilos.EstilizarBotonPrimario(btnBuscar);
-            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
-            AppEstilos.EstilizarBotonSecundario(btnVerDetalle);
         }
     }
 }

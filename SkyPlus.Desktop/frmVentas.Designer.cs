@@ -46,16 +46,16 @@
             // lblTitulo
             // 
             lblTitulo.AutoSize = true;
-            lblTitulo.Location = new Point(390, 1);
+            lblTitulo.Location = new Point(381, 9);
             lblTitulo.Name = "lblTitulo";
-            lblTitulo.Size = new Size(49, 15);
+            lblTitulo.Size = new Size(48, 15);
             lblTitulo.TabIndex = 0;
             lblTitulo.Text = "VENTAS";
             // 
             // lblBuscar
             // 
             lblBuscar.AutoSize = true;
-            lblBuscar.Location = new Point(146, 68);
+            lblBuscar.Location = new Point(146, 39);
             lblBuscar.Name = "lblBuscar";
             lblBuscar.Size = new Size(45, 15);
             lblBuscar.TabIndex = 1;
@@ -63,7 +63,7 @@
             // 
             // txtBuscar
             // 
-            txtBuscar.Location = new Point(197, 65);
+            txtBuscar.Location = new Point(201, 36);
             txtBuscar.Name = "txtBuscar";
             txtBuscar.Size = new Size(187, 23);
             txtBuscar.TabIndex = 2;
@@ -71,7 +71,7 @@
             // 
             // btnBuscar
             // 
-            btnBuscar.Location = new Point(419, 65);
+            btnBuscar.Location = new Point(419, 39);
             btnBuscar.Name = "btnBuscar";
             btnBuscar.Size = new Size(75, 23);
             btnBuscar.TabIndex = 3;
@@ -81,7 +81,7 @@
             // 
             // btnRefrescar
             // 
-            btnRefrescar.Location = new Point(522, 65);
+            btnRefrescar.Location = new Point(522, 39);
             btnRefrescar.Name = "btnRefrescar";
             btnRefrescar.Size = new Size(75, 23);
             btnRefrescar.TabIndex = 4;
@@ -91,7 +91,7 @@
             // 
             // btnVerDetalle
             // 
-            btnVerDetalle.Location = new Point(419, 7);
+            btnVerDetalle.Location = new Point(419, 11);
             btnVerDetalle.Name = "btnVerDetalle";
             btnVerDetalle.Size = new Size(75, 23);
             btnVerDetalle.TabIndex = 5;
@@ -102,7 +102,7 @@
             // lblCantidad
             // 
             lblCantidad.AutoSize = true;
-            lblCantidad.Location = new Point(146, 11);
+            lblCantidad.Location = new Point(146, 15);
             lblCantidad.Name = "lblCantidad";
             lblCantidad.Size = new Size(53, 15);
             lblCantidad.TabIndex = 6;
@@ -110,12 +110,12 @@
             // 
             // dgvVentas
             // 
+            dgvVentas.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dgvVentas.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvVentas.Dock = DockStyle.Fill;
-            dgvVentas.Location = new Point(0, 0);
+            dgvVentas.Location = new Point(0, 97);
             dgvVentas.Name = "dgvVentas";
             dgvVentas.ReadOnly = true;
-            dgvVentas.Size = new Size(800, 450);
+            dgvVentas.Size = new Size(800, 258);
             dgvVentas.TabIndex = 7;
             // 
             // pnlFiltros

@@ -28,5 +28,8 @@ namespace SkyPlus.Desktop.Models
         public decimal Tarifa { get; set; }
 
         public int IdUsuarioOperador { get; set; }
+
+        public string DescripcionReserva =>
+            $"{NumeroVuelo} | {Salida:dd/MM/yyyy HH:mm} → {Llegada:HH:mm}";
     }
 }

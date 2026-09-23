@@ -7,10 +7,14 @@ namespace SkyPlus.API.Services
     public class VueloService : IVueloService
     {
         private readonly SkyPlusDbContext _context;
+        private readonly IAsientoService _asientoService;
 
-        public VueloService(SkyPlusDbContext context)
+        public VueloService(
+            SkyPlusDbContext context,
+            IAsientoService asientoService)
         {
             _context = context;
+            _asientoService = asientoService;
         }
 
         public async Task<List<VueloResponse>> ObtenerTodosAsync()
@@ -150,8 +154,21 @@ namespace SkyPlus.API.Services
 
             await _context.SaveChangesAsync();
 
-            return await ObtenerPorIdAsync(
-                vuelo.IdVuelo);
+            // Generar automáticamente los 180 asientos del vuelo
+            var asientosGenerados =
+                await _asientoService.GenerarAsientosAsync(vuelo.IdVuelo);
+
+            if (!asientosGenerados)
+            {
+                // Si por algún motivo no se pudieron generar,
+                // eliminamos el vuelo para no dejarlo incompleto.
+                _context.Vuelos.Remove(vuelo);
+                await _context.SaveChangesAsync();
+
+                return null;
+            }
+
+            return await ObtenerPorIdAsync(vuelo.IdVuelo);
         }
 
         public async Task<VueloResponse?> ActualizarAsync(

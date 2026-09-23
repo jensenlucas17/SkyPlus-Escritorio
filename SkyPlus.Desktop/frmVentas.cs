@@ -1,7 +1,6 @@
 ﻿using SkyPlus.Desktop.Estilos;
 using System;
 using System.Collections.Generic;
-using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
 
@@ -22,6 +21,24 @@ namespace SkyPlus.Desktop
         }
 
         private readonly List<VentaDemo> _ventas = new();
+
+        // IMPORTANTE: InitializeComponent va en el constructor
+        public frmVentas()
+        {
+            InitializeComponent();
+        }
+
+        private void frmVentas_Load(object sender, EventArgs e)
+        {
+            CargarDatosDemo();
+            ConfigurarTabla();
+            AplicarFiltros();
+
+            AppEstilos.EstilizarGrid(dgvVentas);
+            AppEstilos.EstilizarBotonPrimario(btnBuscar);
+            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
+            AppEstilos.EstilizarBotonSecundario(btnVerDetalle);
+        }
 
         private void CargarDatosDemo()
         {
@@ -81,12 +98,15 @@ namespace SkyPlus.Desktop
             dgvVentas.AutoGenerateColumns = false;
             dgvVentas.Columns.Clear();
 
+            // Hace que las columnas ocupen todo el ancho disponible
+            dgvVentas.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
+
             dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "colReserva",
                 HeaderText = "Reserva",
                 DataPropertyName = "CodigoReserva",
-                Width = 90
+                FillWeight = 80
             });
 
             dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
@@ -94,7 +114,7 @@ namespace SkyPlus.Desktop
                 Name = "colPasajero",
                 HeaderText = "Pasajero",
                 DataPropertyName = "Pasajero",
-                Width = 180
+                FillWeight = 150
             });
 
             dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
@@ -102,7 +122,7 @@ namespace SkyPlus.Desktop
                 Name = "colVuelo",
                 HeaderText = "Vuelo",
                 DataPropertyName = "Vuelo",
-                Width = 80
+                FillWeight = 70
             });
 
             dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
@@ -110,7 +130,7 @@ namespace SkyPlus.Desktop
                 Name = "colAsiento",
                 HeaderText = "Asiento",
                 DataPropertyName = "Asiento",
-                Width = 80
+                FillWeight = 70
             });
 
             dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
@@ -118,7 +138,7 @@ namespace SkyPlus.Desktop
                 Name = "colMonto",
                 HeaderText = "Monto",
                 DataPropertyName = "Monto",
-                Width = 110,
+                FillWeight = 100,
                 DefaultCellStyle = new DataGridViewCellStyle
                 {
                     Format = "C2"
@@ -130,7 +150,7 @@ namespace SkyPlus.Desktop
                 Name = "colMetodo",
                 HeaderText = "Método de pago",
                 DataPropertyName = "MetodoPago",
-                Width = 130
+                FillWeight = 110
             });
 
             dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
@@ -138,7 +158,7 @@ namespace SkyPlus.Desktop
                 Name = "colFecha",
                 HeaderText = "Fecha",
                 DataPropertyName = "Fecha",
-                Width = 100
+                FillWeight = 90
             });
 
             dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
@@ -146,7 +166,7 @@ namespace SkyPlus.Desktop
                 Name = "colEstado",
                 HeaderText = "Estado",
                 DataPropertyName = "Estado",
-                Width = 100
+                FillWeight = 80
             });
         }
 
@@ -204,19 +224,6 @@ namespace SkyPlus.Desktop
                 "Detalle de venta",
                 MessageBoxButtons.OK,
                 MessageBoxIcon.Information);
-        }
-
-        private void frmVentas_Load(object sender, EventArgs e)
-        {
-            InitializeComponent();
-
-            CargarDatosDemo();
-            ConfigurarTabla();
-            AplicarFiltros();
-            AppEstilos.EstilizarGrid(dgvVentas);
-            AppEstilos.EstilizarBotonPrimario(btnBuscar);
-            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
-            AppEstilos.EstilizarBotonSecundario(btnVerDetalle);
         }
     }
 }

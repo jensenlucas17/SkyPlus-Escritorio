@@ -33,8 +33,10 @@
             btnCancelarReserva = new Button();
             btnNuevo = new Button();
             pnlFiltros = new Panel();
+            btnRefrescar = new Button();
             btnBuscar = new Button();
             txtBuscar = new TextBox();
+            label1 = new Label();
             ((System.ComponentModel.ISupportInitialize)dgvReservas).BeginInit();
             pnlBotones.SuspendLayout();
             pnlFiltros.SuspendLayout();
@@ -72,9 +74,9 @@
             // 
             // btnNuevo
             // 
-            btnNuevo.Location = new Point(275, 30);
+            btnNuevo.Location = new Point(281, 15);
             btnNuevo.Name = "btnNuevo";
-            btnNuevo.Size = new Size(75, 23);
+            btnNuevo.Size = new Size(75, 53);
             btnNuevo.TabIndex = 0;
             btnNuevo.Text = "Nuevo";
             btnNuevo.UseVisualStyleBackColor = true;
@@ -82,6 +84,8 @@
             // 
             // pnlFiltros
             // 
+            pnlFiltros.Controls.Add(label1);
+            pnlFiltros.Controls.Add(btnRefrescar);
             pnlFiltros.Controls.Add(btnBuscar);
             pnlFiltros.Controls.Add(txtBuscar);
             pnlFiltros.Dock = DockStyle.Top;
@@ -90,9 +94,19 @@
             pnlFiltros.Size = new Size(800, 100);
             pnlFiltros.TabIndex = 3;
             // 
+            // btnRefrescar
+            // 
+            btnRefrescar.Location = new Point(531, 49);
+            btnRefrescar.Name = "btnRefrescar";
+            btnRefrescar.Size = new Size(75, 23);
+            btnRefrescar.TabIndex = 2;
+            btnRefrescar.Text = "Refrescar";
+            btnRefrescar.UseVisualStyleBackColor = true;
+            btnRefrescar.Click += btnRefrescar_Click;
+            // 
             // btnBuscar
             // 
-            btnBuscar.Location = new Point(484, 34);
+            btnBuscar.Location = new Point(389, 49);
             btnBuscar.Name = "btnBuscar";
             btnBuscar.Size = new Size(75, 23);
             btnBuscar.TabIndex = 1;
@@ -102,10 +116,19 @@
             // 
             // txtBuscar
             // 
-            txtBuscar.Location = new Point(232, 35);
+            txtBuscar.Location = new Point(95, 49);
             txtBuscar.Name = "txtBuscar";
             txtBuscar.Size = new Size(153, 23);
             txtBuscar.TabIndex = 0;
+            // 
+            // label1
+            // 
+            label1.AutoSize = true;
+            label1.Location = new Point(326, 9);
+            label1.Name = "label1";
+            label1.Size = new Size(59, 15);
+            label1.TabIndex = 3;
+            label1.Text = "RESERVAS";
             // 
             // frmReservas
             // 
@@ -134,5 +157,7 @@
         private Panel pnlFiltros;
         private Button btnBuscar;
         private TextBox txtBuscar;
+        private Button btnRefrescar;
+        private Label label1;
     }
 }

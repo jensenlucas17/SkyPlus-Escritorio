@@ -27,9 +27,12 @@ namespace SkyPlus.Desktop
             await CargarReservas();
 
             AppEstilos.EstilizarGrid(dgvReservas);
+
             AppEstilos.EstilizarBotonPrimario(btnNuevo);
+
             AppEstilos.EstilizarBotonSecundario(btnCancelarReserva);
             AppEstilos.EstilizarBotonSecundario(btnBuscar);
+            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
         }
 
         private async Task CargarReservas()
@@ -54,12 +57,26 @@ namespace SkyPlus.Desktop
 
         private void AplicarFiltro()
         {
-            var texto = txtBuscar.Text.Trim().ToLower();
+            var texto = txtBuscar.Text.Trim();
 
             var filtradas = _reservasCache.Where(r =>
-                string.IsNullOrEmpty(texto) ||
-                r.CodigoReserva.ToLower().Contains(texto) ||
-                r.Pasajero.ToLower().Contains(texto)
+                string.IsNullOrWhiteSpace(texto) ||
+
+                (!string.IsNullOrWhiteSpace(r.CodigoReserva) &&
+                 r.CodigoReserva.Contains(texto, StringComparison.OrdinalIgnoreCase)) ||
+
+                (!string.IsNullOrWhiteSpace(r.Pasajero) &&
+                 r.Pasajero.Contains(texto, StringComparison.OrdinalIgnoreCase)) ||
+
+                (!string.IsNullOrWhiteSpace(r.Vuelo) &&
+                 r.Vuelo.Contains(texto, StringComparison.OrdinalIgnoreCase)) ||
+
+                (!string.IsNullOrWhiteSpace(r.Asiento) &&
+                 r.Asiento.Contains(texto, StringComparison.OrdinalIgnoreCase)) ||
+
+                (!string.IsNullOrWhiteSpace(r.EstadoReserva) &&
+                 r.EstadoReserva.Contains(texto, StringComparison.OrdinalIgnoreCase))
+
             ).ToList();
 
             dgvReservas.DataSource = null;
@@ -71,8 +88,14 @@ namespace SkyPlus.Desktop
             AplicarFiltro();
         }
 
-        private async void btnBuscar_Click(object sender, EventArgs e)
+        private void btnBuscar_Click(object sender, EventArgs e)
         {
+            AplicarFiltro();
+        }
+
+        private async void btnRefrescar_Click(object sender, EventArgs e)
+        {
+            txtBuscar.Clear();
             await CargarReservas();
         }
 

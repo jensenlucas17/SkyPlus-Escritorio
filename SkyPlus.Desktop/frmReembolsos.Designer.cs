@@ -55,7 +55,7 @@
             // lblBuscar
             // 
             lblBuscar.AutoSize = true;
-            lblBuscar.Location = new Point(104, 68);
+            lblBuscar.Location = new Point(99, 54);
             lblBuscar.Name = "lblBuscar";
             lblBuscar.Size = new Size(45, 15);
             lblBuscar.TabIndex = 1;
@@ -63,7 +63,7 @@
             // 
             // txtBuscar
             // 
-            txtBuscar.Location = new Point(187, 65);
+            txtBuscar.Location = new Point(183, 51);
             txtBuscar.Name = "txtBuscar";
             txtBuscar.Size = new Size(239, 23);
             txtBuscar.TabIndex = 2;
@@ -71,7 +71,7 @@
             // 
             // btnBuscar
             // 
-            btnBuscar.Location = new Point(446, 65);
+            btnBuscar.Location = new Point(443, 50);
             btnBuscar.Name = "btnBuscar";
             btnBuscar.Size = new Size(75, 23);
             btnBuscar.TabIndex = 3;
@@ -81,7 +81,7 @@
             // 
             // btnRefrescar
             // 
-            btnRefrescar.Location = new Point(536, 65);
+            btnRefrescar.Location = new Point(536, 51);
             btnRefrescar.Name = "btnRefrescar";
             btnRefrescar.Size = new Size(75, 23);
             btnRefrescar.TabIndex = 4;
@@ -110,11 +110,11 @@
             // 
             // dgvReembolsos
             // 
+            dgvReembolsos.Anchor = AnchorStyles.Top | AnchorStyles.Bottom | AnchorStyles.Left | AnchorStyles.Right;
             dgvReembolsos.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvReembolsos.Dock = DockStyle.Fill;
-            dgvReembolsos.Location = new Point(0, 0);
+            dgvReembolsos.Location = new Point(0, 98);
             dgvReembolsos.Name = "dgvReembolsos";
-            dgvReembolsos.Size = new Size(800, 450);
+            dgvReembolsos.Size = new Size(797, 253);
             dgvReembolsos.TabIndex = 7;
             // 
             // pnlFiltros

@@ -33,12 +33,14 @@
             btnRefrescar = new Button();
             txtBuscar = new TextBox();
             dgvCancelaciones = new DataGridView();
+            lblCancelaciones = new Label();
             pnlFiltros.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvCancelaciones).BeginInit();
             SuspendLayout();
             // 
             // pnlFiltros
             // 
+            pnlFiltros.Controls.Add(lblCancelaciones);
             pnlFiltros.Controls.Add(btnBuscar);
             pnlFiltros.Controls.Add(btnRefrescar);
             pnlFiltros.Controls.Add(txtBuscar);
@@ -85,6 +87,15 @@
             dgvCancelaciones.Size = new Size(800, 350);
             dgvCancelaciones.TabIndex = 1;
             // 
+            // lblCancelaciones
+            // 
+            lblCancelaciones.AutoSize = true;
+            lblCancelaciones.Location = new Point(321, 9);
+            lblCancelaciones.Name = "lblCancelaciones";
+            lblCancelaciones.Size = new Size(101, 15);
+            lblCancelaciones.TabIndex = 2;
+            lblCancelaciones.Text = "CANCELACIONES";
+            // 
             // frmCancelaciones
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
@@ -108,5 +119,6 @@
         private Button btnBuscar;
         private Button btnRefrescar;
         private DataGridView dgvCancelaciones;
+        private Label lblCancelaciones;
     }
 }
