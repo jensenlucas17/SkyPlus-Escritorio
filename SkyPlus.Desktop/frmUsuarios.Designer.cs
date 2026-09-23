@@ -29,6 +29,8 @@
         private void InitializeComponent()
         {
             pnlFiltros = new Panel();
+            lblEstadoFiltro = new Label();
+            lblRolFiltro = new Label();
             btnRefrescar = new Button();
             cmbEstadoFiltro = new ComboBox();
             cmbRolFiltro = new ComboBox();
@@ -45,6 +47,8 @@
             // 
             // pnlFiltros
             // 
+            pnlFiltros.Controls.Add(lblEstadoFiltro);
+            pnlFiltros.Controls.Add(lblRolFiltro);
             pnlFiltros.Controls.Add(btnRefrescar);
             pnlFiltros.Controls.Add(cmbEstadoFiltro);
             pnlFiltros.Controls.Add(cmbRolFiltro);
@@ -55,15 +59,33 @@
             pnlFiltros.Size = new Size(800, 100);
             pnlFiltros.TabIndex = 0;
             // 
+            // lblEstadoFiltro
+            // 
+            lblEstadoFiltro.AutoSize = true;
+            lblEstadoFiltro.Location = new Point(305, 52);
+            lblEstadoFiltro.Name = "lblEstadoFiltro";
+            lblEstadoFiltro.Size = new Size(45, 15);
+            lblEstadoFiltro.TabIndex = 4;
+            lblEstadoFiltro.Text = "Estado:";
+            // 
+            // lblRolFiltro
+            // 
+            lblRolFiltro.AutoSize = true;
+            lblRolFiltro.Location = new Point(120, 52);
+            lblRolFiltro.Name = "lblRolFiltro";
+            lblRolFiltro.Size = new Size(27, 15);
+            lblRolFiltro.TabIndex = 3;
+            lblRolFiltro.Text = "Rol:";
+            // 
             // btnRefrescar
             // 
             btnRefrescar.Location = new Point(528, 48);
             btnRefrescar.Name = "btnRefrescar";
             btnRefrescar.Size = new Size(75, 23);
             btnRefrescar.TabIndex = 3;
-            btnRefrescar.Text = "Buscar";
+            btnRefrescar.Text = "Refrescar";
             btnRefrescar.UseVisualStyleBackColor = true;
-            btnRefrescar.Click += btnRefrescar_Click_1;
+            btnRefrescar.Click += btnRefrescar_Click;
             // 
             // cmbEstadoFiltro
             // 
@@ -73,25 +95,26 @@
             cmbEstadoFiltro.Name = "cmbEstadoFiltro";
             cmbEstadoFiltro.Size = new Size(121, 23);
             cmbEstadoFiltro.TabIndex = 2;
-            cmbEstadoFiltro.SelectedIndexChanged += cmbEstadoFiltro_SelectedIndexChanged_1;
+            cmbEstadoFiltro.SelectedIndexChanged += cmbEstadoFiltro_SelectedIndexChanged;
             // 
             // cmbRolFiltro
             // 
             cmbRolFiltro.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbRolFiltro.FormattingEnabled = true;
-            cmbRolFiltro.Location = new Point(217, 49);
+            cmbRolFiltro.Location = new Point(153, 48);
             cmbRolFiltro.Name = "cmbRolFiltro";
             cmbRolFiltro.Size = new Size(121, 23);
             cmbRolFiltro.TabIndex = 1;
+            cmbRolFiltro.SelectedIndexChanged += cmbRolFiltro_SelectedIndexChanged;
             // 
             // txtBuscar
             // 
-            txtBuscar.Location = new Point(312, 12);
+            txtBuscar.Location = new Point(235, 12);
             txtBuscar.Name = "txtBuscar";
             txtBuscar.PlaceholderText = "Buscar por nombre o email";
             txtBuscar.Size = new Size(151, 23);
             txtBuscar.TabIndex = 0;
-            txtBuscar.TextChanged += txtBuscar_TextChanged_1;
+            txtBuscar.TextChanged += txtBuscar_TextChanged;
             // 
             // panel1
             // 
@@ -108,11 +131,11 @@
             // 
             btnDesactivarReactivar.Location = new Point(417, 37);
             btnDesactivarReactivar.Name = "btnDesactivarReactivar";
-            btnDesactivarReactivar.Size = new Size(102, 23);
+            btnDesactivarReactivar.Size = new Size(121, 23);
             btnDesactivarReactivar.TabIndex = 2;
-            btnDesactivarReactivar.Text = "Desactivar";
+            btnDesactivarReactivar.Text = "Desactivar/Activar";
             btnDesactivarReactivar.UseVisualStyleBackColor = true;
-            btnDesactivarReactivar.Click += btnDesactivarReactivar_Click_1;
+            btnDesactivarReactivar.Click += btnDesactivarReactivar_Click;
             // 
             // btnEditar
             // 
@@ -122,7 +145,7 @@
             btnEditar.TabIndex = 1;
             btnEditar.Text = "Editar";
             btnEditar.UseVisualStyleBackColor = true;
-            btnEditar.Click += btnEditar_Click_1;
+            btnEditar.Click += btnEditar_Click;
             // 
             // btnNuevo
             // 
@@ -132,7 +155,7 @@
             btnNuevo.TabIndex = 0;
             btnNuevo.Text = "Nuevo";
             btnNuevo.UseVisualStyleBackColor = true;
-            btnNuevo.Click += btnNuevo_Click_1;
+            btnNuevo.Click += btnNuevo_Click;
             // 
             // dgvUsuarios
             // 
@@ -176,5 +199,7 @@
         private Button btnEditar;
         private Button btnNuevo;
         private DataGridView dgvUsuarios;
+        private Label lblRolFiltro;
+        private Label lblEstadoFiltro;
     }
 }

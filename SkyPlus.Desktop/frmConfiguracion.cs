@@ -17,16 +17,68 @@ namespace SkyPlus.Desktop
 
         private void frmConfiguracion_Load(object sender, EventArgs e)
         {
-            // TODO: cargar valores reales desde la API en la 2da entrega.
-            txtNombreAerolinea.Text = "SkyPlus Líneas Aéreas";
-            cmbMoneda.Items.Clear();
-            cmbMoneda.Items.AddRange(new object[] { "ARS", "USD" });
-            cmbMoneda.SelectedIndex = 0;
+            bool esAdministrador =
+                SesionUsuario.Rol == "Administrador";
 
-            lblUsuarioActual.Text = $"Usuario: {SesionUsuario.Nombre} {SesionUsuario.Apellido}";
+            // ==========================
+            // SEGURIDAD - TODOS LOS ROLES
+            // ==========================
 
-            AppEstilos.EstilizarBotonPrimario(btnGuardarGeneral);
+            grpSeguridad.Visible = true;
+
+            lblUsuarioActual.Text =
+                $"Usuario: {SesionUsuario.Nombre} {SesionUsuario.Apellido}";
+
             AppEstilos.EstilizarBotonPrimario(btnCambiarPassword);
+
+
+            // ==========================
+            // CONFIGURACIÓN GENERAL
+            // SOLO ADMINISTRADOR
+            // ==========================
+
+            grpDatosGenerales.Visible = esAdministrador;
+
+            if (esAdministrador)
+            {
+                // Datos locales de demostración.
+                // Se conectarán a la API posteriormente.
+                txtNombreAerolinea.Text = "SkyPlus Líneas Aéreas";
+
+                cmbMoneda.Items.Clear();
+                cmbMoneda.Items.AddRange(new object[]
+                {
+            "ARS",
+            "USD"
+                });
+
+                cmbMoneda.SelectedIndex = 0;
+
+                AppEstilos.EstilizarBotonPrimario(
+                    btnGuardarGeneral);
+            }
+
+
+            // ==========================
+            // POSICIONAMIENTO
+            // ==========================
+
+            if (esAdministrador)
+            {
+                // Mantiene las posiciones originales.
+                grpDatosGenerales.Location =
+                    new System.Drawing.Point(246, 43);
+
+                grpSeguridad.Location =
+                    new System.Drawing.Point(246, 241);
+            }
+            else
+            {
+                // Como Datos Generales está oculto,
+                // Seguridad ocupa su lugar.
+                grpSeguridad.Location =
+                    new System.Drawing.Point(246, 43);
+            }
         }
 
         private void btnGuardarGeneral_Click(object sender, EventArgs e)

@@ -21,7 +21,7 @@ namespace SkyPlus.Desktop
             ("Check-in",       new[] { "Agente de Check-in" }),
             ("Boarding Pass",  new[] { "Agente de Check-in" }),
             ("Reportes",       new[] { "Administrador", "Gerente" }),
-            ("Configuración",  new[] { "Administrador" }),
+            ("Configuración",  new[] { "Administrador", "Gerente", "Agente de Reservas", "Agente de Check-in" }),
             ("Aeronaves",      new[] { "Administrador", "Gerente" }),
         };
 

@@ -26,9 +26,16 @@ namespace SkyPlus.Desktop
             AppEstilos.EstilizarBotonSecundario(btnEditar);
             AppEstilos.EstilizarBotonSecundario(btnRefrescar);
             AppEstilos.EstilizarBotonSecundario(btnDesactivarReactivar);
-            cmbEstadoFiltro.Items.AddRange(new object[] { "Todos", "Activo", "Inactivo" });
+            cmbEstadoFiltro.Items.Clear();
+            cmbEstadoFiltro.Items.AddRange(new object[]
+            {
+                "Todos",
+                "Activo",
+                "Inactivo"
+            });
             cmbEstadoFiltro.SelectedIndex = 0;
 
+            _ = CargarRolesFiltroAsync();
             _ = CargarUsuariosAsync();
         }
 
@@ -62,6 +69,7 @@ namespace SkyPlus.Desktop
         {
             var texto = txtBuscar.Text.Trim().ToLower();
             var estadoFiltro = cmbEstadoFiltro.SelectedItem?.ToString() ?? "Todos";
+            var rolFiltro = cmbRolFiltro.SelectedItem?.ToString() ?? "Todos";
 
             var filtrados = _usuariosCache.Where(u =>
                 (string.IsNullOrEmpty(texto) ||
@@ -70,6 +78,8 @@ namespace SkyPlus.Desktop
                     u.EmailCorporativo.ToLower().Contains(texto))
                 &&
                 (estadoFiltro == "Todos" || u.EstadoCuenta == estadoFiltro)
+                &&
+                (rolFiltro == "Todos" || u.Rol == rolFiltro)
             ).ToList();
 
             dgvUsuarios.DataSource = filtrados;
@@ -79,7 +89,18 @@ namespace SkyPlus.Desktop
 
         private void cmbEstadoFiltro_SelectedIndexChanged(object sender, EventArgs e) => AplicarFiltros();
 
-        private void btnRefrescar_Click(object sender, EventArgs e) => _ = CargarUsuariosAsync();
+        private async void btnRefrescar_Click(object sender, EventArgs e)
+        {
+            txtBuscar.Clear();
+
+            if (cmbEstadoFiltro.Items.Count > 0)
+                cmbEstadoFiltro.SelectedIndex = 0;
+
+            if (cmbRolFiltro.Items.Count > 0)
+                cmbRolFiltro.SelectedIndex = 0;
+
+            await CargarUsuariosAsync();
+        }
 
         private void btnNuevo_Click(object sender, EventArgs e)
         {
@@ -148,34 +169,39 @@ namespace SkyPlus.Desktop
             }
         }
 
-        private void txtBuscar_TextChanged_1(object sender, EventArgs e)
+        private async System.Threading.Tasks.Task CargarRolesFiltroAsync()
         {
+            try
+            {
+                var rolClient = new RolClient();
+                var roles = await rolClient.ObtenerTodosAsync();
 
+                cmbRolFiltro.Items.Clear();
+                cmbRolFiltro.Items.Add("Todos");
+
+                if (roles != null)
+                {
+                    foreach (var rol in roles)
+                    {
+                        cmbRolFiltro.Items.Add(rol.NombreRol);
+                    }
+                }
+
+                cmbRolFiltro.SelectedIndex = 0;
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "No se pudieron cargar los roles: " + ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
 
-        private void cmbEstadoFiltro_SelectedIndexChanged_1(object sender, EventArgs e)
+        private void cmbRolFiltro_SelectedIndexChanged(object sender, EventArgs e)
         {
-
-        }
-
-        private void btnRefrescar_Click_1(object sender, EventArgs e)
-        {
-
-        }
-
-        private void btnNuevo_Click_1(object sender, EventArgs e)
-        {
-
-        }
-
-        private void btnEditar_Click_1(object sender, EventArgs e)
-        {
-
-        }
-
-        private void btnDesactivarReactivar_Click_1(object sender, EventArgs e)
-        {
-
+            AplicarFiltros();
         }
 
         private void btnEliminar_Click_1(object sender, EventArgs e)
