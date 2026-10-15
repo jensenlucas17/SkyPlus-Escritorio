@@ -76,6 +76,14 @@ namespace SkyPlus.Infrastructure.Data
                     .HasColumnName("apellido")
                     .IsRequired();
 
+                entity.Property(e => e.Dni)
+                    .HasColumnName("dni")
+                    .HasMaxLength(8)
+                    .IsRequired(false);
+
+                entity.HasIndex(e => e.Dni)
+                    .IsUnique();
+
                 entity.Property(e => e.EmailCorporativo)
                     .HasColumnName("email_corporativo")
                     .IsRequired();

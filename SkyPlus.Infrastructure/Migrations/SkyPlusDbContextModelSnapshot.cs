@@ -466,6 +466,11 @@ namespace SkyPlus.Infrastructure.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("contrasena_hash");
 
+                    b.Property<string>("Dni")
+                        .HasMaxLength(8)
+                        .HasColumnType("varchar(8)")
+                        .HasColumnName("dni");
+
                     b.Property<string>("EmailCorporativo")
                         .IsRequired()
                         .HasColumnType("varchar(255)")
@@ -490,6 +495,9 @@ namespace SkyPlus.Infrastructure.Migrations
                         .HasColumnName("ultima_sesion");
 
                     b.HasKey("IdUsuario");
+
+                    b.HasIndex("Dni")
+                        .IsUnique();
 
                     b.HasIndex("EmailCorporativo")
                         .IsUnique();

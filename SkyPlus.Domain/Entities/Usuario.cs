@@ -10,6 +10,8 @@
 
         public string Apellido { get; set; } = string.Empty;
 
+        public string? Dni { get; set; }
+
         public string EmailCorporativo { get; set; } = string.Empty;
 
         public string ContrasenaHash { get; set; } = string.Empty;

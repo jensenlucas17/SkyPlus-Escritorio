@@ -43,6 +43,8 @@
             btnGuardar = new Button();
             btnCancelar = new Button();
             lblPassword = new Label();
+            lblDNI = new Label();
+            txtDni = new TextBox();
             SuspendLayout();
             // 
             // txtNombre
@@ -63,7 +65,7 @@
             // 
             // txtApellido
             // 
-            txtApellido.Location = new Point(202, 85);
+            txtApellido.Location = new Point(202, 64);
             txtApellido.Name = "txtApellido";
             txtApellido.Size = new Size(147, 23);
             txtApellido.TabIndex = 2;
@@ -71,7 +73,7 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(59, 85);
+            label2.Location = new Point(59, 67);
             label2.Name = "label2";
             label2.Size = new Size(54, 15);
             label2.TabIndex = 3;
@@ -79,7 +81,7 @@
             // 
             // txtEmail
             // 
-            txtEmail.Location = new Point(202, 145);
+            txtEmail.Location = new Point(202, 158);
             txtEmail.Name = "txtEmail";
             txtEmail.Size = new Size(147, 23);
             txtEmail.TabIndex = 4;
@@ -87,7 +89,7 @@
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(59, 145);
+            label3.Location = new Point(60, 161);
             label3.Name = "label3";
             label3.Size = new Size(39, 15);
             label3.TabIndex = 5;
@@ -97,7 +99,7 @@
             // 
             cmbRol.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbRol.FormattingEnabled = true;
-            cmbRol.Location = new Point(202, 208);
+            cmbRol.Location = new Point(202, 204);
             cmbRol.Name = "cmbRol";
             cmbRol.Size = new Size(147, 23);
             cmbRol.TabIndex = 6;
@@ -105,7 +107,7 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(60, 208);
+            label4.Location = new Point(60, 207);
             label4.Name = "label4";
             label4.Size = new Size(27, 15);
             label4.TabIndex = 7;
@@ -113,25 +115,25 @@
             // 
             // txtPassword
             // 
-            txtPassword.Location = new Point(202, 322);
+            txtPassword.Location = new Point(202, 304);
             txtPassword.Name = "txtPassword";
             txtPassword.PasswordChar = '●';
             txtPassword.Size = new Size(147, 23);
-            txtPassword.TabIndex = 9;
+            txtPassword.TabIndex = 11;
             // 
             // cmbEstado
             // 
             cmbEstado.DropDownStyle = ComboBoxStyle.DropDownList;
             cmbEstado.FormattingEnabled = true;
-            cmbEstado.Location = new Point(202, 266);
+            cmbEstado.Location = new Point(202, 250);
             cmbEstado.Name = "cmbEstado";
             cmbEstado.Size = new Size(147, 23);
-            cmbEstado.TabIndex = 10;
+            cmbEstado.TabIndex = 9;
             // 
             // lblEstado
             // 
             lblEstado.AutoSize = true;
-            lblEstado.Location = new Point(60, 266);
+            lblEstado.Location = new Point(60, 253);
             lblEstado.Name = "lblEstado";
             lblEstado.Size = new Size(45, 15);
             lblEstado.TabIndex = 11;
@@ -141,7 +143,7 @@
             // 
             lblMensaje.AutoSize = true;
             lblMensaje.ForeColor = Color.Red;
-            lblMensaje.Location = new Point(202, 372);
+            lblMensaje.Location = new Point(59, 369);
             lblMensaje.Name = "lblMensaje";
             lblMensaje.Size = new Size(38, 15);
             lblMensaje.TabIndex = 12;
@@ -150,7 +152,7 @@
             // 
             // btnGuardar
             // 
-            btnGuardar.Location = new Point(177, 415);
+            btnGuardar.Location = new Point(96, 402);
             btnGuardar.Name = "btnGuardar";
             btnGuardar.Size = new Size(75, 23);
             btnGuardar.TabIndex = 13;
@@ -160,7 +162,7 @@
             // 
             // btnCancelar
             // 
-            btnCancelar.Location = new Point(299, 415);
+            btnCancelar.Location = new Point(224, 402);
             btnCancelar.Name = "btnCancelar";
             btnCancelar.Size = new Size(75, 23);
             btnCancelar.TabIndex = 14;
@@ -171,17 +173,36 @@
             // lblPassword
             // 
             lblPassword.AutoSize = true;
-            lblPassword.Location = new Point(60, 322);
+            lblPassword.Location = new Point(60, 307);
             lblPassword.Name = "lblPassword";
             lblPassword.Size = new Size(70, 15);
             lblPassword.TabIndex = 15;
             lblPassword.Text = "Contraseña:";
+            // 
+            // lblDNI
+            // 
+            lblDNI.AutoSize = true;
+            lblDNI.Location = new Point(59, 112);
+            lblDNI.Name = "lblDNI";
+            lblDNI.Size = new Size(27, 15);
+            lblDNI.TabIndex = 16;
+            lblDNI.Text = "DNI";
+            // 
+            // txtDni
+            // 
+            txtDni.Location = new Point(202, 109);
+            txtDni.MaxLength = 8;
+            txtDni.Name = "txtDni";
+            txtDni.Size = new Size(147, 23);
+            txtDni.TabIndex = 3;
             // 
             // frmUsuarioABM
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(426, 450);
+            Controls.Add(txtDni);
+            Controls.Add(lblDNI);
             Controls.Add(lblPassword);
             Controls.Add(btnCancelar);
             Controls.Add(btnGuardar);
@@ -223,5 +244,7 @@
         private Button btnGuardar;
         private Button btnCancelar;
         private Label lblPassword;
+        private Label lblDNI;
+        private TextBox txtDni;
     }
 }

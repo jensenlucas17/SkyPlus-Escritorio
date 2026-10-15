@@ -44,6 +44,7 @@ namespace SkyPlus.Desktop
             dgvUsuarios.Columns.Clear();
             dgvUsuarios.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(UsuarioResponse.Nombre), HeaderText = "Nombre", Width = 120 });
             dgvUsuarios.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(UsuarioResponse.Apellido), HeaderText = "Apellido", Width = 120 });
+            dgvUsuarios.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(UsuarioResponse.Dni), HeaderText = "DNI", Width = 100 });
             dgvUsuarios.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(UsuarioResponse.EmailCorporativo), HeaderText = "Email corporativo", Width = 200 });
             dgvUsuarios.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(UsuarioResponse.Rol), HeaderText = "Rol", Width = 130 });
             dgvUsuarios.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(UsuarioResponse.EstadoCuenta), HeaderText = "Estado", Width = 80 });
@@ -75,7 +76,8 @@ namespace SkyPlus.Desktop
                 (string.IsNullOrEmpty(texto) ||
                     u.Nombre.ToLower().Contains(texto) ||
                     u.Apellido.ToLower().Contains(texto) ||
-                    u.EmailCorporativo.ToLower().Contains(texto))
+                    u.EmailCorporativo.ToLower().Contains(texto) ||
+                     (u.Dni?.Contains(texto) ?? false))
                 &&
                 (estadoFiltro == "Todos" || u.EstadoCuenta == estadoFiltro)
                 &&
@@ -138,6 +140,17 @@ namespace SkyPlus.Desktop
             var seleccionado = ObtenerSeleccionado();
             if (seleccionado == null) return;
 
+            if (string.IsNullOrWhiteSpace(seleccionado.Dni))
+            {
+                MessageBox.Show(
+                    "Este usuario no tiene un DNI registrado. " +
+                    "Primero debés completar sus datos desde Editar.",
+                    "DNI pendiente",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
             bool estaActivo = seleccionado.EstadoCuenta == "Activo";
             string nuevoEstado = estaActivo ? "Inactivo" : "Activo";
             string accion = estaActivo ? "desactivar" : "reactivar";
@@ -155,11 +168,24 @@ namespace SkyPlus.Desktop
                     IdRol = seleccionado.IdRol,
                     Nombre = seleccionado.Nombre,
                     Apellido = seleccionado.Apellido,
+                    Dni = seleccionado.Dni ?? string.Empty,
                     EmailCorporativo = seleccionado.EmailCorporativo,
                     EstadoCuenta = nuevoEstado
                 };
 
-                await _usuarioClient.ActualizarAsync(seleccionado.IdUsuario, request);
+                var resultado = await _usuarioClient.ActualizarAsync(
+                    seleccionado.IdUsuario, request);
+
+                if (resultado == null)
+                {
+                    MessageBox.Show(
+                        "No se pudo actualizar el estado del usuario.",
+                        "Error",
+                        MessageBoxButtons.OK,
+                        MessageBoxIcon.Warning);
+                    return;
+                }
+
                 await CargarUsuariosAsync();
             }
             catch (Exception ex)
