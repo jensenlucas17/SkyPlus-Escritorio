@@ -67,5 +67,10 @@ namespace SkyPlus.Desktop.Services
             await _apiClient.DeleteAsync(
                 $"api/Lugares/{id}");
         }
+
+        public async Task ReactivarAsync(int id)
+        {
+            await _apiClient.PatchAsync($"api/Lugares/{id}/reactivar");
+        }
     }
 }

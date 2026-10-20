@@ -31,6 +31,14 @@ namespace SkyPlus.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IdAeronave"));
 
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasDefaultValue("Activo")
+                        .HasColumnName("estado");
+
                     b.Property<string>("Matricula")
                         .IsRequired()
                         .HasColumnType("varchar(255)")
@@ -103,6 +111,14 @@ namespace SkyPlus.Infrastructure.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("codigo_qr");
 
+                    b.Property<string>("EstadoCheckin")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)")
+                        .HasDefaultValue("Realizado")
+                        .HasColumnName("estado_checkin");
+
                     b.Property<DateTime>("FechaCheckin")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("fecha_checkin");
@@ -138,6 +154,14 @@ namespace SkyPlus.Infrastructure.Migrations
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)")
                         .HasColumnName("costo");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasDefaultValue("Activo")
+                        .HasColumnName("estado");
 
                     b.Property<int>("IdReserva")
                         .HasColumnType("int")
@@ -180,6 +204,14 @@ namespace SkyPlus.Infrastructure.Migrations
                         .HasColumnType("varchar(255)")
                         .HasColumnName("codigo_iata");
 
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasDefaultValue("Activo")
+                        .HasColumnName("estado");
+
                     b.Property<string>("Nombre")
                         .IsRequired()
                         .HasColumnType("longtext")
@@ -206,6 +238,14 @@ namespace SkyPlus.Infrastructure.Migrations
                         .HasColumnName("id_pago");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IdPago"));
+
+                    b.Property<string>("EstadoPago")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)")
+                        .HasDefaultValue("Registrado")
+                        .HasColumnName("estado_pago");
 
                     b.Property<DateTime>("FechaPago")
                         .HasColumnType("datetime(6)")
@@ -263,6 +303,14 @@ namespace SkyPlus.Infrastructure.Migrations
                         .HasColumnType("longtext")
                         .HasColumnName("email");
 
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasDefaultValue("Activo")
+                        .HasColumnName("estado");
+
                     b.Property<string>("Nacionalidad")
                         .IsRequired()
                         .HasColumnType("longtext")
@@ -294,6 +342,14 @@ namespace SkyPlus.Infrastructure.Migrations
                         .HasColumnName("id_reembolso");
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IdReembolso"));
+
+                    b.Property<string>("EstadoReembolso")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(15)
+                        .HasColumnType("varchar(15)")
+                        .HasDefaultValue("Registrado")
+                        .HasColumnName("estado_reembolso");
 
                     b.Property<DateTime>("FechaReembolso")
                         .HasColumnType("datetime(6)")
@@ -400,6 +456,14 @@ namespace SkyPlus.Infrastructure.Migrations
 
                     MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IdRol"));
 
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasDefaultValue("Activo")
+                        .HasColumnName("estado");
+
                     b.Property<string>("NombreRol")
                         .IsRequired()
                         .HasColumnType("varchar(255)")
@@ -431,6 +495,14 @@ namespace SkyPlus.Infrastructure.Migrations
                         .IsRequired()
                         .HasColumnType("longtext")
                         .HasColumnName("descripcion");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(10)
+                        .HasColumnType("varchar(10)")
+                        .HasDefaultValue("Activo")
+                        .HasColumnName("estado");
 
                     b.Property<decimal>("LimiteKg")
                         .HasPrecision(10, 2)

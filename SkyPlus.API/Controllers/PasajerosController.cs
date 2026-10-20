@@ -132,5 +132,16 @@ namespace SkyPlus.API.Controllers
                     "Pasajero eliminado correctamente."
             });
         }
+
+        [HttpPatch("{id}/reactivar")]
+        public async Task<IActionResult> Reactivar(int id)
+        {
+            var reactivado = await _pasajeroService.ReactivarAsync(id);
+
+            if (!reactivado)
+                return BadRequest("El pasajero no existe o ya está activo.");
+
+            return Ok(new { mensaje = "Pasajero reactivado correctamente." });
+        }
     }
 }

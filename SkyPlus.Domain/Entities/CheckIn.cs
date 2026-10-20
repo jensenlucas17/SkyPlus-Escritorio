@@ -14,6 +14,8 @@
 
         public DateTime FechaCheckin { get; set; }
 
+        public string EstadoCheckin { get; set; } = "Realizado";
+
         // Relaciones
         public Reserva? Reserva { get; set; }
 

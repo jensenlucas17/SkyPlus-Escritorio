@@ -75,5 +75,11 @@ namespace SkyPlus.Desktop.Services
             await _apiClient.DeleteAsync(
                 $"api/Pasajeros/{id}");
         }
+
+        public async Task ReactivarAsync(int id)
+        {
+            await _apiClient.PatchAsync(
+                $"api/Pasajeros/{id}/reactivar");
+        }
     }
 }

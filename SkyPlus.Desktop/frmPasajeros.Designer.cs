@@ -37,6 +37,7 @@
             btnEditar = new Button();
             btnNuevo = new Button();
             dgvPasajeros = new DataGridView();
+            btnReactivar = new Button();
             pnlFiltros.SuspendLayout();
             pnlBotones.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvPasajeros).BeginInit();
@@ -81,6 +82,7 @@
             // 
             // pnlBotones
             // 
+            pnlBotones.Controls.Add(btnReactivar);
             pnlBotones.Controls.Add(btnEliminar);
             pnlBotones.Controls.Add(btnEditar);
             pnlBotones.Controls.Add(btnNuevo);
@@ -92,7 +94,7 @@
             // 
             // btnEliminar
             // 
-            btnEliminar.Location = new Point(503, 30);
+            btnEliminar.Location = new Point(358, 30);
             btnEliminar.Name = "btnEliminar";
             btnEliminar.Size = new Size(75, 23);
             btnEliminar.TabIndex = 2;
@@ -102,7 +104,7 @@
             // 
             // btnEditar
             // 
-            btnEditar.Location = new Point(357, 30);
+            btnEditar.Location = new Point(214, 30);
             btnEditar.Name = "btnEditar";
             btnEditar.Size = new Size(75, 23);
             btnEditar.TabIndex = 1;
@@ -112,7 +114,7 @@
             // 
             // btnNuevo
             // 
-            btnNuevo.Location = new Point(209, 30);
+            btnNuevo.Location = new Point(79, 30);
             btnNuevo.Name = "btnNuevo";
             btnNuevo.Size = new Size(75, 23);
             btnNuevo.TabIndex = 0;
@@ -129,6 +131,16 @@
             dgvPasajeros.ReadOnly = true;
             dgvPasajeros.Size = new Size(800, 250);
             dgvPasajeros.TabIndex = 2;
+            // 
+            // btnReactivar
+            // 
+            btnReactivar.Location = new Point(485, 30);
+            btnReactivar.Name = "btnReactivar";
+            btnReactivar.Size = new Size(75, 23);
+            btnReactivar.TabIndex = 3;
+            btnReactivar.Text = "Reactivar";
+            btnReactivar.UseVisualStyleBackColor = true;
+            btnReactivar.Click += btnReactivar_Click;
             // 
             // frmPasajeros
             // 
@@ -159,5 +171,6 @@
         private Button btnEditar;
         private Button btnNuevo;
         private DataGridView dgvPasajeros;
+        private Button btnReactivar;
     }
 }

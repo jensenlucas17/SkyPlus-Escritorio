@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
+using SkyPlus.API.Exceptions;
 
 namespace SkyPlus.API.Controllers
 {
@@ -18,17 +20,14 @@ namespace SkyPlus.API.Controllers
         [HttpGet]
         public async Task<IActionResult> ObtenerTodos()
         {
-            var vuelos =
-                await _vueloService.ObtenerTodosAsync();
-
+            var vuelos = await _vueloService.ObtenerTodosAsync();
             return Ok(vuelos);
         }
 
         [HttpGet("{id}")]
         public async Task<IActionResult> ObtenerPorId(int id)
         {
-            var vuelo =
-                await _vueloService.ObtenerPorIdAsync(id);
+            var vuelo = await _vueloService.ObtenerPorIdAsync(id);
 
             if (vuelo == null)
             {
@@ -45,13 +44,11 @@ namespace SkyPlus.API.Controllers
         public async Task<IActionResult> Crear(
             [FromBody] CrearVueloRequest request)
         {
-            if (string.IsNullOrWhiteSpace(
-                request.NumeroVuelo))
+            if (string.IsNullOrWhiteSpace(request.NumeroVuelo))
             {
                 return BadRequest(new
                 {
-                    mensaje =
-                        "El número de vuelo es obligatorio."
+                    mensaje = "El número de vuelo es obligatorio."
                 });
             }
 
@@ -59,29 +56,34 @@ namespace SkyPlus.API.Controllers
             {
                 return BadRequest(new
                 {
-                    mensaje =
-                        "La tarifa no puede ser negativa."
+                    mensaje = "La tarifa no puede ser negativa."
                 });
             }
 
-            var vuelo =
-                await _vueloService.CrearAsync(request);
+            try
+            {
+                var vuelo = await _vueloService.CrearAsync(request);
 
-            if (vuelo == null)
+                if (vuelo == null)
+                {
+                    return BadRequest(new
+                    {
+                        mensaje = "No se pudo crear el vuelo. Verificá los datos ingresados."
+                    });
+                }
+
+                return CreatedAtAction(
+                    nameof(ObtenerPorId),
+                    new { id = vuelo.IdVuelo },
+                    vuelo);
+            }
+            catch (ValidacionNegocioException ex)
             {
                 return BadRequest(new
                 {
-                    mensaje =
-                        "No se pudo crear el vuelo. " +
-                        "Verifique los datos relacionados, " +
-                        "el número de vuelo y las fechas."
+                    mensaje = ex.Message
                 });
             }
-
-            return CreatedAtAction(
-                nameof(ObtenerPorId),
-                new { id = vuelo.IdVuelo },
-                vuelo);
         }
 
         [HttpPut("{id}")]
@@ -89,13 +91,11 @@ namespace SkyPlus.API.Controllers
             int id,
             [FromBody] ActualizarVueloRequest request)
         {
-            if (string.IsNullOrWhiteSpace(
-                request.NumeroVuelo))
+            if (string.IsNullOrWhiteSpace(request.NumeroVuelo))
             {
                 return BadRequest(new
                 {
-                    mensaje =
-                        "El número de vuelo es obligatorio."
+                    mensaje = "El número de vuelo es obligatorio."
                 });
             }
 
@@ -103,49 +103,60 @@ namespace SkyPlus.API.Controllers
             {
                 return BadRequest(new
                 {
-                    mensaje =
-                        "La tarifa no puede ser negativa."
+                    mensaje = "La tarifa no puede ser negativa."
                 });
             }
 
-            var vuelo =
-                await _vueloService.ActualizarAsync(
-                    id,
-                    request);
+            try
+            {
+                var vuelo = await _vueloService.ActualizarAsync(id, request);
 
-            if (vuelo == null)
+                if (vuelo == null)
+                {
+                    return BadRequest(new
+                    {
+                        mensaje = "No se pudo actualizar el vuelo. Verificá los datos ingresados."
+                    });
+                }
+
+                return Ok(vuelo);
+            }
+            catch (ValidacionNegocioException ex)
             {
                 return BadRequest(new
                 {
-                    mensaje =
-                        "No se pudo actualizar el vuelo. " +
-                        "Verifique los datos relacionados, " +
-                        "el número de vuelo y las fechas."
+                    mensaje = ex.Message
                 });
             }
-
-            return Ok(vuelo);
         }
 
         [HttpDelete("{id}")]
         public async Task<IActionResult> Eliminar(int id)
         {
-            var resultado =
-                await _vueloService.EliminarAsync(id);
-
-            if (!resultado)
+            try
             {
-                return NotFound(new
+                var resultado = await _vueloService.EliminarAsync(id);
+
+                if (!resultado)
                 {
-                    mensaje = "Vuelo no encontrado."
+                    return BadRequest(new
+                    {
+                        mensaje = "No se pudo cancelar el vuelo. Puede que no exista, ya esté cancelado o finalizado, o tenga reservas activas."
+                    });
+                }
+
+                return Ok(new
+                {
+                    mensaje = "Vuelo cancelado correctamente. Se conservaron sus datos históricos."
                 });
             }
-
-            return Ok(new
+            catch (ValidacionNegocioException ex)
             {
-                mensaje =
-                    "Vuelo eliminado correctamente."
-            });
+                return BadRequest(new
+                {
+                    mensaje = ex.Message
+                });
+            }
         }
     }
 }

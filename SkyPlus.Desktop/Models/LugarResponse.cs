@@ -12,5 +12,6 @@ namespace SkyPlus.Desktop.Models
         public string Ciudad { get; set; } = string.Empty;
         public string Pais { get; set; } = string.Empty;
         public string IataCiudad => $"{CodigoIata} - {Ciudad}";
+        public string Estado { get; set; } = "Activo";
     }
 }

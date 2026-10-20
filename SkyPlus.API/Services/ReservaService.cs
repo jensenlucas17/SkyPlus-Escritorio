@@ -1,6 +1,8 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SkyPlus.API.DTOs;
+using SkyPlus.API.Exceptions;
 using SkyPlus.Infrastructure.Data;
+using System.Security.Cryptography;
 
 namespace SkyPlus.API.Services
 {
@@ -15,172 +17,110 @@ namespace SkyPlus.API.Services
 
         public async Task<List<ReservaResponse>> ObtenerTodosAsync()
         {
-            return await _context.Reservas
-                .Include(r => r.Pasajero)
-                .Include(r => r.Vuelo)
-                    .ThenInclude(v => v!.LugarOrigen)
-                .Include(r => r.Vuelo)
-                    .ThenInclude(v => v!.LugarDestino)
-                .Include(r => r.Asiento)
-                .Select(r => MapearReserva(r))
-                .ToListAsync();
+            var reservas = await ConsultaReservas().ToListAsync();
+            return reservas.Select(MapearReserva).ToList();
         }
 
-        public async Task<ReservaResponse?> ObtenerPorIdAsync(
-            int id)
+        public async Task<ReservaResponse?> ObtenerPorIdAsync(int id)
         {
-            var reserva =
-                await _context.Reservas
-                    .Include(r => r.Pasajero)
-                    .Include(r => r.Vuelo)
-                        .ThenInclude(v => v!.LugarOrigen)
-                    .Include(r => r.Vuelo)
-                        .ThenInclude(v => v!.LugarDestino)
-                    .Include(r => r.Asiento)
-                    .FirstOrDefaultAsync(r =>
-                        r.IdReserva == id);
-
-            return reserva == null
-                ? null
-                : MapearReserva(reserva);
+            var reserva = await ConsultaReservas()
+                .FirstOrDefaultAsync(r => r.IdReserva == id);
+            return reserva == null ? null : MapearReserva(reserva);
         }
 
-        public async Task<List<ReservaResponse>> ObtenerPorPasajeroAsync(
-            int idPasajero)
+        public async Task<List<ReservaResponse>> ObtenerPorPasajeroAsync(int idPasajero)
         {
-            return await _context.Reservas
+            var reservas = await ConsultaReservas()
                 .Where(r => r.IdPasajero == idPasajero)
-                .Include(r => r.Pasajero)
-                .Include(r => r.Vuelo)
-                    .ThenInclude(v => v!.LugarOrigen)
-                .Include(r => r.Vuelo)
-                    .ThenInclude(v => v!.LugarDestino)
-                .Include(r => r.Asiento)
-                .Select(r => MapearReserva(r))
                 .ToListAsync();
+            return reservas.Select(MapearReserva).ToList();
         }
 
-        public async Task<ReservaResponse?> CrearAsync(
-            CrearReservaRequest request)
+        private IQueryable<Domain.Entities.Reserva> ConsultaReservas()
         {
-            // 1. Verificar pasajero
-            var pasajero =
-                await _context.Pasajeros
-                    .FirstOrDefaultAsync(p =>
-                        p.IdPasajero == request.IdPasajero);
+            return _context.Reservas
+                .Include(r => r.Pasajero)
+                .Include(r => r.Vuelo).ThenInclude(v => v!.LugarOrigen)
+                .Include(r => r.Vuelo).ThenInclude(v => v!.LugarDestino)
+                .Include(r => r.Asiento);
+        }
 
+        public async Task<ReservaResponse?> CrearAsync(CrearReservaRequest request)
+        {
+            var pasajero = await _context.Pasajeros.FindAsync(request.IdPasajero);
             if (pasajero == null)
-                return null;
+                throw new ValidacionNegocioException("El pasajero seleccionado no existe.");
+            if (pasajero.Estado != "Activo")
+                throw new ValidacionNegocioException($"El pasajero {pasajero.Nombre} {pasajero.Apellido} está inactivo. Debe reactivarlo antes de reservar.");
 
-            // 2. Verificar vuelo
-            var vuelo =
-                await _context.Vuelos
-                    .FirstOrDefaultAsync(v =>
-                        v.IdVuelo == request.IdVuelo);
-
+            var vuelo = await _context.Vuelos.FindAsync(request.IdVuelo);
             if (vuelo == null)
-                return null;
+                throw new ValidacionNegocioException("El vuelo seleccionado no existe.");
+            if (vuelo.EstadoVuelo == "Cancelado")
+                throw new ValidacionNegocioException("No se puede reservar: el vuelo está cancelado.");
+            if (vuelo.EstadoVuelo == "Finalizado")
+                throw new ValidacionNegocioException("No se puede reservar: el vuelo ya finalizó.");
+            if (vuelo.EstadoVuelo != "Programado" && vuelo.EstadoVuelo != "Confirmado")
+                throw new ValidacionNegocioException($"No se puede reservar un vuelo en estado {vuelo.EstadoVuelo}.");
 
-            // 3. Verificar asiento
-            var asiento =
-                await _context.Asientos
-                    .FirstOrDefaultAsync(a =>
-                        a.IdAsiento == request.IdAsiento);
-
+            var asiento = await _context.Asientos.FindAsync(request.IdAsiento);
             if (asiento == null)
-                return null;
-
-            // 4. El asiento debe pertenecer al vuelo
+                throw new ValidacionNegocioException("El asiento seleccionado no existe.");
             if (asiento.IdVuelo != request.IdVuelo)
-                return null;
-
-            // 5. El asiento debe estar libre
+                throw new ValidacionNegocioException("El asiento seleccionado pertenece a otro vuelo.");
             if (asiento.Estado != "Libre")
-                return null;
+                throw new ValidacionNegocioException($"El asiento {asiento.Fila}{asiento.Letra} no está libre (estado: {asiento.Estado}).");
 
-            // 6. Verificar que no exista una reserva
-            // activa para ese asiento
-            var asientoReservado =
-                await _context.Reservas
-                    .AnyAsync(r =>
-                        r.IdAsiento == request.IdAsiento &&
-                        r.IdVuelo == request.IdVuelo &&
-                        r.EstadoReserva != "Cancelada");
-
+            var asientoReservado = await _context.Reservas.AnyAsync(r =>
+                r.IdAsiento == request.IdAsiento &&
+                r.IdVuelo == request.IdVuelo &&
+                r.EstadoReserva != "Cancelada");
             if (asientoReservado)
-                return null;
+                throw new ValidacionNegocioException("El asiento ya tiene una reserva activa.");
 
-            // 7. Verificar usuario agente
-            var usuario =
-                await _context.Usuarios
-                    .FirstOrDefaultAsync(u =>
-                        u.IdUsuario == request.IdUsuarioAgente);
+            var agente = await _context.Usuarios.FindAsync(request.IdUsuarioAgente);
+            if (agente == null)
+                throw new ValidacionNegocioException("El agente de reservas seleccionado no existe.");
+            if (agente.EstadoCuenta != "Activo")
+                throw new ValidacionNegocioException("El agente de reservas está inactivo.");
 
-            if (usuario == null)
-                return null;
-
-            // 8. Generar código
-            var codigoReserva =
-                await GenerarCodigoReservaAsync();
-
-            // 9. Crear reserva
+            var codigo = await GenerarCodigoReservaAsync();
             var reserva = new Domain.Entities.Reserva
             {
                 IdPasajero = request.IdPasajero,
                 IdVuelo = request.IdVuelo,
                 IdAsiento = request.IdAsiento,
                 IdUsuarioAgente = request.IdUsuarioAgente,
-                CodigoReserva = codigoReserva,
+                CodigoReserva = codigo,
                 TarifaBase = vuelo.Tarifa,
                 EstadoReserva = "Confirmada",
                 FechaReserva = DateTime.Now
             };
 
-            // 10. Ocupar asiento
             asiento.Estado = "Ocupado";
-
             _context.Reservas.Add(reserva);
-
             await _context.SaveChangesAsync();
-
-            return await ObtenerPorIdAsync(
-                reserva.IdReserva);
+            return await ObtenerPorIdAsync(reserva.IdReserva);
         }
 
-        public async Task<bool> CancelarAsync(
-            int id)
+        public async Task<bool> CancelarAsync(int id)
         {
-            var reserva =
-                await _context.Reservas
-                    .FirstOrDefaultAsync(r =>
-                        r.IdReserva == id);
-
+            var reserva = await _context.Reservas.FirstOrDefaultAsync(r => r.IdReserva == id);
             if (reserva == null)
                 return false;
-
             if (reserva.EstadoReserva == "Cancelada")
-                return false;
+                throw new ValidacionNegocioException("La reserva ya está cancelada.");
 
             reserva.EstadoReserva = "Cancelada";
             reserva.FechaCancelacion = DateTime.Now;
-
-            var asiento =
-                await _context.Asientos
-                    .FirstOrDefaultAsync(a =>
-                        a.IdAsiento == reserva.IdAsiento);
-
+            var asiento = await _context.Asientos.FirstOrDefaultAsync(a => a.IdAsiento == reserva.IdAsiento);
             if (asiento != null)
-            {
                 asiento.Estado = "Libre";
-            }
-
             await _context.SaveChangesAsync();
-
             return true;
         }
 
-        private static ReservaResponse MapearReserva(
-            Domain.Entities.Reserva reserva)
+        private static ReservaResponse MapearReserva(Domain.Entities.Reserva reserva)
         {
             return new ReservaResponse
             {
@@ -194,50 +134,23 @@ namespace SkyPlus.API.Services
                 EstadoReserva = reserva.EstadoReserva,
                 FechaReserva = reserva.FechaReserva,
                 FechaCancelacion = reserva.FechaCancelacion,
-
-                Pasajero =
-                    reserva.Pasajero == null
-                        ? string.Empty
-                        : $"{reserva.Pasajero.Apellido}, " +
-                          $"{reserva.Pasajero.Nombre}",
-
-                Vuelo =
-                    reserva.Vuelo == null
-                        ? string.Empty
-                        : reserva.Vuelo.NumeroVuelo,
-
-                Asiento =
-                    reserva.Asiento == null
-                        ? string.Empty
-                        : $"{reserva.Asiento.Fila}" +
-                          $"{reserva.Asiento.Letra}"
+                Pasajero = reserva.Pasajero == null ? string.Empty :
+                    $"{reserva.Pasajero.Apellido}, {reserva.Pasajero.Nombre}",
+                Vuelo = reserva.Vuelo == null ? string.Empty : reserva.Vuelo.NumeroVuelo,
+                Asiento = reserva.Asiento == null ? string.Empty :
+                    $"{reserva.Asiento.Fila}{reserva.Asiento.Letra}"
             };
         }
 
         private async Task<string> GenerarCodigoReservaAsync()
         {
-            const string caracteres =
-                "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-
-            var random = new Random();
-
+            const string caracteres = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
             while (true)
             {
-                var codigo =
-                    new string(
-                        Enumerable.Range(0, 6)
-                            .Select(_ =>
-                                caracteres[
-                                    random.Next(
-                                        caracteres.Length)])
-                            .ToArray());
-
-                var existe =
-                    await _context.Reservas
-                        .AnyAsync(r =>
-                            r.CodigoReserva == codigo);
-
-                if (!existe)
+                var codigo = new string(Enumerable.Range(0, 6)
+                    .Select(_ => caracteres[RandomNumberGenerator.GetInt32(caracteres.Length)])
+                    .ToArray());
+                if (!await _context.Reservas.AnyAsync(r => r.CodigoReserva == codigo))
                     return codigo;
             }
         }

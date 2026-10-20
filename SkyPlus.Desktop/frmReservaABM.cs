@@ -30,13 +30,28 @@ namespace SkyPlus.Desktop
             AppEstilos.EstilizarBotonPrimario(btnGuardar);
             AppEstilos.EstilizarBotonSecundario(btnCancelar);
 
-            await CargarPasajeros();
-            await CargarVuelos();
+            try
+            {
+                await CargarPasajeros();
+                await CargarVuelos();
+            }
+            catch (HttpRequestException ex)
+            {
+                MostrarError(ObtenerMensajeHttp(ex));
+            }
+            catch (Exception ex)
+            {
+                MostrarError("No se pudieron cargar los datos: " + ex.Message);
+            }
         }
 
         private async System.Threading.Tasks.Task CargarPasajeros()
         {
-            var pasajeros = await _pasajeroClient.ObtenerTodosAsync();
+            var pasajeros = (await _pasajeroClient.ObtenerTodosAsync()
+                ?? new List<PasajeroResponse>())
+                .Where(p => string.Equals(p.Estado, "Activo",
+                    StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
             cmbPasajero.DataSource = null;
 
@@ -60,7 +75,18 @@ namespace SkyPlus.Desktop
 
             if (form.ShowDialog() == DialogResult.OK)
             {
-                await CargarPasajeros();
+                try
+                {
+                    await CargarPasajeros();
+                }
+                catch (HttpRequestException ex)
+                {
+                    MostrarError(ObtenerMensajeHttp(ex));
+                }
+                catch (Exception ex)
+                {
+                    MostrarError("No se pudo actualizar la lista de pasajeros: " + ex.Message);
+                }
             }
         }
 
@@ -68,8 +94,12 @@ namespace SkyPlus.Desktop
 
         private async System.Threading.Tasks.Task CargarVuelos()
         {
-            _vuelos = await _vueloClient.ObtenerTodosAsync()
-                      ?? new List<VueloResponse>();
+            _vuelos = (await _vueloClient.ObtenerTodosAsync()
+                      ?? new List<VueloResponse>())
+                .Where(v =>
+                    string.Equals(v.EstadoVuelo, "Programado", StringComparison.OrdinalIgnoreCase) ||
+                    string.Equals(v.EstadoVuelo, "Confirmado", StringComparison.OrdinalIgnoreCase))
+                .ToList();
 
             CargarOrigenes();
         }
@@ -106,7 +136,7 @@ namespace SkyPlus.Desktop
             LimpiarAsientos();
         }
 
-       
+
         private void cmbOrigen_SelectedIndexChanged(object sender, EventArgs e)
         {
             cmbDestino.DataSource = null;
@@ -219,10 +249,9 @@ namespace SkyPlus.Desktop
                     lblMensaje.Visible = false;
                 }
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                MostrarError(
-                    "No se pudieron obtener los asientos del vuelo.");
+                MostrarError(ObtenerMensajeHttp(ex));
             }
             catch (Exception ex)
             {
@@ -339,6 +368,12 @@ namespace SkyPlus.Desktop
                 return;
             }
 
+            if (SesionUsuario.IdUsuario <= 0)
+            {
+                MostrarError("No se pudo identificar al agente de la sesión.");
+                return;
+            }
+
             btnGuardar.Enabled = false;
 
             try
@@ -358,9 +393,9 @@ namespace SkyPlus.Desktop
                 DialogResult = DialogResult.OK;
                 Close();
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                MostrarError("No se pudo conectar con la API.");
+                MostrarError(ObtenerMensajeHttp(ex));
             }
             catch (Exception ex)
             {
@@ -376,6 +411,14 @@ namespace SkyPlus.Desktop
         {
             DialogResult = DialogResult.Cancel;
             Close();
+        }
+
+        private static string ObtenerMensajeHttp(HttpRequestException ex)
+        {
+            return ex.StatusCode.HasValue
+                ? ex.Message
+                : "No se pudo conectar con la API de SkyPlus. " +
+                  "Verificá que esté ejecutándose.";
         }
 
         private void MostrarError(string mensaje)

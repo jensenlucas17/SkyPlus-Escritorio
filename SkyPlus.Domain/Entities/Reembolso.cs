@@ -14,6 +14,7 @@
 
         public DateTime FechaReembolso { get; set; }
 
+        public string EstadoReembolso { get; set; } = "Registrado";
         // Relaciones
         public Pago? Pago { get; set; }
 

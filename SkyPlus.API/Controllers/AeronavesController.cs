@@ -120,5 +120,16 @@ namespace SkyPlus.API.Controllers
                 mensaje = "Aeronave eliminada correctamente."
             });
         }
+
+        [HttpPatch("{id}/reactivar")]
+        public async Task<IActionResult> Reactivar(int id)
+        {
+            var reactivado = await _aeronaveService.ReactivarAsync(id);
+
+            if (!reactivado)
+                return BadRequest("La aeronave no existe o ya está activa.");
+
+            return Ok(new { mensaje = "Aeronave reactivada correctamente." });
+        }
     }
 }

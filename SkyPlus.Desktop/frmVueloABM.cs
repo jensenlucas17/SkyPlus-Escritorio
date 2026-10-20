@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -89,11 +90,11 @@ namespace SkyPlus.Desktop
                     }
                 }
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                MostrarError(
-                    "No se pudo conectar con la API de SkyPlus. " +
-                    "Verificá que SkyPlus.API esté ejecutándose.");
+                MostrarError(ex.StatusCode.HasValue
+                    ? ex.Message
+                    : "No se pudo conectar con la API de SkyPlus. Verificá que esté ejecutándose.");
             }
             catch (Exception ex)
             {
@@ -119,6 +120,13 @@ namespace SkyPlus.Desktop
                 lugares =
                     new List<LugarResponse>();
             }
+
+            lugares = lugares
+                .Where(l => l.Estado == "Activo" ||
+                    (_vueloEdicion != null &&
+                     (l.IdLugar == _vueloEdicion.IdLugarOrigen ||
+                      l.IdLugar == _vueloEdicion.IdLugarDestino)))
+                .ToList();
 
             cmbOrigen.DisplayMember =
                 nameof(LugarResponse.IataCiudad);
@@ -154,6 +162,12 @@ namespace SkyPlus.Desktop
                 aeronaves =
                     new List<AeronaveResponse>();
             }
+
+            aeronaves = aeronaves
+                .Where(a => a.Estado == "Activo" ||
+                    (_vueloEdicion != null &&
+                     a.IdAeronave == _vueloEdicion.IdAeronave))
+                .ToList();
 
             cmbAeronave.DisplayMember =
                 nameof(AeronaveResponse.MatriculaModelo);
@@ -362,9 +376,9 @@ namespace SkyPlus.Desktop
             }
             catch (HttpRequestException ex)
             {
-                MostrarError(
-                    "No se pudo conectar con la API.\n\n" +
-                    ex.Message);
+                MostrarError(ex.StatusCode.HasValue
+                    ? ex.Message
+                    : "No se pudo conectar con la API de SkyPlus. Verificá que esté ejecutándose.");
             }
             catch (Exception ex)
             {

@@ -46,6 +46,12 @@ namespace SkyPlus.Infrastructure.Data
                     .HasColumnName("nombre_rol")
                     .IsRequired();
 
+                entity.Property(e => e.Estado)
+                    .HasColumnName("estado")
+                    .HasMaxLength(10)
+                    .HasDefaultValue("Activo")
+                    .IsRequired();
+
                 entity.HasIndex(e => e.NombreRol)
                     .IsUnique();
             });
@@ -146,6 +152,12 @@ namespace SkyPlus.Infrastructure.Data
                     .HasColumnName("telefono")
                     .IsRequired();
 
+                entity.Property(e => e.Estado)
+                    .HasColumnName("estado")
+                    .HasMaxLength(10)
+                    .HasDefaultValue("Activo")
+                    .IsRequired();
+
                 entity.HasIndex(e => e.Documento)
                     .IsUnique();
             });
@@ -170,6 +182,12 @@ namespace SkyPlus.Infrastructure.Data
 
                 entity.Property(e => e.Modelo)
                     .HasColumnName("modelo")
+                    .IsRequired();
+                
+                entity.Property(e => e.Estado)
+                    .HasColumnName("estado")
+                    .HasMaxLength(10)
+                    .HasDefaultValue("Activo")
                     .IsRequired();
 
                 entity.HasIndex(e => e.Matricula)
@@ -204,6 +222,12 @@ namespace SkyPlus.Infrastructure.Data
 
                 entity.Property(e => e.Pais)
                     .HasColumnName("pais")
+                    .IsRequired();
+
+                entity.Property(e => e.Estado)
+                    .HasColumnName("estado")
+                    .HasMaxLength(10)
+                    .HasDefaultValue("Activo")
                     .IsRequired();
 
                 entity.HasIndex(e => e.CodigoIata)
@@ -358,6 +382,12 @@ namespace SkyPlus.Infrastructure.Data
                     .HasPrecision(10, 2)
                     .IsRequired();
 
+                entity.Property(e => e.Estado)
+                    .HasColumnName("estado")
+                    .HasMaxLength(10)
+                    .HasDefaultValue("Activo")
+                    .IsRequired();
+
                 entity.Property(e => e.Descripcion)
                     .HasColumnName("descripcion")
                     .IsRequired();
@@ -473,6 +503,12 @@ namespace SkyPlus.Infrastructure.Data
                     .HasPrecision(10, 2)
                     .IsRequired();
 
+                entity.Property(e => e.Estado)
+                    .HasColumnName("estado")
+                    .HasMaxLength(10)
+                    .HasDefaultValue("Activo")
+                    .IsRequired();
+
                 entity.HasOne(e => e.Reserva)
                     .WithMany()
                     .HasForeignKey(e => e.IdReserva)
@@ -517,6 +553,12 @@ namespace SkyPlus.Infrastructure.Data
 
                 entity.Property(e => e.FechaPago)
                     .HasColumnName("fecha_pago")
+                    .IsRequired();
+
+                entity.Property(e => e.EstadoPago)
+                    .HasColumnName("estado_pago")
+                    .HasMaxLength(15)
+                    .HasDefaultValue("Registrado")
                     .IsRequired();
 
                 // Una reserva tiene un pago
@@ -569,6 +611,12 @@ namespace SkyPlus.Infrastructure.Data
                     .HasColumnName("fecha_reembolso")
                     .IsRequired();
 
+                entity.Property(e => e.EstadoReembolso)
+                    .HasColumnName("estado_reembolso")
+                    .HasMaxLength(15)
+                    .HasDefaultValue("Registrado")
+                    .IsRequired();
+
                 // Un pago no debería tener más de un reembolso
                 entity.HasIndex(e => e.IdPago)
                     .IsUnique();
@@ -616,6 +664,12 @@ namespace SkyPlus.Infrastructure.Data
 
                 entity.Property(e => e.FechaCheckin)
                     .HasColumnName("fecha_checkin")
+                    .IsRequired();
+
+                entity.Property(e => e.EstadoCheckin)
+                    .HasColumnName("estado_checkin")
+                    .HasMaxLength(15)
+                    .HasDefaultValue("Realizado")
                     .IsRequired();
 
                 // Una reserva no puede tener más de un check-in

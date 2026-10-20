@@ -59,5 +59,11 @@ namespace SkyPlus.Desktop.Services
             await _apiClient.DeleteAsync(
                 $"api/Aeronaves/{id}");
         }
+
+        public async Task ReactivarAsync(int id)
+        {
+            await _apiClient.PatchAsync(
+                $"api/Aeronaves/{id}/reactivar");
+        }
     }
 }

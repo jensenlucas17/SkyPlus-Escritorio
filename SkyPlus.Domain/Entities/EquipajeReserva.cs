@@ -12,6 +12,8 @@
 
         public decimal Costo { get; set; }
 
+        public string Estado { get; set; } = "Activo";
+
         // Relaciones
         public Reserva? Reserva { get; set; }
 

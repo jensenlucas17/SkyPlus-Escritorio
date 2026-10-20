@@ -1,5 +1,6 @@
 ﻿using System.Net.Http;
 using System.Net.Http.Json;
+using System.Text.Json;
 
 namespace SkyPlus.Desktop.Services
 {
@@ -19,7 +20,7 @@ namespace SkyPlus.Desktop.Services
         {
             var response = await _httpClient.GetAsync(endpoint);
 
-            response.EnsureSuccessStatusCode();
+            await VerificarRespuestaAsync(response);
 
             return await response.Content.ReadFromJsonAsync<T>();
         }
@@ -30,7 +31,7 @@ namespace SkyPlus.Desktop.Services
         {
             var response = await _httpClient.PostAsJsonAsync(endpoint, data);
 
-            response.EnsureSuccessStatusCode();
+            await VerificarRespuestaAsync(response);
 
             return await response.Content.ReadFromJsonAsync<TResponse>();
         }
@@ -41,7 +42,7 @@ namespace SkyPlus.Desktop.Services
         {
             var response = await _httpClient.PutAsJsonAsync(endpoint, data);
 
-            response.EnsureSuccessStatusCode();
+            await VerificarRespuestaAsync(response);
 
             return await response.Content.ReadFromJsonAsync<TResponse>();
         }
@@ -50,7 +51,44 @@ namespace SkyPlus.Desktop.Services
         {
             var response = await _httpClient.DeleteAsync(endpoint);
 
-            response.EnsureSuccessStatusCode();
+            await VerificarRespuestaAsync(response);
+        }
+
+        public async Task PatchAsync(string endpoint)
+        {
+            using var response = await _httpClient.PatchAsync(endpoint, null);
+            await VerificarRespuestaAsync(response);
+        }
+
+        private static async Task VerificarRespuestaAsync(
+    HttpResponseMessage response)
+        {
+            if (response.IsSuccessStatusCode)
+                return;
+
+            var contenido = await response.Content.ReadAsStringAsync();
+
+            string mensaje = $"Error HTTP {(int)response.StatusCode}.";
+
+            try
+            {
+                using var json = JsonDocument.Parse(contenido);
+
+                if (json.RootElement.TryGetProperty(
+                    "mensaje", out var propiedad))
+                {
+                    mensaje = propiedad.GetString() ?? mensaje;
+                }
+            }
+            catch (JsonException)
+            {
+                // La respuesta no contiene JSON válido.
+            }
+
+            throw new HttpRequestException(
+                mensaje,
+                null,
+                response.StatusCode);
         }
     }
 }

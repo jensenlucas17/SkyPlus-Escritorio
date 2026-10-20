@@ -33,6 +33,7 @@
             btnBuscar = new Button();
             txtBuscar = new TextBox();
             pnlBotones = new Panel();
+            btnReactivar = new Button();
             btnEliminar = new Button();
             btnEditar = new Button();
             btnNuevo = new Button();
@@ -81,6 +82,7 @@
             // 
             // pnlBotones
             // 
+            pnlBotones.Controls.Add(btnReactivar);
             pnlBotones.Controls.Add(btnEliminar);
             pnlBotones.Controls.Add(btnEditar);
             pnlBotones.Controls.Add(btnNuevo);
@@ -90,9 +92,19 @@
             pnlBotones.Size = new Size(800, 100);
             pnlBotones.TabIndex = 1;
             // 
+            // btnReactivar
+            // 
+            btnReactivar.Location = new Point(459, 40);
+            btnReactivar.Name = "btnReactivar";
+            btnReactivar.Size = new Size(75, 23);
+            btnReactivar.TabIndex = 3;
+            btnReactivar.Text = "Reactivar";
+            btnReactivar.UseVisualStyleBackColor = true;
+            btnReactivar.Click += btnReactivar_Click;
+            // 
             // btnEliminar
             // 
-            btnEliminar.Location = new Point(497, 40);
+            btnEliminar.Location = new Point(335, 40);
             btnEliminar.Name = "btnEliminar";
             btnEliminar.Size = new Size(75, 23);
             btnEliminar.TabIndex = 2;
@@ -102,7 +114,7 @@
             // 
             // btnEditar
             // 
-            btnEditar.Location = new Point(343, 40);
+            btnEditar.Location = new Point(199, 40);
             btnEditar.Name = "btnEditar";
             btnEditar.Size = new Size(75, 23);
             btnEditar.TabIndex = 1;
@@ -112,7 +124,7 @@
             // 
             // btnNuevo
             // 
-            btnNuevo.Location = new Point(182, 40);
+            btnNuevo.Location = new Point(70, 40);
             btnNuevo.Name = "btnNuevo";
             btnNuevo.Size = new Size(75, 23);
             btnNuevo.TabIndex = 0;
@@ -159,5 +171,6 @@
         private Button btnEditar;
         private Button btnNuevo;
         private Label label1;
+        private Button btnReactivar;
     }
 }

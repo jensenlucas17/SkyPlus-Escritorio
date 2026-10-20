@@ -18,5 +18,6 @@
 
         public string NombreCompleto =>
             $"{Apellido}, {Nombre}";
+        public string Estado { get; set; } = "Activo";
     }
 }

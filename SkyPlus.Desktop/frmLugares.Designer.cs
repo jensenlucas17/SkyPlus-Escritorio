@@ -33,6 +33,7 @@
             btnRefrescar = new Button();
             txtBuscar = new TextBox();
             pnlBotones = new Panel();
+            btnReactivar = new Button();
             btnEliminar = new Button();
             btnEditar = new Button();
             btnNuevo = new Button();
@@ -81,6 +82,7 @@
             // 
             // pnlBotones
             // 
+            pnlBotones.Controls.Add(btnReactivar);
             pnlBotones.Controls.Add(btnEliminar);
             pnlBotones.Controls.Add(btnEditar);
             pnlBotones.Controls.Add(btnNuevo);
@@ -90,9 +92,19 @@
             pnlBotones.Size = new Size(800, 100);
             pnlBotones.TabIndex = 1;
             // 
+            // btnReactivar
+            // 
+            btnReactivar.Location = new Point(450, 41);
+            btnReactivar.Name = "btnReactivar";
+            btnReactivar.Size = new Size(75, 23);
+            btnReactivar.TabIndex = 3;
+            btnReactivar.Text = "Reactivar";
+            btnReactivar.UseVisualStyleBackColor = true;
+            btnReactivar.Click += btnReactivar_Click;
+            // 
             // btnEliminar
             // 
-            btnEliminar.Location = new Point(492, 41);
+            btnEliminar.Location = new Point(330, 41);
             btnEliminar.Name = "btnEliminar";
             btnEliminar.Size = new Size(75, 23);
             btnEliminar.TabIndex = 2;
@@ -102,7 +114,7 @@
             // 
             // btnEditar
             // 
-            btnEditar.Location = new Point(324, 41);
+            btnEditar.Location = new Point(200, 41);
             btnEditar.Name = "btnEditar";
             btnEditar.Size = new Size(75, 23);
             btnEditar.TabIndex = 1;
@@ -112,7 +124,7 @@
             // 
             // btnNuevo
             // 
-            btnNuevo.Location = new Point(148, 41);
+            btnNuevo.Location = new Point(75, 41);
             btnNuevo.Name = "btnNuevo";
             btnNuevo.Size = new Size(75, 23);
             btnNuevo.TabIndex = 0;
@@ -160,5 +172,6 @@
         private Button btnNuevo;
         private DataGridView dgvLugares;
         private Label label1;
+        private Button btnReactivar;
     }
 }

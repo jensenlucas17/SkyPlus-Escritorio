@@ -16,5 +16,6 @@ namespace SkyPlus.API.Services
             ActualizarAeronaveRequest request);
 
         Task<bool> EliminarAsync(int id);
+        Task<bool> ReactivarAsync(int id);
     }
 }

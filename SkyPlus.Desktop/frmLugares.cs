@@ -30,6 +30,7 @@ namespace SkyPlus.Desktop
             AppEstilos.EstilizarBotonSecundario(btnEditar);
             AppEstilos.EstilizarBotonSecundario(btnEliminar);
             AppEstilos.EstilizarBotonSecundario(btnRefrescar);
+            AppEstilos.EstilizarBotonSecundario(btnReactivar);
         }
 
         private void ConfigurarColumnas()
@@ -63,6 +64,13 @@ namespace SkyPlus.Desktop
                 DataPropertyName = nameof(LugarResponse.Pais),
                 HeaderText = "País",
                 Width = 120
+            });
+
+            dgvLugares.Columns.Add(new DataGridViewTextBoxColumn
+            {
+                DataPropertyName = nameof(LugarResponse.Estado),
+                HeaderText = "Estado",
+                Width = 100
             });
         }
 
@@ -166,9 +174,21 @@ namespace SkyPlus.Desktop
             if (seleccionado == null)
                 return;
 
+            if (seleccionado.Estado == "Inactivo")
+            {
+                MessageBox.Show(
+                    "Este aeropuerto ya se encuentra inactivo.",
+                    "Atención",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
             var confirmacion = MessageBox.Show(
-                $"¿Confirmás eliminar {seleccionado.CodigoIata} - {seleccionado.Nombre}?",
-                "Confirmar",
+                $"¿Confirmás dar de baja el aeropuerto " +
+                $"{seleccionado.CodigoIata} - {seleccionado.Nombre}?\n\n" +
+                "El aeropuerto quedará inactivo, pero conservará su historial.",
+                "Confirmar baja",
                 MessageBoxButtons.YesNo,
                 MessageBoxIcon.Warning);
 
@@ -179,20 +199,84 @@ namespace SkyPlus.Desktop
             {
                 await _lugarClient.EliminarAsync(seleccionado.IdLugar);
 
+                MessageBox.Show(
+                    "Aeropuerto dado de baja correctamente.",
+                    "Operación exitosa",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
                 await CargarLugares();
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
                 MessageBox.Show(
-                    "No se pudo conectar con la API de SkyPlus.",
-                    "Error de conexión",
+                    "No se pudo completar la baja del aeropuerto.\n\n" +
+                    ex.Message,
+                    "Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "Ocurrió un error al eliminar el aeropuerto:\n\n" + ex.Message,
+                    "Ocurrió un error:\n\n" + ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private async void btnReactivar_Click(object sender, EventArgs e)
+        {
+            var seleccionado = ObtenerSeleccionado();
+
+            if (seleccionado == null)
+                return;
+
+            if (seleccionado.Estado == "Activo")
+            {
+                MessageBox.Show(
+                    "Este aeropuerto ya se encuentra activo.",
+                    "Atención",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            var confirmacion = MessageBox.Show(
+                $"¿Confirmás reactivar el aeropuerto " +
+                $"{seleccionado.CodigoIata} - {seleccionado.Nombre}?",
+                "Confirmar reactivación",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (confirmacion != DialogResult.Yes)
+                return;
+
+            try
+            {
+                await _lugarClient.ReactivarAsync(seleccionado.IdLugar);
+
+                MessageBox.Show(
+                    "Aeropuerto reactivado correctamente.",
+                    "Operación exitosa",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                await CargarLugares();
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show(
+                    "No se pudo reactivar el aeropuerto.\n\n" + ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Ocurrió un error:\n\n" + ex.Message,
                     "Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);

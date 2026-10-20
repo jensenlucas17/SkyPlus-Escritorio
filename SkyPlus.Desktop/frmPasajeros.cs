@@ -30,6 +30,7 @@ namespace SkyPlus.Desktop
             AppEstilos.EstilizarBotonSecundario(btnEditar);
             AppEstilos.EstilizarBotonSecundario(btnEliminar);
             AppEstilos.EstilizarBotonSecundario(btnBuscar);
+            AppEstilos.EstilizarBotonSecundario(btnReactivar);
         }
 
         private async Task CargarPasajeros()
@@ -92,35 +93,129 @@ namespace SkyPlus.Desktop
 
         private async void btnEliminar_Click(object sender, EventArgs e)
         {
-            if (dgvPasajeros.CurrentRow == null)
+            if (dgvPasajeros.CurrentRow?.DataBoundItem
+                is not PasajeroResponse pasajero)
             {
-                MessageBox.Show("Seleccione un pasajero.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(
+                    "Seleccione un pasajero.",
+                    "Aviso",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
                 return;
             }
 
-            var pasajero = dgvPasajeros.CurrentRow.DataBoundItem as PasajeroResponse;
-            if (pasajero == null) return;
+            if (pasajero.Estado == "Inactivo")
+            {
+                MessageBox.Show(
+                    "Este pasajero ya se encuentra inactivo.",
+                    "Aviso",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
 
             var respuesta = MessageBox.Show(
-                $"¿Desea eliminar a {pasajero.NombreCompleto}?",
-                "Confirmar eliminación", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+                $"¿Desea dar de baja a {pasajero.NombreCompleto}?\n\n" +
+                "El pasajero quedará inactivo, pero conservará " +
+                "sus datos y su historial de reservas.",
+                "Confirmar baja",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Warning);
 
-            if (respuesta != DialogResult.Yes) return;
+            if (respuesta != DialogResult.Yes)
+                return;
 
             try
             {
                 await _pasajeroClient.EliminarAsync(pasajero.IdPasajero);
-                MessageBox.Show("Pasajero eliminado correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                MessageBox.Show(
+                    "Pasajero dado de baja correctamente.",
+                    "Éxito",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
                 await CargarPasajeros();
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                MessageBox.Show("No se pudo conectar con la API.", "Error de conexión", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    "No se pudo completar la baja del pasajero.\n\n" +
+                    ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
             catch (Exception ex)
             {
-                MessageBox.Show("No se pudo eliminar el pasajero.\n\n" + ex.Message,
-                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                MessageBox.Show(
+                    "Ocurrió un error:\n\n" + ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+        }
+
+        private async void btnReactivar_Click(object sender, EventArgs e)
+        {
+            if (dgvPasajeros.CurrentRow?.DataBoundItem
+                is not PasajeroResponse pasajero)
+            {
+                MessageBox.Show(
+                    "Seleccione un pasajero.",
+                    "Aviso",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (pasajero.Estado == "Activo")
+            {
+                MessageBox.Show(
+                    "Este pasajero ya se encuentra activo.",
+                    "Aviso",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            var respuesta = MessageBox.Show(
+                $"¿Desea reactivar a {pasajero.NombreCompleto}?",
+                "Confirmar reactivación",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (respuesta != DialogResult.Yes)
+                return;
+
+            try
+            {
+                await _pasajeroClient.ReactivarAsync(pasajero.IdPasajero);
+
+                MessageBox.Show(
+                    "Pasajero reactivado correctamente.",
+                    "Éxito",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                await CargarPasajeros();
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show(
+                    "No se pudo reactivar el pasajero.\n\n" +
+                    ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Ocurrió un error:\n\n" + ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
             }
         }
     }

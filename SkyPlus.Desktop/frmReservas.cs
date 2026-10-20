@@ -1,5 +1,4 @@
 ﻿// SkyPlus.Desktop/frmReservas.cs
-
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -25,11 +24,8 @@ namespace SkyPlus.Desktop
         private async void frmReservas_Load(object sender, EventArgs e)
         {
             await CargarReservas();
-
             AppEstilos.EstilizarGrid(dgvReservas);
-
             AppEstilos.EstilizarBotonPrimario(btnNuevo);
-
             AppEstilos.EstilizarBotonSecundario(btnCancelarReserva);
             AppEstilos.EstilizarBotonSecundario(btnBuscar);
             AppEstilos.EstilizarBotonSecundario(btnRefrescar);
@@ -43,10 +39,13 @@ namespace SkyPlus.Desktop
                 _reservasCache = reservas ?? new List<ReservaResponse>();
                 AplicarFiltro();
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                MessageBox.Show("No se pudo conectar con la API de SkyPlus.",
-                    "Error de conexión", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                string mensaje = ex.StatusCode.HasValue
+                    ? ex.Message
+                    : "No se pudo conectar con la API de SkyPlus. Verificá que esté ejecutándose.";
+                MessageBox.Show(mensaje, "No se pudieron cargar las reservas",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             catch (Exception ex)
             {
@@ -58,25 +57,18 @@ namespace SkyPlus.Desktop
         private void AplicarFiltro()
         {
             var texto = txtBuscar.Text.Trim();
-
             var filtradas = _reservasCache.Where(r =>
                 string.IsNullOrWhiteSpace(texto) ||
-
                 (!string.IsNullOrWhiteSpace(r.CodigoReserva) &&
                  r.CodigoReserva.Contains(texto, StringComparison.OrdinalIgnoreCase)) ||
-
                 (!string.IsNullOrWhiteSpace(r.Pasajero) &&
                  r.Pasajero.Contains(texto, StringComparison.OrdinalIgnoreCase)) ||
-
                 (!string.IsNullOrWhiteSpace(r.Vuelo) &&
                  r.Vuelo.Contains(texto, StringComparison.OrdinalIgnoreCase)) ||
-
                 (!string.IsNullOrWhiteSpace(r.Asiento) &&
                  r.Asiento.Contains(texto, StringComparison.OrdinalIgnoreCase)) ||
-
                 (!string.IsNullOrWhiteSpace(r.EstadoReserva) &&
                  r.EstadoReserva.Contains(texto, StringComparison.OrdinalIgnoreCase))
-
             ).ToList();
 
             dgvReservas.DataSource = null;
@@ -114,7 +106,8 @@ namespace SkyPlus.Desktop
         {
             if (dgvReservas.CurrentRow == null)
             {
-                MessageBox.Show("Seleccione una reserva.", "Aviso", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show("Seleccione una reserva.", "Aviso",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
                 return;
             }
 
@@ -123,7 +116,8 @@ namespace SkyPlus.Desktop
 
             if (reserva.EstadoReserva == "Cancelada")
             {
-                MessageBox.Show("Esta reserva ya está cancelada.", "Atención", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Esta reserva ya está cancelada.", "Atención",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
@@ -136,12 +130,17 @@ namespace SkyPlus.Desktop
             try
             {
                 await _reservaClient.CancelarAsync(reserva.IdReserva);
-                MessageBox.Show("Reserva cancelada correctamente.", "Éxito", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                MessageBox.Show("Reserva cancelada correctamente.", "Éxito",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                 await CargarReservas();
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                MessageBox.Show("No se pudo conectar con la API.", "Error de conexión", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                string mensaje = ex.StatusCode.HasValue
+                    ? ex.Message
+                    : "No se pudo conectar con la API de SkyPlus. Verificá que esté ejecutándose.";
+                MessageBox.Show(mensaje, "No se pudo cancelar la reserva",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
             }
             catch (Exception ex)
             {

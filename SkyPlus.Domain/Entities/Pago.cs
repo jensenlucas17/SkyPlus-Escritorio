@@ -14,6 +14,8 @@
 
         public DateTime FechaPago { get; set; }
 
+        public string EstadoPago { get; set; } = "Registrado";
+
         // Relaciones
         public Reserva? Reserva { get; set; }
 

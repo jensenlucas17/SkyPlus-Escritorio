@@ -120,5 +120,16 @@ namespace SkyPlus.API.Controllers
                 mensaje = "Lugar eliminado correctamente."
             });
         }
+
+        [HttpPatch("{id}/reactivar")]
+        public async Task<IActionResult> Reactivar(int id)
+        {
+            var reactivado = await _lugarService.ReactivarAsync(id);
+
+            if (!reactivado)
+                return BadRequest("El lugar no existe o ya está activo.");
+
+            return Ok(new { mensaje = "Lugar reactivado correctamente." });
+        }
     }
 }

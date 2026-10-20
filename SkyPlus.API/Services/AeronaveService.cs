@@ -20,7 +20,8 @@ namespace SkyPlus.API.Services
                 {
                     IdAeronave = a.IdAeronave,
                     Matricula = a.Matricula,
-                    Modelo = a.Modelo
+                    Modelo = a.Modelo,
+                    Estado = a.Estado
                 })
                 .ToListAsync();
         }
@@ -33,7 +34,8 @@ namespace SkyPlus.API.Services
                 {
                     IdAeronave = a.IdAeronave,
                     Matricula = a.Matricula,
-                    Modelo = a.Modelo
+                    Modelo = a.Modelo,
+                    Estado = a.Estado
                 })
                 .FirstOrDefaultAsync();
         }
@@ -41,6 +43,16 @@ namespace SkyPlus.API.Services
         public async Task<AeronaveResponse?> CrearAsync(
             CrearAeronaveRequest request)
         {
+            request.Matricula = request.Matricula?.Trim().ToUpperInvariant()
+                ?? string.Empty;
+
+            request.Modelo = request.Modelo?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(request.Matricula) ||
+                string.IsNullOrWhiteSpace(request.Modelo))
+            {
+                return null;
+            }
             var matriculaExiste = await _context.Aeronaves
                 .AnyAsync(a => a.Matricula == request.Matricula);
 
@@ -64,6 +76,16 @@ namespace SkyPlus.API.Services
             int id,
             ActualizarAeronaveRequest request)
         {
+            request.Matricula = request.Matricula?.Trim().ToUpperInvariant()
+            ?? string.Empty;
+
+            request.Modelo = request.Modelo?.Trim() ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(request.Matricula) ||
+                string.IsNullOrWhiteSpace(request.Modelo))
+            {
+                return null;
+            }
             var aeronave = await _context.Aeronaves
                 .FirstOrDefaultAsync(a => a.IdAeronave == id);
 
@@ -94,10 +116,27 @@ namespace SkyPlus.API.Services
             if (aeronave == null)
                 return false;
 
-            _context.Aeronaves.Remove(aeronave);
+            if (aeronave.Estado == "Inactivo")
+                return false;
+
+            aeronave.Estado = "Inactivo";
 
             await _context.SaveChangesAsync();
 
+            return true;
+        }
+
+        public async Task<bool> ReactivarAsync(int id)
+        {
+            var aeronave = await _context.Aeronaves
+                .FirstOrDefaultAsync(a => a.IdAeronave == id);
+
+            if (aeronave == null || aeronave.Estado == "Activo")
+                return false;
+
+            aeronave.Estado = "Activo";
+
+            await _context.SaveChangesAsync();
             return true;
         }
     }

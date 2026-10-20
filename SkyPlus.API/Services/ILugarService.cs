@@ -15,5 +15,6 @@ namespace SkyPlus.API.Services
             ActualizarLugarRequest request);
 
         Task<bool> EliminarAsync(int id);
+        Task<bool> ReactivarAsync(int id);
     }
 }

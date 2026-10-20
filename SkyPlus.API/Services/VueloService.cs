@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SkyPlus.API.DTOs;
 using SkyPlus.Infrastructure.Data;
+using SkyPlus.API.Exceptions;
 
 namespace SkyPlus.API.Services
 {
@@ -92,50 +93,47 @@ namespace SkyPlus.API.Services
                 .FirstOrDefaultAsync();
         }
 
-        public async Task<VueloResponse?> CrearAsync(
-            CrearVueloRequest request)
+        public async Task<VueloResponse?> CrearAsync(CrearVueloRequest request)
         {
-            var numeroExiste =
-                await _context.Vuelos.AnyAsync(
-                    v => v.NumeroVuelo == request.NumeroVuelo);
+            if (string.IsNullOrWhiteSpace(request.NumeroVuelo))
+                throw new ValidacionNegocioException("El número de vuelo es obligatorio.");
 
-            if (numeroExiste)
-                return null;
+            if (await _context.Vuelos.AnyAsync(v => v.NumeroVuelo == request.NumeroVuelo))
+                throw new ValidacionNegocioException($"Ya existe un vuelo con el número {request.NumeroVuelo}.");
 
-            var aeronaveExiste =
-                await _context.Aeronaves.AnyAsync(
-                    a => a.IdAeronave == request.IdAeronave);
+            var aeronave = await _context.Aeronaves.FindAsync(request.IdAeronave);
+            if (aeronave == null)
+                throw new ValidacionNegocioException("La aeronave seleccionada no existe.");
+            if (aeronave.Estado != "Activo")
+                throw new ValidacionNegocioException($"La aeronave {aeronave.Matricula} está inactiva. Debe reactivarla antes de asignarla.");
 
-            var origenExiste =
-                await _context.Lugares.AnyAsync(
-                    l => l.IdLugar == request.IdLugarOrigen);
+            var origen = await _context.Lugares.FindAsync(request.IdLugarOrigen);
+            if (origen == null)
+                throw new ValidacionNegocioException("El aeropuerto de origen no existe.");
+            if (origen.Estado != "Activo")
+                throw new ValidacionNegocioException($"El aeropuerto de origen {origen.CodigoIata} está inactivo.");
 
-            var destinoExiste =
-                await _context.Lugares.AnyAsync(
-                    l => l.IdLugar == request.IdLugarDestino);
+            var destino = await _context.Lugares.FindAsync(request.IdLugarDestino);
+            if (destino == null)
+                throw new ValidacionNegocioException("El aeropuerto de destino no existe.");
+            if (destino.Estado != "Activo")
+                throw new ValidacionNegocioException($"El aeropuerto de destino {destino.CodigoIata} está inactivo.");
 
-            var usuarioExiste =
-                await _context.Usuarios.AnyAsync(
-                    u => u.IdUsuario == request.IdUsuarioOperador);
+            if (request.IdLugarOrigen == request.IdLugarDestino)
+                throw new ValidacionNegocioException("El origen y el destino deben ser diferentes.");
 
-            if (!aeronaveExiste ||
-                !origenExiste ||
-                !destinoExiste ||
-                !usuarioExiste)
-            {
-                return null;
-            }
-
-            if (request.IdLugarOrigen ==
-                request.IdLugarDestino)
-            {
-                return null;
-            }
+            var operador = await _context.Usuarios.FindAsync(request.IdUsuarioOperador);
+            if (operador == null)
+                throw new ValidacionNegocioException("El usuario operador no existe.");
+            if (operador.EstadoCuenta != "Activo")
+                throw new ValidacionNegocioException("El usuario operador está inactivo.");
 
             if (request.Llegada <= request.Salida)
-            {
-                return null;
-            }
+                throw new ValidacionNegocioException("La llegada debe ser posterior a la salida.");
+            if (request.Tarifa <= 0)
+                throw new ValidacionNegocioException("La tarifa debe ser mayor que cero.");
+            if (request.EstadoVuelo != "Programado" && request.EstadoVuelo != "Confirmado")
+                throw new ValidacionNegocioException("Un vuelo nuevo debe estar Programado o Confirmado.");
 
             var vuelo = new Domain.Entities.Vuelo
             {
@@ -150,135 +148,124 @@ namespace SkyPlus.API.Services
                 Tarifa = request.Tarifa
             };
 
-            _context.Vuelos.Add(vuelo);
-
-            await _context.SaveChangesAsync();
-
-            // Generar automáticamente los 180 asientos del vuelo
-            var asientosGenerados =
-                await _asientoService.GenerarAsientosAsync(vuelo.IdVuelo);
-
-            if (!asientosGenerados)
+            await using var transaccion = await _context.Database.BeginTransactionAsync();
+            try
             {
-                // Si por algún motivo no se pudieron generar,
-                // eliminamos el vuelo para no dejarlo incompleto.
-                _context.Vuelos.Remove(vuelo);
+                _context.Vuelos.Add(vuelo);
                 await _context.SaveChangesAsync();
 
-                return null;
+                if (!await _asientoService.GenerarAsientosAsync(vuelo.IdVuelo))
+                {
+                    throw new ValidacionNegocioException("No se pudieron generar los asientos del vuelo. No se guardó el vuelo.");
+                }
+
+                await transaccion.CommitAsync();
+            }
+            catch
+            {
+                await transaccion.RollbackAsync();
+                _context.ChangeTracker.Clear();
+                throw;
             }
 
             return await ObtenerPorIdAsync(vuelo.IdVuelo);
         }
 
-        public async Task<VueloResponse?> ActualizarAsync(
-            int id,
-            ActualizarVueloRequest request)
+        public async Task<VueloResponse?> ActualizarAsync(int id, ActualizarVueloRequest request)
         {
-            var vuelo =
-                await _context.Vuelos
-                    .FirstOrDefaultAsync(
-                        v => v.IdVuelo == id);
-
+            var vuelo = await _context.Vuelos.FindAsync(id);
             if (vuelo == null)
-                return null;
+                throw new ValidacionNegocioException("El vuelo que desea actualizar no existe.");
+            if (vuelo.EstadoVuelo == "Cancelado" || vuelo.EstadoVuelo == "Finalizado")
+                throw new ValidacionNegocioException("No se puede modificar un vuelo cancelado o finalizado.");
+            if (string.IsNullOrWhiteSpace(request.NumeroVuelo))
+                throw new ValidacionNegocioException("El número de vuelo es obligatorio.");
+            if (await _context.Vuelos.AnyAsync(v => v.NumeroVuelo == request.NumeroVuelo && v.IdVuelo != id))
+                throw new ValidacionNegocioException($"Ya existe otro vuelo con el número {request.NumeroVuelo}.");
 
-            var numeroExiste =
-                await _context.Vuelos.AnyAsync(
-                    v =>
-                        v.NumeroVuelo ==
-                        request.NumeroVuelo &&
-                        v.IdVuelo != id);
+            var aeronave = await _context.Aeronaves.FindAsync(request.IdAeronave);
+            if (aeronave == null)
+                throw new ValidacionNegocioException("La aeronave seleccionada no existe.");
+            if (aeronave.Estado != "Activo" && request.IdAeronave != vuelo.IdAeronave)
+                throw new ValidacionNegocioException($"La aeronave {aeronave.Matricula} está inactiva.");
 
-            if (numeroExiste)
-                return null;
+            var origen = await _context.Lugares.FindAsync(request.IdLugarOrigen);
+            if (origen == null)
+                throw new ValidacionNegocioException("El aeropuerto de origen no existe.");
+            if (origen.Estado != "Activo" && request.IdLugarOrigen != vuelo.IdLugarOrigen)
+                throw new ValidacionNegocioException($"El aeropuerto de origen {origen.CodigoIata} está inactivo.");
 
-            var aeronaveExiste =
-                await _context.Aeronaves.AnyAsync(
-                    a =>
-                        a.IdAeronave ==
-                        request.IdAeronave);
+            var destino = await _context.Lugares.FindAsync(request.IdLugarDestino);
+            if (destino == null)
+                throw new ValidacionNegocioException("El aeropuerto de destino no existe.");
+            if (destino.Estado != "Activo" && request.IdLugarDestino != vuelo.IdLugarDestino)
+                throw new ValidacionNegocioException($"El aeropuerto de destino {destino.CodigoIata} está inactivo.");
 
-            var origenExiste =
-                await _context.Lugares.AnyAsync(
-                    l =>
-                        l.IdLugar ==
-                        request.IdLugarOrigen);
+            if (request.IdLugarOrigen == request.IdLugarDestino)
+                throw new ValidacionNegocioException("El origen y el destino deben ser diferentes.");
 
-            var destinoExiste =
-                await _context.Lugares.AnyAsync(
-                    l =>
-                        l.IdLugar ==
-                        request.IdLugarDestino);
-
-            var usuarioExiste =
-                await _context.Usuarios.AnyAsync(
-                    u =>
-                        u.IdUsuario ==
-                        request.IdUsuarioOperador);
-
-            if (!aeronaveExiste ||
-                !origenExiste ||
-                !destinoExiste ||
-                !usuarioExiste)
-            {
-                return null;
-            }
-
-            if (request.IdLugarOrigen ==
-                request.IdLugarDestino)
-            {
-                return null;
-            }
+            var operador = await _context.Usuarios.FindAsync(request.IdUsuarioOperador);
+            if (operador == null)
+                throw new ValidacionNegocioException("El usuario operador no existe.");
+            if (operador.EstadoCuenta != "Activo" && request.IdUsuarioOperador != vuelo.IdUsuarioOperador)
+                throw new ValidacionNegocioException("El usuario operador seleccionado está inactivo.");
 
             if (request.Llegada <= request.Salida)
-            {
-                return null;
-            }
+                throw new ValidacionNegocioException("La llegada debe ser posterior a la salida.");
+            if (request.Tarifa <= 0)
+                throw new ValidacionNegocioException("La tarifa debe ser mayor que cero.");
+            if (request.EstadoVuelo == "Cancelado")
+                throw new ValidacionNegocioException("Para cancelar un vuelo utilice la operación de baja/cancelación.");
+            if (request.EstadoVuelo != "Programado" &&
+                request.EstadoVuelo != "Confirmado" &&
+                request.EstadoVuelo != "Finalizado")
+                throw new ValidacionNegocioException("El estado del vuelo no es válido.");
 
-            vuelo.NumeroVuelo =
-                request.NumeroVuelo;
+            var tieneReservas = await _context.Reservas.AnyAsync(r =>
+                r.IdVuelo == id && r.EstadoReserva != "Cancelada");
+            if (tieneReservas &&
+                (request.IdAeronave != vuelo.IdAeronave ||
+                 request.IdLugarOrigen != vuelo.IdLugarOrigen ||
+                 request.IdLugarDestino != vuelo.IdLugarDestino ||
+                 request.Salida != vuelo.Salida ||
+                 request.Llegada != vuelo.Llegada))
+                throw new ValidacionNegocioException(
+                    "El vuelo tiene reservas activas. No se pueden cambiar aeronave, ruta ni horarios sin gestionar las reservas.");
 
-            vuelo.IdAeronave =
-                request.IdAeronave;
-
-            vuelo.IdUsuarioOperador =
-                request.IdUsuarioOperador;
-
-            vuelo.IdLugarOrigen =
-                request.IdLugarOrigen;
-
-            vuelo.IdLugarDestino =
-                request.IdLugarDestino;
-
-            vuelo.Salida =
-                request.Salida;
-
-            vuelo.Llegada =
-                request.Llegada;
-
-            vuelo.EstadoVuelo =
-                request.EstadoVuelo;
-
-            vuelo.Tarifa =
-                request.Tarifa;
+            vuelo.NumeroVuelo = request.NumeroVuelo;
+            vuelo.IdAeronave = request.IdAeronave;
+            vuelo.IdUsuarioOperador = request.IdUsuarioOperador;
+            vuelo.IdLugarOrigen = request.IdLugarOrigen;
+            vuelo.IdLugarDestino = request.IdLugarDestino;
+            vuelo.Salida = request.Salida;
+            vuelo.Llegada = request.Llegada;
+            vuelo.EstadoVuelo = request.EstadoVuelo;
+            vuelo.Tarifa = request.Tarifa;
 
             await _context.SaveChangesAsync();
-
             return await ObtenerPorIdAsync(id);
         }
 
         public async Task<bool> EliminarAsync(int id)
         {
-            var vuelo =
-                await _context.Vuelos
-                    .FirstOrDefaultAsync(
-                        v => v.IdVuelo == id);
+            var vuelo = await _context.Vuelos
+                .FirstOrDefaultAsync(v => v.IdVuelo == id);
 
             if (vuelo == null)
                 return false;
 
-            _context.Vuelos.Remove(vuelo);
+            if (vuelo.EstadoVuelo == "Cancelado" || vuelo.EstadoVuelo == "Finalizado")
+                throw new ValidacionNegocioException("El vuelo ya está cancelado o finalizado.");
+
+            var tieneReservasActivas = await _context.Reservas
+                .AnyAsync(r =>
+                    r.IdVuelo == id &&
+                    r.EstadoReserva != "Cancelada");
+
+            if (tieneReservasActivas)
+                throw new ValidacionNegocioException("El vuelo tiene reservas activas. Primero debe gestionarlas antes de cancelarlo.");
+
+            vuelo.EstadoVuelo = "Cancelado";
 
             await _context.SaveChangesAsync();
 

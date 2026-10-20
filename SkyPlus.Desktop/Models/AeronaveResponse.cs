@@ -8,7 +8,7 @@ namespace SkyPlus.Desktop.Models
         public int IdAeronave { get; set; }
         public string Matricula { get; set; } = string.Empty;
         public string Modelo { get; set; } = string.Empty;
-
         public string MatriculaModelo => $"{Matricula} - {Modelo}";
+        public string Estado { get; set; } = "Activo";
     }
 }

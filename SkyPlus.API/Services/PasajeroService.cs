@@ -24,7 +24,8 @@ namespace SkyPlus.API.Services
                     Documento = p.Documento,
                     Nacionalidad = p.Nacionalidad,
                     Email = p.Email,
-                    Telefono = p.Telefono
+                    Telefono = p.Telefono,
+                    Estado = p.Estado
                 })
                 .ToListAsync();
         }
@@ -41,7 +42,8 @@ namespace SkyPlus.API.Services
                     Documento = p.Documento,
                     Nacionalidad = p.Nacionalidad,
                     Email = p.Email,
-                    Telefono = p.Telefono
+                    Telefono = p.Telefono,
+                    Estado = p.Estado
                 })
                 .FirstOrDefaultAsync();
         }
@@ -49,6 +51,23 @@ namespace SkyPlus.API.Services
         public async Task<PasajeroResponse?> CrearAsync(
             CrearPasajeroRequest request)
         {
+            request.Nombre = request.Nombre?.Trim() ?? string.Empty;
+            request.Apellido = request.Apellido?.Trim() ?? string.Empty;
+            request.Documento = request.Documento?.Trim() ?? string.Empty;
+            request.Nacionalidad = request.Nacionalidad?.Trim() ?? string.Empty;
+            request.Email = request.Email?.Trim() ?? string.Empty;
+            request.Telefono = request.Telefono?.Trim() ?? string.Empty;
+
+            if (!NombreValido(request.Nombre) ||
+                !NombreValido(request.Apellido) ||
+                !DocumentoValido(request.Documento) ||
+                !NombreValido(request.Nacionalidad) ||
+                !EmailValido(request.Email) ||
+                !TelefonoValido(request.Telefono))
+            {
+                return null;
+            }
+
             var documentoExiste =
                 await _context.Pasajeros
                     .AnyAsync(p =>
@@ -87,6 +106,23 @@ namespace SkyPlus.API.Services
             if (pasajero == null)
                 return null;
 
+            request.Nombre = request.Nombre?.Trim() ?? string.Empty;
+            request.Apellido = request.Apellido?.Trim() ?? string.Empty;
+            request.Documento = request.Documento?.Trim() ?? string.Empty;
+            request.Nacionalidad = request.Nacionalidad?.Trim() ?? string.Empty;
+            request.Email = request.Email?.Trim() ?? string.Empty;
+            request.Telefono = request.Telefono?.Trim() ?? string.Empty;
+
+            if (!NombreValido(request.Nombre) ||
+                !NombreValido(request.Apellido) ||
+                !DocumentoValido(request.Documento) ||
+                !NombreValido(request.Nacionalidad) ||
+                !EmailValido(request.Email) ||
+                !TelefonoValido(request.Telefono))
+            {
+                return null;
+            }
+
             var documentoExiste =
                 await _context.Pasajeros
                     .AnyAsync(p =>
@@ -110,19 +146,63 @@ namespace SkyPlus.API.Services
 
         public async Task<bool> EliminarAsync(int id)
         {
-            var pasajero =
-                await _context.Pasajeros
-                    .FirstOrDefaultAsync(p =>
-                        p.IdPasajero == id);
+            var pasajero = await _context.Pasajeros
+                .FirstOrDefaultAsync(p => p.IdPasajero == id);
 
             if (pasajero == null)
                 return false;
 
-            _context.Pasajeros.Remove(pasajero);
+            if (pasajero.Estado == "Inactivo")
+                return false;
+
+            pasajero.Estado = "Inactivo";
 
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        public async Task<bool> ReactivarAsync(int id)
+        {
+            var pasajero = await _context.Pasajeros
+                .FirstOrDefaultAsync(p => p.IdPasajero == id);
+
+            if (pasajero == null || pasajero.Estado == "Activo")
+                return false;
+
+            pasajero.Estado = "Activo";
+
+            await _context.SaveChangesAsync();
+            return true;
+        }
+
+        private static bool NombreValido(string? valor)
+        {
+            return !string.IsNullOrWhiteSpace(valor) &&
+                System.Text.RegularExpressions.Regex.IsMatch(
+                    valor, @"^\p{L}+(?:[ '\-]\p{L}+)*$");
+        }
+
+        private static bool DocumentoValido(string? documento)
+        {
+            return !string.IsNullOrWhiteSpace(documento) &&
+                System.Text.RegularExpressions.Regex.IsMatch(
+                    documento, @"^[0-9]{7,8}$");
+        }
+
+        private static bool EmailValido(string? email)
+        {
+            return !string.IsNullOrWhiteSpace(email) &&
+                System.Net.Mail.MailAddress.TryCreate(
+                    email, out var direccion) &&
+                direccion.Address == email;
+        }
+
+        private static bool TelefonoValido(string? telefono)
+        {
+            return !string.IsNullOrWhiteSpace(telefono) &&
+                System.Text.RegularExpressions.Regex.IsMatch(
+                    telefono, @"^\+?[0-9]{7,15}$");
         }
     }
 }

@@ -32,6 +32,7 @@ namespace SkyPlus.Desktop
             AppEstilos.EstilizarBotonSecundario(btnEditar);
             AppEstilos.EstilizarBotonSecundario(btnEliminar);
             AppEstilos.EstilizarBotonSecundario(btnBuscar);
+            AppEstilos.EstilizarBotonSecundario(btnReactivar);
         }
 
         private async Task CargarAeronaves()
@@ -118,64 +119,64 @@ namespace SkyPlus.Desktop
             }
         }
 
-        private async void btnEliminar_Click(
-            object sender,
-            EventArgs e)
+        private async void btnEliminar_Click(object sender, EventArgs e)
         {
-            if (dgvAeronaves.CurrentRow == null)
+            if (dgvAeronaves.CurrentRow?.DataBoundItem
+                is not AeronaveResponse aeronave)
             {
                 MessageBox.Show(
                     "Seleccione una aeronave.",
                     "Aviso",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Warning);
-
                 return;
             }
 
-            var aeronave =
-                dgvAeronaves.CurrentRow.DataBoundItem
-                as AeronaveResponse;
-
-            if (aeronave == null)
+            if (aeronave.Estado == "Inactivo")
+            {
+                MessageBox.Show(
+                    "Esta aeronave ya se encuentra inactiva.",
+                    "Aviso",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
                 return;
+            }
 
             var respuesta = MessageBox.Show(
-                $"¿Desea eliminar la aeronave " +
-                $"{aeronave.Matricula}?",
-                "Confirmar eliminación",
+                $"¿Desea dar de baja la aeronave {aeronave.Matricula}?\n\n" +
+                "La aeronave quedará inactiva, pero conservará su historial.",
+                "Confirmar baja",
                 MessageBoxButtons.YesNo,
-                MessageBoxIcon.Question);
+                MessageBoxIcon.Warning);
 
             if (respuesta != DialogResult.Yes)
                 return;
 
             try
             {
-                await _aeronaveClient
-                    .EliminarAsync(aeronave.IdAeronave);
+                await _aeronaveClient.EliminarAsync(aeronave.IdAeronave);
 
                 MessageBox.Show(
-                    "Aeronave eliminada correctamente.",
+                    "Aeronave dada de baja correctamente.",
                     "Éxito",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Information);
 
                 await CargarAeronaves();
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
                 MessageBox.Show(
-                    "No se pudo conectar con la API.",
-                    "Error de conexión",
+                    "No se pudo completar la baja de la aeronave.\n\n" +
+                    ex.Message,
+                    "Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
             }
             catch (Exception ex)
             {
                 MessageBox.Show(
-                    "No se pudo eliminar la aeronave.\n\n" +
-                    ex.Message,
+                    "Ocurrió un error:\n\n" + ex.Message,
                     "Error",
                     MessageBoxButtons.OK,
                     MessageBoxIcon.Error);
@@ -187,6 +188,69 @@ namespace SkyPlus.Desktop
             EventArgs e)
         {
             await CargarAeronaves();
+        }
+
+        private async void btnReactivar_Click(object sender, EventArgs e)
+        {
+            if (dgvAeronaves.CurrentRow?.DataBoundItem
+                is not AeronaveResponse aeronave)
+            {
+                MessageBox.Show(
+                    "Seleccione una aeronave.",
+                    "Aviso",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
+                return;
+            }
+
+            if (aeronave.Estado == "Activo")
+            {
+                MessageBox.Show(
+                    "Esta aeronave ya se encuentra activa.",
+                    "Aviso",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+                return;
+            }
+
+            var respuesta = MessageBox.Show(
+                $"¿Desea reactivar la aeronave {aeronave.Matricula}?",
+                "Confirmar reactivación",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (respuesta != DialogResult.Yes)
+                return;
+
+            try
+            {
+                await _aeronaveClient.ReactivarAsync(aeronave.IdAeronave);
+
+                MessageBox.Show(
+                    "Aeronave reactivada correctamente.",
+                    "Éxito",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Information);
+
+                await CargarAeronaves();
+            }
+            catch (HttpRequestException ex)
+            {
+                MessageBox.Show(
+                    "No se pudo reactivar la aeronave.\n\n" +
+                    ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(
+                    "Ocurrió un error:\n\n" + ex.Message,
+                    "Error",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Error);
+            }
         }
     }
 }

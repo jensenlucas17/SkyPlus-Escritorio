@@ -1,6 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
+using SkyPlus.API.Exceptions;
 
 namespace SkyPlus.API.Controllers
 {
@@ -10,8 +12,7 @@ namespace SkyPlus.API.Controllers
     {
         private readonly IReservaService _reservaService;
 
-        public ReservasController(
-            IReservaService reservaService)
+        public ReservasController(IReservaService reservaService)
         {
             _reservaService = reservaService;
         }
@@ -19,18 +20,14 @@ namespace SkyPlus.API.Controllers
         [HttpGet]
         public async Task<IActionResult> ObtenerTodos()
         {
-            var reservas =
-                await _reservaService.ObtenerTodosAsync();
-
+            var reservas = await _reservaService.ObtenerTodosAsync();
             return Ok(reservas);
         }
 
         [HttpGet("{id}")]
-        public async Task<IActionResult> ObtenerPorId(
-            int id)
+        public async Task<IActionResult> ObtenerPorId(int id)
         {
-            var reserva =
-                await _reservaService.ObtenerPorIdAsync(id);
+            var reserva = await _reservaService.ObtenerPorIdAsync(id);
 
             if (reserva == null)
             {
@@ -47,9 +44,8 @@ namespace SkyPlus.API.Controllers
         public async Task<IActionResult> ObtenerPorPasajero(
             int idPasajero)
         {
-            var reservas =
-                await _reservaService
-                    .ObtenerPorPasajeroAsync(idPasajero);
+            var reservas = await _reservaService
+                .ObtenerPorPasajeroAsync(idPasajero);
 
             return Ok(reservas);
         }
@@ -65,58 +61,63 @@ namespace SkyPlus.API.Controllers
             {
                 return BadRequest(new
                 {
-                    mensaje =
-                        "Pasajero, vuelo, asiento y usuario " +
-                        "agente son obligatorios."
+                    mensaje = "Los identificadores del pasajero, vuelo, asiento y agente deben ser mayores que cero."
                 });
             }
 
-            var reserva =
-                await _reservaService.CrearAsync(request);
+            try
+            {
+                var reserva = await _reservaService.CrearAsync(request);
 
-            if (reserva == null)
+                if (reserva == null)
+                {
+                    return BadRequest(new
+                    {
+                        mensaje = "No se pudo crear la reserva. Verificá los datos ingresados."
+                    });
+                }
+
+                return CreatedAtAction(
+                    nameof(ObtenerPorId),
+                    new { id = reserva.IdReserva },
+                    reserva);
+            }
+            catch (ValidacionNegocioException ex)
             {
                 return BadRequest(new
                 {
-                    mensaje =
-                        "No se pudo crear la reserva. " +
-                        "Verificá que el pasajero, vuelo, " +
-                        "asiento y usuario existan, y que " +
-                        "el asiento esté libre y pertenezca " +
-                        "al vuelo seleccionado."
+                    mensaje = ex.Message
                 });
             }
-
-            return CreatedAtAction(
-                nameof(ObtenerPorId),
-                new
-                {
-                    id = reserva.IdReserva
-                },
-                reserva);
         }
 
         [HttpPut("{id}/cancelar")]
-        public async Task<IActionResult> Cancelar(
-            int id)
+        public async Task<IActionResult> Cancelar(int id)
         {
-            var resultado =
-                await _reservaService.CancelarAsync(id);
+            try
+            {
+                var resultado = await _reservaService.CancelarAsync(id);
 
-            if (!resultado)
+                if (!resultado)
+                {
+                    return BadRequest(new
+                    {
+                        mensaje = "La reserva no existe o ya se encuentra cancelada."
+                    });
+                }
+
+                return Ok(new
+                {
+                    mensaje = "Reserva cancelada correctamente y asiento liberado."
+                });
+            }
+            catch (ValidacionNegocioException ex)
             {
                 return BadRequest(new
                 {
-                    mensaje =
-                        "La reserva no existe o ya está cancelada."
+                    mensaje = ex.Message
                 });
             }
-
-            return Ok(new
-            {
-                mensaje =
-                    "Reserva cancelada y asiento liberado correctamente."
-            });
         }
     }
 }
