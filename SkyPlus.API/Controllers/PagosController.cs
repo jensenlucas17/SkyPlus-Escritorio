@@ -1,3 +1,4 @@
+
 using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Exceptions;
@@ -24,20 +25,58 @@ namespace SkyPlus.API.Controllers
         public async Task<IActionResult> ObtenerPorId(int id)
         {
             var pago = await _pagoService.ObtenerPorIdAsync(id);
+
             return pago == null
                 ? NotFound(new { mensaje = "Pago no encontrado." })
                 : Ok(pago);
         }
 
+        // Pago inicial: pasaje + equipaje inicial.
         [HttpPost]
-        public async Task<IActionResult> Crear([FromBody] CrearPagoRequest request)
+        public async Task<IActionResult> Crear(
+            [FromBody] CrearPagoRequest request)
         {
             try
             {
                 var pago = await _pagoService.CrearAsync(request);
+
                 if (pago == null)
-                    return BadRequest(new { mensaje = "No se pudo registrar el pago." });
-                return CreatedAtAction(nameof(ObtenerPorId), new { id = pago.IdPago }, pago);
+                    return BadRequest(new
+                    {
+                        mensaje = "No se pudo registrar el pago."
+                    });
+
+                return CreatedAtAction(
+                    nameof(ObtenerPorId),
+                    new { id = pago.IdPago },
+                    pago);
+            }
+            catch (ValidacionNegocioException ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+        }
+
+        // Pago adicional: equipaje y cargos pendientes.
+        [HttpPost("adicional")]
+        public async Task<IActionResult> CrearAdicional(
+            [FromBody] CrearPagoRequest request)
+        {
+            try
+            {
+                var pago = await _pagoService
+                    .CrearAdicionalAsync(request);
+
+                if (pago == null)
+                    return BadRequest(new
+                    {
+                        mensaje = "No se pudo registrar el pago adicional."
+                    });
+
+                return CreatedAtAction(
+                    nameof(ObtenerPorId),
+                    new { id = pago.IdPago },
+                    pago);
             }
             catch (ValidacionNegocioException ex)
             {
@@ -51,7 +90,12 @@ namespace SkyPlus.API.Controllers
             try
             {
                 await _pagoService.AnularAsync(id);
-                return Ok(new { mensaje = "Pago anulado correctamente. Se conservó el historial." });
+
+                return Ok(new
+                {
+                    mensaje = "Pago anulado correctamente. " +
+                              "Se conservó el historial."
+                });
             }
             catch (ValidacionNegocioException ex)
             {

@@ -1,4 +1,7 @@
-﻿namespace SkyPlus.Domain.Entities
+﻿
+using System.Collections.Generic;
+
+namespace SkyPlus.Domain.Entities
 {
     public class Pago
     {
@@ -16,9 +19,15 @@
 
         public string EstadoPago { get; set; } = "Registrado";
 
+        // Inicial o Adicional.
+        public string TipoPago { get; set; } = "Inicial";
+
         // Relaciones
         public Reserva? Reserva { get; set; }
 
         public Usuario? UsuarioAgente { get; set; }
+
+        public ICollection<PagoDetalle> Detalles { get; set; }
+            = new List<PagoDetalle>();
     }
 }

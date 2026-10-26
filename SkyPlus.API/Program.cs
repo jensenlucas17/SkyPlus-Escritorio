@@ -24,6 +24,7 @@ builder.Services.AddScoped<IReservaService, ReservaService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddHostedService<ReservasExpirationService>();
 builder.Services.AddScoped<IReembolsoService, ReembolsoService>();
+builder.Services.AddScoped<IEquipajeService, EquipajeService>();
 
 // Servicios
 builder.Services.AddControllers();

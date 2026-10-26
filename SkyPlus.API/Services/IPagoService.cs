@@ -1,3 +1,4 @@
+
 using SkyPlus.API.DTOs;
 
 namespace SkyPlus.API.Services
@@ -7,6 +8,7 @@ namespace SkyPlus.API.Services
         Task<List<PagoResponse>> ObtenerTodosAsync();
         Task<PagoResponse?> ObtenerPorIdAsync(int id);
         Task<PagoResponse?> CrearAsync(CrearPagoRequest request);
+        Task<PagoResponse?> CrearAdicionalAsync(CrearPagoRequest request);
         Task<bool> AnularAsync(int id);
     }
 }

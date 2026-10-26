@@ -1,3 +1,4 @@
+
 using System;
 
 namespace SkyPlus.API.DTOs
@@ -12,5 +13,7 @@ namespace SkyPlus.API.DTOs
         public string MetodoPago { get; set; } = string.Empty;
         public DateTime FechaPago { get; set; }
         public string EstadoPago { get; set; } = string.Empty;
+
+        public string TipoPago { get; set; } = string.Empty;
     }
 }

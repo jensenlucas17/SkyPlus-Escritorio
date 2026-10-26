@@ -92,6 +92,61 @@ namespace SkyPlus.Infrastructure.Migrations
                     b.ToTable("asiento", (string)null);
                 });
 
+            modelBuilder.Entity("SkyPlus.Domain.Entities.CargoAdicional", b =>
+                {
+                    b.Property<int>("IdCargoAdicional")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_cargo_adicional");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IdCargoAdicional"));
+
+                    b.Property<string>("Descripcion")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("varchar(500)")
+                        .HasColumnName("descripcion");
+
+                    b.Property<string>("Estado")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasDefaultValue("Pendiente")
+                        .HasColumnName("estado");
+
+                    b.Property<DateTime>("FechaCreacion")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("fecha_creacion");
+
+                    b.Property<int?>("IdEquipajeReserva")
+                        .HasColumnType("int")
+                        .HasColumnName("id_equipaje_reserva");
+
+                    b.Property<int>("IdReserva")
+                        .HasColumnType("int")
+                        .HasColumnName("id_reserva");
+
+                    b.Property<decimal>("Monto")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)")
+                        .HasColumnName("monto");
+
+                    b.Property<string>("TipoCargo")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("tipo_cargo");
+
+                    b.HasKey("IdCargoAdicional");
+
+                    b.HasIndex("IdEquipajeReserva");
+
+                    b.HasIndex("IdReserva");
+
+                    b.ToTable("cargo_adicional", (string)null);
+                });
+
             modelBuilder.Entity("SkyPlus.Domain.Entities.CheckIn", b =>
                 {
                     b.Property<int>("IdCheckin")
@@ -158,10 +213,14 @@ namespace SkyPlus.Infrastructure.Migrations
                     b.Property<string>("Estado")
                         .IsRequired()
                         .ValueGeneratedOnAdd()
-                        .HasMaxLength(10)
-                        .HasColumnType("varchar(10)")
-                        .HasDefaultValue("Activo")
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasDefaultValue("PendientePago")
                         .HasColumnName("estado");
+
+                    b.Property<DateTime>("FechaContratacion")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("fecha_contratacion");
 
                     b.Property<int>("IdReserva")
                         .HasColumnType("int")
@@ -171,7 +230,12 @@ namespace SkyPlus.Infrastructure.Migrations
                         .HasColumnType("int")
                         .HasColumnName("id_tipo_equipaje");
 
-                    b.Property<decimal>("PesoKg")
+                    b.Property<decimal>("LimiteKgContratado")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)")
+                        .HasColumnName("limite_kg_contratado");
+
+                    b.Property<decimal?>("PesoKg")
                         .HasPrecision(10, 2)
                         .HasColumnType("decimal(10,2)")
                         .HasColumnName("peso_kg");
@@ -269,14 +333,63 @@ namespace SkyPlus.Infrastructure.Migrations
                         .HasColumnType("decimal(10,2)")
                         .HasColumnName("monto");
 
+                    b.Property<string>("TipoPago")
+                        .IsRequired()
+                        .ValueGeneratedOnAdd()
+                        .HasMaxLength(20)
+                        .HasColumnType("varchar(20)")
+                        .HasDefaultValue("Inicial")
+                        .HasColumnName("tipo_pago");
+
                     b.HasKey("IdPago");
 
-                    b.HasIndex("IdReserva")
-                        .IsUnique();
+                    b.HasIndex("IdReserva");
 
                     b.HasIndex("IdUsuarioAgente");
 
+                    b.HasIndex("IdReserva", "TipoPago")
+                        .IsUnique()
+                        .HasFilter("tipo_pago = 'Inicial'");
+
                     b.ToTable("pago", (string)null);
+                });
+
+            modelBuilder.Entity("SkyPlus.Domain.Entities.PagoDetalle", b =>
+                {
+                    b.Property<int>("IdPagoDetalle")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("int")
+                        .HasColumnName("id_pago_detalle");
+
+                    MySqlPropertyBuilderExtensions.UseMySqlIdentityColumn(b.Property<int>("IdPagoDetalle"));
+
+                    b.Property<string>("Concepto")
+                        .IsRequired()
+                        .HasMaxLength(30)
+                        .HasColumnType("varchar(30)")
+                        .HasColumnName("concepto");
+
+                    b.Property<int?>("IdCargoAdicional")
+                        .HasColumnType("int")
+                        .HasColumnName("id_cargo_adicional");
+
+                    b.Property<int>("IdPago")
+                        .HasColumnType("int")
+                        .HasColumnName("id_pago");
+
+                    b.Property<decimal>("Monto")
+                        .HasPrecision(10, 2)
+                        .HasColumnType("decimal(10,2)")
+                        .HasColumnName("monto");
+
+                    b.HasKey("IdPagoDetalle");
+
+                    b.HasIndex("IdCargoAdicional")
+                        .IsUnique();
+
+                    b.HasIndex("IdPago");
+
+                    b.ToTable("pago_detalle", (string)null);
                 });
 
             modelBuilder.Entity("SkyPlus.Domain.Entities.Pasajero", b =>
@@ -655,6 +768,24 @@ namespace SkyPlus.Infrastructure.Migrations
                     b.Navigation("Vuelo");
                 });
 
+            modelBuilder.Entity("SkyPlus.Domain.Entities.CargoAdicional", b =>
+                {
+                    b.HasOne("SkyPlus.Domain.Entities.EquipajeReserva", "EquipajeReserva")
+                        .WithMany()
+                        .HasForeignKey("IdEquipajeReserva")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SkyPlus.Domain.Entities.Reserva", "Reserva")
+                        .WithMany()
+                        .HasForeignKey("IdReserva")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("EquipajeReserva");
+
+                    b.Navigation("Reserva");
+                });
+
             modelBuilder.Entity("SkyPlus.Domain.Entities.CheckIn", b =>
                 {
                     b.HasOne("SkyPlus.Domain.Entities.Reserva", "Reserva")
@@ -710,6 +841,24 @@ namespace SkyPlus.Infrastructure.Migrations
                     b.Navigation("Reserva");
 
                     b.Navigation("UsuarioAgente");
+                });
+
+            modelBuilder.Entity("SkyPlus.Domain.Entities.PagoDetalle", b =>
+                {
+                    b.HasOne("SkyPlus.Domain.Entities.CargoAdicional", "CargoAdicional")
+                        .WithMany()
+                        .HasForeignKey("IdCargoAdicional")
+                        .OnDelete(DeleteBehavior.Restrict);
+
+                    b.HasOne("SkyPlus.Domain.Entities.Pago", "Pago")
+                        .WithMany("Detalles")
+                        .HasForeignKey("IdPago")
+                        .OnDelete(DeleteBehavior.Restrict)
+                        .IsRequired();
+
+                    b.Navigation("CargoAdicional");
+
+                    b.Navigation("Pago");
                 });
 
             modelBuilder.Entity("SkyPlus.Domain.Entities.Reembolso", b =>
@@ -810,6 +959,11 @@ namespace SkyPlus.Infrastructure.Migrations
                     b.Navigation("LugarOrigen");
 
                     b.Navigation("UsuarioOperador");
+                });
+
+            modelBuilder.Entity("SkyPlus.Domain.Entities.Pago", b =>
+                {
+                    b.Navigation("Detalles");
                 });
 #pragma warning restore 612, 618
         }
