@@ -406,6 +406,10 @@ namespace SkyPlus.Infrastructure.Migrations
                         .HasColumnType("datetime(6)")
                         .HasColumnName("fecha_cancelacion");
 
+                    b.Property<DateTime?>("FechaExpiracion")
+                        .HasColumnType("datetime(6)")
+                        .HasColumnName("fecha_expiracion");
+
                     b.Property<DateTime>("FechaReserva")
                         .HasColumnType("datetime(6)")
                         .HasColumnName("fecha_reserva");

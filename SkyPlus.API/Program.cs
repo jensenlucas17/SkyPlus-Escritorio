@@ -21,6 +21,8 @@ builder.Services.AddScoped<IVueloService, VueloService>();
 builder.Services.AddScoped<IPasajeroService, PasajeroService>();
 builder.Services.AddScoped<IAsientoService, AsientoService>();
 builder.Services.AddScoped<IReservaService, ReservaService>();
+builder.Services.AddScoped<IPagoService, PagoService>();
+builder.Services.AddHostedService<ReservasExpirationService>();
 
 // Servicios
 builder.Services.AddControllers();

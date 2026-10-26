@@ -446,6 +446,9 @@ namespace SkyPlus.Infrastructure.Data
                 entity.HasIndex(e => e.CodigoReserva)
                     .IsUnique();
 
+                entity.Property(e => e.FechaExpiracion)
+                    .HasColumnName("fecha_expiracion");
+
                 // Pasajero → Reservas
                 entity.HasOne(e => e.Pasajero)
                     .WithMany()

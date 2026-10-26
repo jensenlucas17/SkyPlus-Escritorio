@@ -22,6 +22,8 @@
 
         public DateTime? FechaCancelacion { get; set; }
 
+        public DateTime? FechaExpiracion { get; set; }
+
         // Datos preparados para mostrar en el formulario
         public string Pasajero { get; set; } = string.Empty;
 
