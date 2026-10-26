@@ -1,6 +1,7 @@
 using Microsoft.EntityFrameworkCore;
 using SkyPlus.API.Services;
 using SkyPlus.Infrastructure.Data;
+using QuestPDF.Infrastructure;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -25,6 +26,8 @@ builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddHostedService<ReservasExpirationService>();
 builder.Services.AddScoped<IReembolsoService, ReembolsoService>();
 builder.Services.AddScoped<IEquipajeService, EquipajeService>();
+builder.Services.AddScoped<ICheckInService, CheckInService>();
+builder.Services.AddScoped<BoardingPassService>();
 
 // Servicios
 builder.Services.AddControllers();
@@ -32,6 +35,8 @@ builder.Services.AddControllers();
 // Swagger
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+QuestPDF.Settings.License = LicenseType.Community;
 
 var app = builder.Build();
 

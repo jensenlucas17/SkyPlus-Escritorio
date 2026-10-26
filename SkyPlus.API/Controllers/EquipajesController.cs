@@ -1,6 +1,7 @@
 ﻿
 using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
+using SkyPlus.API.Exceptions;
 using SkyPlus.API.Services;
 
 namespace SkyPlus.API.Controllers
@@ -67,5 +68,21 @@ namespace SkyPlus.API.Controllers
                 return BadRequest(new { mensaje = ex.Message });
             }
         }
+
+        [HttpPut("registrar-peso")]
+        public async Task<IActionResult> RegistrarPeso(
+            [FromBody] RegistrarPesoEquipajeRequest request)
+        {
+            try
+            {
+                var resultado = await _equipajeService.RegistrarPesoAsync(request);
+                return Ok(resultado);
+            }
+            catch (ValidacionNegocioException ex)
+            {
+                return BadRequest(new { mensaje = ex.Message });
+            }
+        }
+
     }
 }
