@@ -23,6 +23,7 @@ builder.Services.AddScoped<IAsientoService, AsientoService>();
 builder.Services.AddScoped<IReservaService, ReservaService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddHostedService<ReservasExpirationService>();
+builder.Services.AddScoped<IReembolsoService, ReembolsoService>();
 
 // Servicios
 builder.Services.AddControllers();
