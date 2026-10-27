@@ -67,6 +67,8 @@ namespace SkyPlus.Desktop
                 SesionUsuario.Email = datos.Email;
                 SesionUsuario.IdRol = datos.IdRol;
                 SesionUsuario.Rol = datos.Rol;
+                SesionUsuario.Token = datos.Token;
+                SesionUsuario.ExpiracionToken = datos.ExpiracionToken;
 
                 var dashboard = new frmDashboard();
                 dashboard.Show();

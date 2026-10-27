@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.Exceptions;
 using SkyPlus.API.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Administrador,Gerente")]
     public class ReportesController : ControllerBase
     {
         private readonly IReporteService _reporteService;

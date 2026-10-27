@@ -16,5 +16,21 @@
 
         public static bool EstaLogueado =>
             IdUsuario > 0;
+        public static string Token { get; set; } = string.Empty;
+
+        public static DateTime ExpiracionToken { get; set; }
+
+        public static void CerrarSesion()
+        {
+            IdUsuario = 0;
+            Nombre = string.Empty;
+            Apellido = string.Empty;
+            Email = string.Empty;
+            IdRol = 0;
+            Rol = string.Empty;
+            Token = string.Empty;
+            ExpiracionToken = DateTime.MinValue;
+        }
+
     }
 }

@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [AllowAnonymous]
     public class AuthController : ControllerBase
     {
         private readonly IAuthService _authService;

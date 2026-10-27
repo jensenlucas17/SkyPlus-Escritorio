@@ -38,7 +38,8 @@ namespace SkyPlus.API.Services
             .Include(r => r.Vuelo).ThenInclude(v => v!.LugarDestino)
             .Include(r => r.Asiento);
 
-        public async Task<ReservaResponse?> CrearAsync(CrearReservaRequest request)
+        public async Task<ReservaResponse?> CrearAsync(
+            CrearReservaRequest request,int idUsuarioAutenticado)
         {
             // Bloqueo serializable para evitar que dos solicitudes ocupen el mismo asiento.
             await using var tx = await _context.Database.BeginTransactionAsync(IsolationLevel.Serializable);
@@ -69,19 +70,29 @@ namespace SkyPlus.API.Services
                  (r.EstadoReserva == "PendientePago" && r.FechaExpiracion > ahora)));
             if (ocupada) throw new ValidacionNegocioException("El asiento ya tiene una reserva activa.");
 
-            var agente = await _context.Usuarios.Include(u => u.Rol)
-                .FirstOrDefaultAsync(u => u.IdUsuario == request.IdUsuarioAgente);
-            if (agente == null) throw new ValidacionNegocioException("El agente no existe.");
-            if (agente.EstadoCuenta != "Activo") throw new ValidacionNegocioException("El agente está inactivo.");
+            var agente = await _context.Usuarios
+                .Include(u => u.Rol)
+                .FirstOrDefaultAsync(u =>
+                    u.IdUsuario == idUsuarioAutenticado);
+
+            if (agente == null)
+                throw new ValidacionNegocioException(
+                    "El usuario autenticado no existe.");
+
+            if (agente.EstadoCuenta != "Activo")
+                throw new ValidacionNegocioException(
+                    "El usuario autenticado está inactivo.");
+
             if (agente.Rol?.NombreRol != "Agente de Reservas")
-                throw new ValidacionNegocioException("Solo un Agente de Reservas puede crear reservas.");
+                throw new ValidacionNegocioException(
+                    "Solo un Agente de Reservas puede crear reservas.");
 
             var reserva = new Reserva
             {
                 IdPasajero = request.IdPasajero,
                 IdVuelo = request.IdVuelo,
                 IdAsiento = request.IdAsiento,
-                IdUsuarioAgente = request.IdUsuarioAgente,
+                IdUsuarioAgente = agente.IdUsuario,
                 CodigoReserva = await GenerarCodigoReservaAsync(),
                 TarifaBase = vuelo.Tarifa,
                 EstadoReserva = "PendientePago",

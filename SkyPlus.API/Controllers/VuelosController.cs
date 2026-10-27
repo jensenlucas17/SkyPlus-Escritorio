@@ -1,13 +1,14 @@
-﻿
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
 using SkyPlus.API.Exceptions;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class VuelosController : ControllerBase
     {
         private readonly IVueloService _vueloService;
@@ -18,6 +19,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Gerente,Agente de Reservas,Agente de Check-in")]
         public async Task<IActionResult> ObtenerTodos()
         {
             var vuelos = await _vueloService.ObtenerTodosAsync();
@@ -25,6 +27,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Administrador,Gerente,Agente de Reservas,Agente de Check-in")]
         public async Task<IActionResult> ObtenerPorId(int id)
         {
             var vuelo = await _vueloService.ObtenerPorIdAsync(id);
@@ -41,6 +44,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administrador,Gerente")]
         public async Task<IActionResult> Crear(
             [FromBody] CrearVueloRequest request)
         {
@@ -87,6 +91,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrador,Gerente")]
         public async Task<IActionResult> Actualizar(
             int id,
             [FromBody] ActualizarVueloRequest request)
@@ -131,6 +136,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Administrador,Gerente")]
         public async Task<IActionResult> Eliminar(int id)
         {
             try

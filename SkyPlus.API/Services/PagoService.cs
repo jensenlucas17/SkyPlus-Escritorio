@@ -1,4 +1,3 @@
-
 using Microsoft.EntityFrameworkCore;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Exceptions;
@@ -47,10 +46,6 @@ namespace SkyPlus.API.Services
                 throw new ValidacionNegocioException(
                     "Seleccioná una reserva válida.");
 
-            if (request.IdUsuarioAgente <= 0)
-                throw new ValidacionNegocioException(
-                    "El agente es obligatorio.");
-
             if (string.IsNullOrWhiteSpace(request.MetodoPago))
                 throw new ValidacionNegocioException(
                     "El método de pago es obligatorio.");
@@ -79,7 +74,8 @@ namespace SkyPlus.API.Services
 
         // PAGO INICIAL: PASAJE + EQUIPAJE INICIAL
         public async Task<PagoResponse?> CrearAsync(
-            CrearPagoRequest request)
+            CrearPagoRequest request,
+            int idUsuarioAutenticado)
         {
             ValidarRequest(request);
 
@@ -118,7 +114,7 @@ namespace SkyPlus.API.Services
                 }
 
                 var agente = await ValidarAgenteAsync(
-                    request.IdUsuarioAgente);
+                    idUsuarioAutenticado);
 
                 var cargos = await _context.CargosAdicionales
                     .Where(c =>
@@ -179,7 +175,8 @@ namespace SkyPlus.API.Services
 
         // PAGO ADICIONAL: EQUIPAJE Y OTROS CARGOS
         public async Task<PagoResponse?> CrearAdicionalAsync(
-            CrearPagoRequest request)
+            CrearPagoRequest request,
+            int idUsuarioAutenticado)
         {
             ValidarRequest(request);
 
@@ -202,7 +199,7 @@ namespace SkyPlus.API.Services
                         "en reservas confirmadas.");
 
                 var agente = await ValidarAgenteAsync(
-                    request.IdUsuarioAgente);
+                    idUsuarioAutenticado);
 
                 var cargos = await _context.CargosAdicionales
                     .Where(c =>

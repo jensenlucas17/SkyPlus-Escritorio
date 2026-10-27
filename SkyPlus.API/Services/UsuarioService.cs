@@ -1,6 +1,4 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SkyPlus.API.DTOs;
 using SkyPlus.Infrastructure.Data;
 
@@ -9,10 +7,14 @@ namespace SkyPlus.API.Services
     public class UsuarioService : IUsuarioService
     {
         private readonly SkyPlusDbContext _context;
+        private readonly PasswordService _passwordService;
 
-        public UsuarioService(SkyPlusDbContext context)
+        public UsuarioService(
+            SkyPlusDbContext context,
+            PasswordService passwordService)
         {
             _context = context;
+            _passwordService = passwordService;
         }
 
         public async Task<List<UsuarioResponse>> ObtenerTodosAsync()
@@ -89,6 +91,12 @@ namespace SkyPlus.API.Services
              if (dniExiste)
                 return null;
 
+            if (string.IsNullOrWhiteSpace(request.Password) ||
+                request.Password.Length < 12)
+            {
+                return null;
+            }
+
             var usuario = new Domain.Entities.Usuario
             {
                 IdRol = request.IdRol,
@@ -96,7 +104,7 @@ namespace SkyPlus.API.Services
                 Apellido = request.Apellido,
                 Dni = request.Dni,
                 EmailCorporativo = request.EmailCorporativo,
-                ContrasenaHash = GenerarHash(request.Password),
+                ContrasenaHash = _passwordService.GenerarHash(request.Password),
                 EstadoCuenta = "Activo",
                 UltimaSesion = null
             };
@@ -187,15 +195,6 @@ namespace SkyPlus.API.Services
                 System.Text.RegularExpressions.Regex.IsMatch(
                     valor,
                     @"^\p{L}+(?:[ '\-]\p{L}+)*$");
-        }
-        private static string GenerarHash(string password)
-        {
-            using SHA256 sha256 = SHA256.Create();
-
-            byte[] bytes = Encoding.UTF8.GetBytes(password);
-            byte[] hash = sha256.ComputeHash(bytes);
-
-            return Convert.ToHexString(hash).ToLower();
         }
     }
 }

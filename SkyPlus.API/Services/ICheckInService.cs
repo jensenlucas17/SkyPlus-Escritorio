@@ -13,8 +13,13 @@ namespace SkyPlus.API.Services
             int idReserva);
 
         Task<CheckInResponse> CrearAsync(
-            CrearCheckInRequest request);
+            CrearCheckInRequest request,
+            int idUsuarioAutenticado);
+
         Task<ValidarQrResponse> ValidarQrAsync(string codigoQr);
-        Task<ValidarQrResponse> RegistrarEmbarqueAsync(RegistrarEmbarqueRequest request);
+        
+        Task<ValidarQrResponse> RegistrarEmbarqueAsync(
+            RegistrarEmbarqueRequest request,
+            int idUsuarioAutenticado);
     }
 }

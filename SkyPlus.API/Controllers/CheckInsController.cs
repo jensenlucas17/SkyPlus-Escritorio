@@ -1,13 +1,15 @@
-﻿
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Exceptions;
 using SkyPlus.API.Services;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Agente de Check-in")]
     public class CheckInsController : ControllerBase
     {
         private readonly ICheckInService _checkInService;
@@ -53,13 +55,27 @@ namespace SkyPlus.API.Controllers
             }
         }
 
+
         [HttpPost]
         public async Task<IActionResult> Crear(
             [FromBody] CrearCheckInRequest request)
         {
+            var idUsuarioClaim = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(idUsuarioClaim, out int idUsuario)
+                || idUsuario <= 0)
+            {
+                return Unauthorized(new
+                {
+                    mensaje = "No se pudo identificar al usuario autenticado."
+                });
+            }
+
             try
             {
-                var checkIn = await _checkInService.CrearAsync(request);
+                var checkIn = await _checkInService.CrearAsync(
+                    request, idUsuario);
 
                 return CreatedAtAction(
                     nameof(ObtenerPorId),
@@ -126,10 +142,22 @@ namespace SkyPlus.API.Controllers
         public async Task<IActionResult> RegistrarEmbarque(
             [FromBody] RegistrarEmbarqueRequest request)
         {
+            var idUsuarioClaim = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(idUsuarioClaim, out int idUsuario)
+                || idUsuario <= 0)
+            {
+                return Unauthorized(new
+                {
+                    mensaje = "No se pudo identificar al usuario autenticado."
+                });
+            }
+
             try
             {
                 var resultado = await _checkInService
-                    .RegistrarEmbarqueAsync(request);
+                    .RegistrarEmbarqueAsync(request, idUsuario);
 
                 return Ok(resultado);
             }
@@ -138,5 +166,6 @@ namespace SkyPlus.API.Controllers
                 return BadRequest(new { mensaje = ex.Message });
             }
         }
+
     }
 }

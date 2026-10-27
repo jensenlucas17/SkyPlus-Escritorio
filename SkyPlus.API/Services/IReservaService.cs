@@ -13,7 +13,8 @@ namespace SkyPlus.API.Services
             int idPasajero);
 
         Task<ReservaResponse?> CrearAsync(
-            CrearReservaRequest request);
+            CrearReservaRequest request,
+            int idUsuarioAutenticado);
 
         Task<bool> CancelarAsync(
             int id);

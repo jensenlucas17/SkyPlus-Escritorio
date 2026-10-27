@@ -1,13 +1,15 @@
-
 using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Exceptions;
 using SkyPlus.API.Services;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Agente de Reservas")]
     public class PagosController : ControllerBase
     {
         private readonly IPagoService _pagoService;
@@ -36,9 +38,22 @@ namespace SkyPlus.API.Controllers
         public async Task<IActionResult> Crear(
             [FromBody] CrearPagoRequest request)
         {
+            var idUsuarioClaim = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(idUsuarioClaim, out int idUsuario)
+                || idUsuario <= 0)
+            {
+                return Unauthorized(new
+                {
+                    mensaje = "No se pudo identificar al usuario autenticado."
+                });
+            }
+
             try
             {
-                var pago = await _pagoService.CrearAsync(request);
+                var pago = await _pagoService.CrearAsync(
+                    request, idUsuario);
 
                 if (pago == null)
                     return BadRequest(new
@@ -62,10 +77,22 @@ namespace SkyPlus.API.Controllers
         public async Task<IActionResult> CrearAdicional(
             [FromBody] CrearPagoRequest request)
         {
+            var idUsuarioClaim = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(idUsuarioClaim, out int idUsuario)
+                || idUsuario <= 0)
+            {
+                return Unauthorized(new
+                {
+                    mensaje = "No se pudo identificar al usuario autenticado."
+                });
+            }
+
             try
             {
-                var pago = await _pagoService
-                    .CrearAdicionalAsync(request);
+                var pago = await _pagoService.CrearAdicionalAsync(
+                    request, idUsuario);
 
                 if (pago == null)
                     return BadRequest(new

@@ -1,13 +1,15 @@
-﻿
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Exceptions;
 using SkyPlus.API.Services;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Agente de Reservas")]
     public class ReembolsosController : ControllerBase
     {
         private readonly IReembolsoService _service;
@@ -39,13 +41,27 @@ namespace SkyPlus.API.Controllers
             return Ok(reembolso);
         }
 
+
         [HttpPost]
         public async Task<ActionResult<ReembolsoResponse>>
             Crear([FromBody] CrearReembolsoRequest request)
         {
+            var idUsuarioClaim = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(idUsuarioClaim, out int idUsuario)
+                || idUsuario <= 0)
+            {
+                return Unauthorized(new
+                {
+                    mensaje = "No se pudo identificar al usuario autenticado."
+                });
+            }
+
             try
             {
-                var reembolso = await _service.CrearAsync(request);
+                var reembolso = await _service.CrearAsync(
+                    request, idUsuario);
 
                 return CreatedAtAction(
                     nameof(ObtenerPorId),
@@ -60,5 +76,6 @@ namespace SkyPlus.API.Controllers
                 });
             }
         }
+
     }
 }

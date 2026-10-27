@@ -79,9 +79,24 @@ namespace SkyPlus.Desktop
                 DialogResult = DialogResult.OK;
                 Close();
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                MostrarError("No se pudo conectar con la API.");
+                if (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                {
+                    MostrarError("Tu sesión expiró o no es válida. Iniciá sesión nuevamente.");
+                }
+                else if (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                {
+                    MostrarError("No tenés permisos para realizar esta operación.");
+                }
+                else if (ex.StatusCode.HasValue)
+                {
+                    MostrarError(ex.Message);
+                }
+                else
+                {
+                    MostrarError("No se pudo conectar con la API: " + ex.Message);
+                }
             }
             catch (Exception ex)
             {

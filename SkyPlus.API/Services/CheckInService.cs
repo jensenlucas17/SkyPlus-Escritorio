@@ -198,15 +198,16 @@ namespace SkyPlus.API.Services
         }
 
         public async Task<CheckInResponse> CrearAsync(
-            CrearCheckInRequest request)
+            CrearCheckInRequest request,
+            int idUsuarioAutenticado)
         {
             if (request.IdReserva <= 0)
                 throw new ValidacionNegocioException(
                     "Seleccioná una reserva válida.");
 
-            if (request.IdUsuarioAgente <= 0)
+            if (idUsuarioAutenticado <= 0)
                 throw new ValidacionNegocioException(
-                    "El agente es obligatorio.");
+                    "El usuario autenticado no es válido.");
 
             int idCheckIn;
 
@@ -216,8 +217,7 @@ namespace SkyPlus.API.Services
                 var agente = await _context.Usuarios
                     .Include(u => u.Rol)
                     .FirstOrDefaultAsync(u =>
-                        u.IdUsuario == request.IdUsuarioAgente);
-
+                        u.IdUsuario == idUsuarioAutenticado);
                 if (agente == null ||
                     agente.EstadoCuenta != "Activo" ||
                     agente.Rol?.NombreRol != "Agente de Check-in")
@@ -391,15 +391,16 @@ namespace SkyPlus.API.Services
         }
 
         public async Task<ValidarQrResponse> RegistrarEmbarqueAsync(
-            RegistrarEmbarqueRequest request)
+                RegistrarEmbarqueRequest request,
+                int idUsuarioAutenticado)
         {
             if (request == null || string.IsNullOrWhiteSpace(request.CodigoQr))
                 throw new ValidacionNegocioException(
                     "El código QR es obligatorio.");
 
-            if (request.IdUsuarioAgente <= 0)
+            if (idUsuarioAutenticado <= 0)
                 throw new ValidacionNegocioException(
-                    "Seleccioná un Agente de Check-in válido.");
+                    "El usuario autenticado no es válido.");
 
             string codigoQr = request.CodigoQr.Trim();
 
@@ -410,7 +411,7 @@ namespace SkyPlus.API.Services
                 .AsNoTracking()
                 .Include(u => u.Rol)
                 .FirstOrDefaultAsync(u =>
-                    u.IdUsuario == request.IdUsuarioAgente);
+                    u.IdUsuario == idUsuarioAutenticado);
 
             if (agente == null ||
                 agente.EstadoCuenta != "Activo" ||

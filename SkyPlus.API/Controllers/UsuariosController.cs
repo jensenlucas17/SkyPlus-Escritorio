@@ -1,11 +1,14 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Administrador")]
     public class UsuariosController : ControllerBase
     {
         private readonly IUsuarioService _usuarioService;
@@ -58,7 +61,7 @@ namespace SkyPlus.API.Controllers
             {
                 return BadRequest(new
                 {
-                    mensaje = "El rol no existe o el email ya está registrado."
+                    mensaje = "No se pudo crear el usuario. Verificá el rol, nombre, apellido, DNI, email y contraseña (mínimo 12 caracteres)."
                 });
             }
 
@@ -83,6 +86,39 @@ namespace SkyPlus.API.Controllers
                 });
             }
 
+            var idUsuarioClaim = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(idUsuarioClaim, out int idAutenticado))
+            {
+                return Unauthorized(new
+                {
+                    mensaje = "No se pudo identificar al usuario autenticado."
+                });
+            }
+
+            if (id == idAutenticado)
+            {
+                var usuarioActual = await _usuarioService.ObtenerPorIdAsync(id);
+
+                if (usuarioActual == null)
+                {
+                    return NotFound(new
+                    {
+                        mensaje = "Usuario no encontrado."
+                    });
+                }
+
+                if (request.IdRol != usuarioActual.IdRol ||
+                    request.EstadoCuenta != usuarioActual.EstadoCuenta)
+                {
+                    return BadRequest(new
+                    {
+                        mensaje = "No podés modificar tu propio rol ni estado de cuenta."
+                    });
+                }
+            }
+
             var usuario = await _usuarioService.ActualizarAsync(id, request);
 
             if (usuario == null)
@@ -96,9 +132,29 @@ namespace SkyPlus.API.Controllers
             return Ok(usuario);
         }
 
-        [HttpDelete("{id}")]
+
+        [HttpDelete("{id:int}")]
         public async Task<IActionResult> Eliminar(int id)
         {
+            var idUsuarioClaim = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(idUsuarioClaim, out int idAutenticado))
+            {
+                return Unauthorized(new
+                {
+                    mensaje = "No se pudo identificar al usuario autenticado."
+                });
+            }
+
+            if (id == idAutenticado)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "No podés desactivar tu propia cuenta."
+                });
+            }
+
             var resultado = await _usuarioService.EliminarAsync(id);
 
             if (!resultado)
@@ -114,5 +170,6 @@ namespace SkyPlus.API.Controllers
                 mensaje = "Usuario desactivado correctamente."
             });
         }
+
     }
 }

@@ -1,13 +1,14 @@
-﻿
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Exceptions;
 using SkyPlus.API.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Agente de Reservas,Agente de Check-in")]
     public class EquipajesController : ControllerBase
     {
         private readonly IEquipajeService _equipajeService;

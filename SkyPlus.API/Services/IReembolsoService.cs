@@ -1,5 +1,4 @@
-﻿
-using SkyPlus.API.DTOs;
+﻿using SkyPlus.API.DTOs;
 
 namespace SkyPlus.API.Services
 {
@@ -7,6 +6,8 @@ namespace SkyPlus.API.Services
     {
         Task<List<ReembolsoResponse>> ObtenerTodosAsync();
         Task<ReembolsoResponse?> ObtenerPorIdAsync(int id);
-        Task<ReembolsoResponse> CrearAsync(CrearReembolsoRequest request);
+        Task<ReembolsoResponse> CrearAsync(
+            CrearReembolsoRequest request,
+            int idUsuarioAutenticado);
     }
 }

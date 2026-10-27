@@ -1,5 +1,4 @@
-﻿
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Exceptions;
 using SkyPlus.Domain.Entities;
@@ -64,15 +63,16 @@ namespace SkyPlus.API.Services
         }
 
         public async Task<ReembolsoResponse> CrearAsync(
-            CrearReembolsoRequest request)
+            CrearReembolsoRequest request,
+            int idUsuarioAutenticado)
         {
             if (request.IdPago <= 0)
                 throw new ValidacionNegocioException(
                     "Seleccioná un pago válido.");
 
-            if (request.IdUsuarioAgente <= 0)
+            if (idUsuarioAutenticado <= 0)
                 throw new ValidacionNegocioException(
-                    "El agente es obligatorio.");
+                    "El usuario autenticado no es válido.");
 
             if (string.IsNullOrWhiteSpace(request.Motivo))
                 throw new ValidacionNegocioException(
@@ -132,7 +132,7 @@ namespace SkyPlus.API.Services
                 var agente = await _context.Usuarios
                     .Include(u => u.Rol)
                     .FirstOrDefaultAsync(u =>
-                        u.IdUsuario == request.IdUsuarioAgente);
+                        u.IdUsuario == idUsuarioAutenticado);
 
                 if (agente == null)
                     throw new ValidacionNegocioException(
