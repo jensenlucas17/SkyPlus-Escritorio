@@ -1,5 +1,4 @@
-﻿
-namespace SkyPlus.Domain.Entities
+﻿namespace SkyPlus.Domain.Entities
 {
     public class EquipajeReserva
     {

@@ -28,6 +28,7 @@ builder.Services.AddScoped<IReembolsoService, ReembolsoService>();
 builder.Services.AddScoped<IEquipajeService, EquipajeService>();
 builder.Services.AddScoped<ICheckInService, CheckInService>();
 builder.Services.AddScoped<BoardingPassService>();
+builder.Services.AddScoped<IReporteService, ReporteService>();
 
 // Servicios
 builder.Services.AddControllers();
