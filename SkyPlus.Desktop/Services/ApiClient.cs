@@ -67,6 +67,15 @@ namespace SkyPlus.Desktop.Services
             using var response = await _httpClient.PatchAsync(endpoint, null);
             await VerificarRespuestaAsync(response);
         }
+        public async Task<byte[]> GetBytesAsync(string endpoint)
+        {
+            ConfigurarAutorizacion();
+            var response = await _httpClient.GetAsync(endpoint);
+
+            await VerificarRespuestaAsync(response);
+
+            return await response.Content.ReadAsByteArrayAsync();
+        }
 
         private static async Task VerificarRespuestaAsync(
     HttpResponseMessage response)

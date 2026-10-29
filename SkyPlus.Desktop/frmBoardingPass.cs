@@ -1,101 +1,160 @@
-﻿// SkyPlus.Desktop/frmBoardingPass.cs
-// Datos locales de demostracion - sin conexion a API. Funcionalidad completa: 2da entrega.
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Forms;
+﻿using System.Diagnostics;
 using SkyPlus.Desktop.Estilos;
+using SkyPlus.Desktop.Models;
+using SkyPlus.Desktop.Services;
+using SkyPlus.Desktop.Utilidades;
 
 namespace SkyPlus.Desktop
 {
     public partial class frmBoardingPass : Form
     {
-        private class BoardingPassDemo
-        {
-            public string CodigoReserva { get; set; } = string.Empty;
-            public string Pasajero { get; set; } = string.Empty;
-            public string Vuelo { get; set; } = string.Empty;
-            public string Asiento { get; set; } = string.Empty;
-            public string Puerta { get; set; } = string.Empty;
-            public string HoraEmbarque { get; set; } = string.Empty;
-        }
-
-        private readonly List<BoardingPassDemo> _boardingPasses = new();
+        private readonly CheckInClient _checkInClient = new CheckInClient();
+        private List<CheckInResponse> _checkins = new List<CheckInResponse>();
 
         public frmBoardingPass()
         {
             InitializeComponent();
         }
 
-        private void frmBoardingPass_Load(object sender, EventArgs e)
+        private async void frmBoardingPass_Load(object sender, EventArgs e)
         {
-            CargarDatosDemo();
             ConfigurarTabla();
-            AplicarFiltros();
 
             AppEstilos.EstilizarGrid(dgvBoardingPass);
             AppEstilos.EstilizarBotonPrimario(btnVerImprimir);
+            AppEstilos.EstilizarBotonPrimario(btnEmbarcar);
             AppEstilos.EstilizarBotonSecundario(btnBuscar);
             AppEstilos.EstilizarBotonSecundario(btnRefrescar);
-        }
 
-        private void CargarDatosDemo()
-        {
-            _boardingPasses.Clear();
-
-            _boardingPasses.Add(new BoardingPassDemo { CodigoReserva = "SP7M2Q", Pasajero = "Fernández, María", Vuelo = "SP205", Asiento = "08C", Puerta = "B12", HoraEmbarque = "07:45" });
-            _boardingPasses.Add(new BoardingPassDemo { CodigoReserva = "SP4K8D", Pasajero = "Gómez, Juan", Vuelo = "SP101", Asiento = "12A", Puerta = "A03", HoraEmbarque = "09:20" });
+            await CargarCheckins();
         }
 
         private void ConfigurarTabla()
         {
             dgvBoardingPass.AutoGenerateColumns = false;
+            dgvBoardingPass.ReadOnly = true;
+            dgvBoardingPass.AllowUserToAddRows = false;
+            dgvBoardingPass.MultiSelect = false;
+            dgvBoardingPass.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvBoardingPass.Columns.Clear();
 
-            dgvBoardingPass.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(BoardingPassDemo.CodigoReserva), HeaderText = "Reserva", Width = 90 });
-            dgvBoardingPass.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(BoardingPassDemo.Pasajero), HeaderText = "Pasajero", Width = 180 });
-            dgvBoardingPass.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(BoardingPassDemo.Vuelo), HeaderText = "Vuelo", Width = 80 });
-            dgvBoardingPass.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(BoardingPassDemo.Asiento), HeaderText = "Asiento", Width = 80 });
-            dgvBoardingPass.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(BoardingPassDemo.Puerta), HeaderText = "Puerta", Width = 70 });
-            dgvBoardingPass.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(BoardingPassDemo.HoraEmbarque), HeaderText = "Hora embarque", Width = 120 });
+            dgvBoardingPass.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckInResponse.CodigoReserva), HeaderText = "Reserva", Width = 90 });
+            dgvBoardingPass.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckInResponse.EstadoCheckin), HeaderText = "Estado", Width = 100 });
+            dgvBoardingPass.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckInResponse.FechaLocal), HeaderText = "Fecha check-in", Width = 130, DefaultCellStyle = new DataGridViewCellStyle { Format = "dd/MM/yyyy HH:mm" } });
+            dgvBoardingPass.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckInResponse.BoardingPass), HeaderText = "Detalle", Width = 380 });
+        }
+
+        private async Task CargarCheckins()
+        {
+            try
+            {
+                _checkins = await _checkInClient.ObtenerTodosAsync() ?? new List<CheckInResponse>();
+                AplicarFiltros();
+            }
+            catch (HttpRequestException ex)
+            {
+                MensajesApi.MostrarError(ex);
+            }
         }
 
         private void AplicarFiltros()
         {
-            var texto = txtBuscar.Text.Trim().ToLower();
+            var texto = txtBuscar.Text.Trim();
 
-            var resultado = _boardingPasses.Where(b =>
+            var resultado = _checkins.Where(c =>
                 string.IsNullOrEmpty(texto) ||
-                b.CodigoReserva.ToLower().Contains(texto) ||
-                b.Pasajero.ToLower().Contains(texto) ||
-                b.Vuelo.ToLower().Contains(texto)
+                c.CodigoReserva.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
+                c.BoardingPass.Contains(texto, StringComparison.OrdinalIgnoreCase)
             ).ToList();
 
             dgvBoardingPass.DataSource = null;
             dgvBoardingPass.DataSource = resultado;
         }
 
-        private void btnBuscar_Click(object sender, EventArgs e) => AplicarFiltros();
-
-        private void btnRefrescar_Click(object sender, EventArgs e)
+        private CheckInResponse? ObtenerSeleccionado()
         {
-            txtBuscar.Clear();
-            CargarDatosDemo();
+            if (dgvBoardingPass.CurrentRow?.DataBoundItem is CheckInResponse checkin)
+                return checkin;
+
+            MessageBox.Show("Seleccioná un check-in de la lista.", "Boarding Pass",
+                MessageBoxButtons.OK, MessageBoxIcon.Information);
+            return null;
+        }
+
+        private void btnBuscar_Click(object sender, EventArgs e)
+        {
             AplicarFiltros();
         }
 
-        private void btnVerImprimir_Click(object sender, EventArgs e)
+        private async void btnRefrescar_Click(object sender, EventArgs e)
         {
-            if (dgvBoardingPass.CurrentRow == null)
+            txtBuscar.Clear();
+            await CargarCheckins();
+        }
+
+        private async void btnVerImprimir_Click(object sender, EventArgs e)
+        {
+            var checkin = ObtenerSeleccionado();
+            if (checkin == null) return;
+
+            try
             {
-                MessageBox.Show("Seleccione un boarding pass.", "Boarding Pass", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                btnVerImprimir.Enabled = false;
+
+                var pdf = await _checkInClient.DescargarBoardingPassAsync(checkin.IdCheckin);
+
+                var ruta = Path.Combine(Path.GetTempPath(),
+                    $"SkyPlus_BoardingPass_{checkin.CodigoReserva}_{DateTime.Now:HHmmss}.pdf");
+
+                await File.WriteAllBytesAsync(ruta, pdf);
+
+                Process.Start(new ProcessStartInfo(ruta) { UseShellExecute = true });
+            }
+            catch (HttpRequestException ex)
+            {
+                MensajesApi.MostrarError(ex);
+            }
+            catch (IOException ex)
+            {
+                MessageBox.Show("No se pudo guardar el PDF: " + ex.Message, "Boarding Pass",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            finally
+            {
+                btnVerImprimir.Enabled = true;
+            }
+        }
+
+        private async void btnEmbarcar_Click(object sender, EventArgs e)
+        {
+            var checkin = ObtenerSeleccionado();
+            if (checkin == null) return;
+
+            if (checkin.EstadoCheckin == "Embarcado")
+            {
+                MessageBox.Show("El pasajero ya embarcó.", "Embarque", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            MessageBox.Show(
-                "La generación e impresión del boarding pass estará disponible en una próxima versión.",
-                "Boarding Pass", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            var confirmacion = MessageBox.Show(
+                $"¿Registrar el embarque de la reserva {checkin.CodigoReserva}?",
+                "Registrar embarque", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            if (confirmacion != DialogResult.Yes) return;
+
+            try
+            {
+                var resultado = await _checkInClient.RegistrarEmbarqueAsync(checkin.CodigoQr);
+
+                MessageBox.Show(resultado?.Mensaje ?? "Embarque registrado.", "Embarque",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                await CargarCheckins();
+            }
+            catch (HttpRequestException ex)
+            {
+                MensajesApi.MostrarError(ex);
+            }
         }
     }
 }

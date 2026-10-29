@@ -35,6 +35,7 @@
             pnlBotones = new Panel();
             btnRealizarCheckin = new Button();
             dgvCheckin = new DataGridView();
+            lblEstado = new Label();
             pnlFiltros.SuspendLayout();
             pnlBotones.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)dgvCheckin).BeginInit();
@@ -42,13 +43,14 @@
             // 
             // pnlFiltros
             // 
+            pnlFiltros.Controls.Add(lblEstado);
             pnlFiltros.Controls.Add(btnBuscar);
             pnlFiltros.Controls.Add(btnRefrescar);
             pnlFiltros.Controls.Add(txtBuscar);
             pnlFiltros.Dock = DockStyle.Top;
             pnlFiltros.Location = new Point(0, 0);
             pnlFiltros.Name = "pnlFiltros";
-            pnlFiltros.Size = new Size(800, 100);
+            pnlFiltros.Size = new Size(800, 129);
             pnlFiltros.TabIndex = 0;
             // 
             // btnBuscar
@@ -101,11 +103,20 @@
             // 
             dgvCheckin.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
             dgvCheckin.Dock = DockStyle.Fill;
-            dgvCheckin.Location = new Point(0, 100);
+            dgvCheckin.Location = new Point(0, 129);
             dgvCheckin.Name = "dgvCheckin";
             dgvCheckin.ReadOnly = true;
-            dgvCheckin.Size = new Size(800, 250);
+            dgvCheckin.Size = new Size(800, 221);
             dgvCheckin.TabIndex = 8;
+            // 
+            // lblEstado
+            // 
+            lblEstado.AutoSize = true;
+            lblEstado.Location = new Point(182, 99);
+            lblEstado.Name = "lblEstado";
+            lblEstado.Size = new Size(38, 15);
+            lblEstado.TabIndex = 10;
+            lblEstado.Text = "label1";
             // 
             // frmCheckin
             // 
@@ -134,5 +145,6 @@
         private Panel pnlBotones;
         private Button btnRealizarCheckin;
         private DataGridView dgvCheckin;
+        private Label lblEstado;
     }
 }

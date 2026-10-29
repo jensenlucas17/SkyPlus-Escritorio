@@ -1,102 +1,153 @@
-﻿// SkyPlus.Desktop/frmCheckin.cs
-// TODO: reemplazar datos demo por CheckinClient real cuando Lucas lo arme.
-
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Windows.Forms;
-using SkyPlus.Desktop.Estilos;
+﻿using SkyPlus.Desktop.Estilos;
+using SkyPlus.Desktop.Models;
+using SkyPlus.Desktop.Services;
+using SkyPlus.Desktop.Utilidades;
 
 namespace SkyPlus.Desktop
 {
     public partial class frmCheckin : Form
     {
-        private class CheckinDemo
-        {
-            public string CodigoReserva { get; set; } = string.Empty;
-            public string Pasajero { get; set; } = string.Empty;
-            public string Vuelo { get; set; } = string.Empty;
-            public string Asiento { get; set; } = string.Empty;
-            public string Estado { get; set; } = string.Empty;
-            public string FechaCheckin { get; set; } = string.Empty;
-        }
-
-        private readonly List<CheckinDemo> _checkins = new();
+        private readonly CheckInClient _checkInClient = new CheckInClient();
+        private readonly ReservaClient _reservaClient = new ReservaClient();
+        private ReservaResponse? _reservaActual;
 
         public frmCheckin()
         {
             InitializeComponent();
         }
 
-        private void frmCheckin_Load(object sender, EventArgs e)
+        private async void frmCheckin_Load(object sender, EventArgs e)
         {
-            CargarDatosDemo();
             ConfigurarTabla();
-            AplicarFiltros();
 
             AppEstilos.EstilizarGrid(dgvCheckin);
             AppEstilos.EstilizarBotonPrimario(btnRealizarCheckin);
             AppEstilos.EstilizarBotonSecundario(btnBuscar);
             AppEstilos.EstilizarBotonSecundario(btnRefrescar);
-        }
 
-        private void CargarDatosDemo()
-        {
-            _checkins.Clear();
-
-            _checkins.Add(new CheckinDemo { CodigoReserva = "SP4K8D", Pasajero = "Gómez, Juan", Vuelo = "SP101", Asiento = "12A", Estado = "Pendiente", FechaCheckin = "-" });
-            _checkins.Add(new CheckinDemo { CodigoReserva = "SP7M2Q", Pasajero = "Fernández, María", Vuelo = "SP205", Asiento = "08C", Estado = "Realizado", FechaCheckin = "22/09/2026 07:15" });
-            _checkins.Add(new CheckinDemo { CodigoReserva = "SP9L5A", Pasajero = "Rodríguez, Carlos", Vuelo = "SP310", Asiento = "21F", Estado = "Pendiente", FechaCheckin = "-" });
+            LimpiarEstado();
+            await CargarCheckins();
         }
 
         private void ConfigurarTabla()
         {
             dgvCheckin.AutoGenerateColumns = false;
+            dgvCheckin.ReadOnly = true;
+            dgvCheckin.AllowUserToAddRows = false;
+            dgvCheckin.MultiSelect = false;
+            dgvCheckin.SelectionMode = DataGridViewSelectionMode.FullRowSelect;
             dgvCheckin.Columns.Clear();
 
-            dgvCheckin.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckinDemo.CodigoReserva), HeaderText = "Reserva", Width = 90 });
-            dgvCheckin.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckinDemo.Pasajero), HeaderText = "Pasajero", Width = 180 });
-            dgvCheckin.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckinDemo.Vuelo), HeaderText = "Vuelo", Width = 80 });
-            dgvCheckin.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckinDemo.Asiento), HeaderText = "Asiento", Width = 80 });
-            dgvCheckin.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckinDemo.Estado), HeaderText = "Estado", Width = 100 });
-            dgvCheckin.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckinDemo.FechaCheckin), HeaderText = "Fecha check-in", Width = 140 });
+            dgvCheckin.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckInResponse.CodigoReserva), HeaderText = "Reserva", Width = 90 });
+            dgvCheckin.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckInResponse.EstadoCheckin), HeaderText = "Estado", Width = 100 });
+            dgvCheckin.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckInResponse.FechaLocal), HeaderText = "Fecha check-in", Width = 130, DefaultCellStyle = new DataGridViewCellStyle { Format = "dd/MM/yyyy HH:mm" } });
+            dgvCheckin.Columns.Add(new DataGridViewTextBoxColumn { DataPropertyName = nameof(CheckInResponse.BoardingPass), HeaderText = "Detalle", Width = 380 });
         }
 
-        private void AplicarFiltros()
+        private async Task CargarCheckins()
         {
-            var texto = txtBuscar.Text.Trim().ToLower();
-
-            var resultado = _checkins.Where(c =>
-                string.IsNullOrEmpty(texto) ||
-                c.CodigoReserva.ToLower().Contains(texto) ||
-                c.Pasajero.ToLower().Contains(texto) ||
-                c.Vuelo.ToLower().Contains(texto)
-            ).ToList();
-
-            dgvCheckin.DataSource = null;
-            dgvCheckin.DataSource = resultado;
-        }
-
-        private void btnBuscar_Click(object sender, EventArgs e) => AplicarFiltros();
-
-        private void btnRefrescar_Click(object sender, EventArgs e)
-        {
-            txtBuscar.Clear();
-            CargarDatosDemo();
-            AplicarFiltros();
-        }
-
-        private void btnRealizarCheckin_Click(object sender, EventArgs e)
-        {
-            if (dgvCheckin.CurrentRow == null)
+            try
             {
-                MessageBox.Show("Seleccione una reserva.", "Check-in", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                var lista = await _checkInClient.ObtenerTodosAsync();
+                dgvCheckin.DataSource = null;
+                dgvCheckin.DataSource = lista ?? new List<CheckInResponse>();
+            }
+            catch (HttpRequestException ex)
+            {
+                MensajesApi.MostrarError(ex);
+            }
+        }
+
+        private void LimpiarEstado()
+        {
+            _reservaActual = null;
+            lblEstado.Text = "Ingresá el código de la reserva y presioná Buscar.";
+            lblEstado.ForeColor = SystemColors.ControlText;
+            btnRealizarCheckin.Enabled = false;
+        }
+
+        private async void btnBuscar_Click(object sender, EventArgs e)
+        {
+            var codigo = txtBuscar.Text.Trim();
+
+            if (string.IsNullOrWhiteSpace(codigo))
+            {
+                MessageBox.Show("Ingresá el código de la reserva.", "Check-in", MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
-            MessageBox.Show(
-                "Esta función estará disponible en una próxima versión.",
-                "Realizar check-in", MessageBoxButtons.OK, MessageBoxIcon.Information);
+            try
+            {
+                var reservas = await _reservaClient.ObtenerTodosAsync() ?? new List<ReservaResponse>();
+
+                var reserva = reservas.FirstOrDefault(r =>
+                    string.Equals(r.CodigoReserva, codigo, StringComparison.OrdinalIgnoreCase));
+
+                if (reserva == null)
+                {
+                    LimpiarEstado();
+                    lblEstado.Text = "No existe una reserva con ese código.";
+                    lblEstado.ForeColor = Color.Firebrick;
+                    return;
+                }
+
+                _reservaActual = reserva;
+
+                var estado = await _checkInClient.ConsultarEstadoAsync(reserva.IdReserva);
+                bool puede = estado?.PuedeRealizarCheckIn == true;
+
+                lblEstado.Text =
+                    $"{reserva.CodigoReserva} · {reserva.Pasajero} · Vuelo {reserva.Vuelo} · Asiento {reserva.Asiento}\n" +
+                    (estado?.Mensaje ?? "No se pudo consultar el estado.");
+
+                lblEstado.ForeColor = puede ? Color.SeaGreen : Color.Firebrick;
+                btnRealizarCheckin.Enabled = puede;
+            }
+            catch (HttpRequestException ex)
+            {
+                MensajesApi.MostrarError(ex);
+            }
+        }
+
+        private async void btnRefrescar_Click(object sender, EventArgs e)
+        {
+            txtBuscar.Clear();
+            LimpiarEstado();
+            await CargarCheckins();
+        }
+
+        private async void btnRealizarCheckin_Click(object sender, EventArgs e)
+        {
+            if (_reservaActual == null)
+            {
+                MessageBox.Show("Primero buscá una reserva.", "Check-in", MessageBoxButtons.OK, MessageBoxIcon.Information);
+                return;
+            }
+
+            var confirmacion = MessageBox.Show(
+                $"¿Confirmás el check-in de {_reservaActual.Pasajero} (reserva {_reservaActual.CodigoReserva})?",
+                "Realizar check-in", MessageBoxButtons.YesNo, MessageBoxIcon.Question);
+
+            if (confirmacion != DialogResult.Yes) return;
+
+            try
+            {
+                btnRealizarCheckin.Enabled = false;
+
+                await _checkInClient.CrearAsync(_reservaActual.IdReserva);
+
+                MessageBox.Show("Check-in realizado correctamente. Ya podés generar el boarding pass.",
+                    "Check-in", MessageBoxButtons.OK, MessageBoxIcon.Information);
+
+                txtBuscar.Clear();
+                LimpiarEstado();
+                await CargarCheckins();
+            }
+            catch (HttpRequestException ex)
+            {
+                MensajesApi.MostrarError(ex);
+                btnRealizarCheckin.Enabled = true;
+            }
         }
     }
 }

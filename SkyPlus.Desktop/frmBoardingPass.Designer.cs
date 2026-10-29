@@ -30,6 +30,7 @@
         {
             dgvBoardingPass = new DataGridView();
             pnlBotones = new Panel();
+            btnEmbarcar = new Button();
             btnVerImprimir = new Button();
             pnlFiltros = new Panel();
             btnBuscar = new Button();
@@ -52,6 +53,7 @@
             // 
             // pnlBotones
             // 
+            pnlBotones.Controls.Add(btnEmbarcar);
             pnlBotones.Controls.Add(btnVerImprimir);
             pnlBotones.Dock = DockStyle.Bottom;
             pnlBotones.Location = new Point(0, 350);
@@ -59,13 +61,23 @@
             pnlBotones.Size = new Size(800, 100);
             pnlBotones.TabIndex = 10;
             // 
+            // btnEmbarcar
+            // 
+            btnEmbarcar.Location = new Point(395, 26);
+            btnEmbarcar.Name = "btnEmbarcar";
+            btnEmbarcar.Size = new Size(103, 47);
+            btnEmbarcar.TabIndex = 1;
+            btnEmbarcar.Text = "Registrar Embarque";
+            btnEmbarcar.UseVisualStyleBackColor = true;
+            btnEmbarcar.Click += btnEmbarcar_Click;
+            // 
             // btnVerImprimir
             // 
-            btnVerImprimir.Location = new Point(337, 29);
+            btnVerImprimir.Location = new Point(246, 26);
             btnVerImprimir.Name = "btnVerImprimir";
             btnVerImprimir.Size = new Size(103, 27);
             btnVerImprimir.TabIndex = 0;
-            btnVerImprimir.Text = "Imprimir";
+            btnVerImprimir.Text = "Abrir PDF";
             btnVerImprimir.UseVisualStyleBackColor = true;
             btnVerImprimir.Click += btnVerImprimir_Click;
             // 
@@ -134,5 +146,6 @@
         private Button btnBuscar;
         private Button btnRefrescar;
         private TextBox txtBuscar;
+        private Button btnEmbarcar;
     }
 }
