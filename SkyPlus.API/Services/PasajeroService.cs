@@ -185,9 +185,16 @@ namespace SkyPlus.API.Services
 
         private static bool DocumentoValido(string? documento)
         {
-            return !string.IsNullOrWhiteSpace(documento) &&
-                System.Text.RegularExpressions.Regex.IsMatch(
-                    documento, @"^[0-9]{7,8}$");
+            if (string.IsNullOrWhiteSpace(documento))
+                return false;
+
+            documento = documento.Trim();
+
+            return documento.Length >= 3 &&
+                   documento.Length <= 30 &&
+                   System.Text.RegularExpressions.Regex.IsMatch(
+                       documento,
+                       @"^[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$");
         }
 
         private static bool EmailValido(string? email)

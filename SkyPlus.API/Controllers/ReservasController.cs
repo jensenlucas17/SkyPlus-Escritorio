@@ -1,13 +1,15 @@
-﻿
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
 using SkyPlus.API.Exceptions;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Agente de Reservas")]
     public class ReservasController : ControllerBase
     {
         private readonly IReservaService _reservaService;
@@ -50,24 +52,37 @@ namespace SkyPlus.API.Controllers
             return Ok(reservas);
         }
 
+
         [HttpPost]
         public async Task<IActionResult> Crear(
             [FromBody] CrearReservaRequest request)
         {
             if (request.IdPasajero <= 0 ||
                 request.IdVuelo <= 0 ||
-                request.IdAsiento <= 0 ||
-                request.IdUsuarioAgente <= 0)
+                request.IdAsiento <= 0)
             {
                 return BadRequest(new
                 {
-                    mensaje = "Los identificadores del pasajero, vuelo, asiento y agente deben ser mayores que cero."
+                    mensaje = "Los identificadores del pasajero, vuelo y asiento deben ser mayores que cero."
+                });
+            }
+
+            var idUsuarioClaim = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(idUsuarioClaim, out int idUsuario)
+                || idUsuario <= 0)
+            {
+                return Unauthorized(new
+                {
+                    mensaje = "No se pudo identificar al usuario autenticado."
                 });
             }
 
             try
             {
-                var reserva = await _reservaService.CrearAsync(request);
+                var reserva = await _reservaService.CrearAsync(
+                    request, idUsuario);
 
                 if (reserva == null)
                 {

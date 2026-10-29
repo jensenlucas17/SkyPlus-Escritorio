@@ -10,7 +10,7 @@ namespace SkyPlus.Desktop
         // TODO: confirmar con Lucas los nombres exactos de rol que devuelve la API (RolResponse.NombreRol)
         private readonly (string Texto, string[] Roles)[] _modulos = new (string, string[])[]
         {
-            ("Usuarios",       new[] { "Administrador", "Gerente" }),
+            ("Usuarios",       new[] { "Administrador" }),
             ("Vuelos",         new[] { "Administrador", "Gerente" }),
             ("Lugares",        new[] { "Administrador", "Gerente" }),
             ("Pasajeros",      new[] { "Agente de Reservas" }),
@@ -109,15 +109,20 @@ namespace SkyPlus.Desktop
 
         private void btnCerrarSesion_Click(object sender, EventArgs e)
         {
-            SesionUsuario.IdUsuario = 0;
-            SesionUsuario.Nombre = string.Empty;
-            SesionUsuario.Apellido = string.Empty;
-            SesionUsuario.Email = string.Empty;
-            SesionUsuario.IdRol = 0;
-            SesionUsuario.Rol = string.Empty;
+            var confirmacion = MessageBox.Show(
+                "¿Estás seguro de que querés cerrar sesión?",
+                "Cerrar sesión",
+                MessageBoxButtons.YesNo,
+                MessageBoxIcon.Question);
+
+            if (confirmacion != DialogResult.Yes)
+                return;
+
+            SesionUsuario.CerrarSesion();
 
             var login = new frmLogin();
             login.Show();
+
             this.Close();
         }
     }

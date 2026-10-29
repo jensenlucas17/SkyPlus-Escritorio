@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using SkyPlus.Infrastructure.Data;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Administrador")]
     public class RolesController : ControllerBase
     {
         private readonly SkyPlusDbContext _context;

@@ -3,6 +3,7 @@
 using System;
 using System.Linq;
 using System.Net.Http;
+using System.Drawing;
 using System.Windows.Forms;
 using SkyPlus.Desktop.Models;
 using SkyPlus.Desktop.Services;
@@ -17,11 +18,94 @@ namespace SkyPlus.Desktop
         private readonly PasajeroClient _pasajeroClient = new PasajeroClient();
         private readonly VueloClient _vueloClient = new VueloClient();
         private readonly AsientoClient _asientoClient = new AsientoClient();
+        private readonly ucMapaAsientos _mapaAsientos = new ucMapaAsientos();
+
 
         public frmReservaABM()
         {
             InitializeComponent();
+
+            // Configuración de la ventana
+            Text = "SkyPlus - Nueva reserva";
+            StartPosition = FormStartPosition.CenterParent;
+            FormBorderStyle = FormBorderStyle.Sizable;
+
+            MinimumSize = new Size(780, 650);
+            ClientSize = new Size(900, 740);
+
+            // Ampliar los campos de selección
+            cmbPasajero.Width = 230;
+            cmbOrigen.Width = 230;
+            cmbDestino.Width = 230;
+            cmbVuelo.Width = 300;
+
+            btnNuevoPasajero.Left = cmbPasajero.Right + 15;
+
+            // Configurar el contenedor del mapa
+            flpAsientos.Controls.Clear();
+            flpAsientos.AutoScroll = false;
+            flpAsientos.WrapContents = false;
+            flpAsientos.FlowDirection = FlowDirection.LeftToRight;
+            flpAsientos.Padding = Padding.Empty;
+            flpAsientos.Margin = Padding.Empty;
+
+            flpAsientos.Location = new Point(33, 270);
+            flpAsientos.Size = new Size(820, 360);
+
+            flpAsientos.Anchor =
+                AnchorStyles.Top |
+                AnchorStyles.Bottom |
+                AnchorStyles.Left |
+                AnchorStyles.Right;
+
+            // Incorporar el mapa visual
+            _mapaAsientos.Dock = DockStyle.None;
+            _mapaAsientos.Margin = Padding.Empty;
+            _mapaAsientos.MinimumSize = Size.Empty;
+            _mapaAsientos.Location = Point.Empty;
+            _mapaAsientos.Size = flpAsientos.ClientSize;
+
+            flpAsientos.Controls.Add(_mapaAsientos);
+
+            // Adaptar el mapa al tamaño del contenedor
+            flpAsientos.ClientSizeChanged += (sender, e) =>
+            {
+                _mapaAsientos.Size = flpAsientos.ClientSize;
+            };
+
+            _mapaAsientos.AsientoSeleccionado +=
+                Mapa_AsientoSeleccionado;
+
+            // Reubicar los controles inferiores
+            label9.Location = new Point(33, 655);
+            lblTarifa.Location = new Point(560, 655);
+
+            btnCancelar.Location = new Point(615, 685);
+            btnGuardar.Location = new Point(710, 685);
+
+            btnCancelar.Size = new Size(90, 32);
+            btnGuardar.Size = new Size(100, 32);
+
+            // Mantener los controles inferiores alineados
+            label9.Anchor =
+                AnchorStyles.Bottom | AnchorStyles.Left;
+
+            lblTarifa.Anchor =
+                AnchorStyles.Bottom | AnchorStyles.Right;
+
+            btnCancelar.Anchor =
+                AnchorStyles.Bottom | AnchorStyles.Right;
+
+            btnGuardar.Anchor =
+                AnchorStyles.Bottom | AnchorStyles.Right;
+
+            // Mensajes de validación
+            lblMensaje.Location = new Point(130, 655);
+            lblMensaje.MaximumSize = new Size(400, 0);
+            lblMensaje.Anchor =
+                AnchorStyles.Bottom | AnchorStyles.Left;
         }
+
 
         private async void frmReservaABM_Load(object sender, EventArgs e)
         {
@@ -229,6 +313,12 @@ namespace SkyPlus.Desktop
                 var asientos = await _asientoClient.ObtenerPorVueloAsync(
                     vuelo.IdVuelo);
 
+                if (cmbVuelo.SelectedItem is not VueloResponse vueloActual ||
+                    vueloActual.IdVuelo != vuelo.IdVuelo)
+                {
+                    return;
+                }
+
                 var lista = asientos ?? new List<AsientoResponse>();
 
                 MostrarAsientos(lista);
@@ -263,74 +353,21 @@ namespace SkyPlus.Desktop
 
         private void MostrarAsientos(List<AsientoResponse> asientos)
         {
-            flpAsientos.Controls.Clear();
-
-            foreach (var asiento in asientos
-                .OrderBy(a => a.Fila)
-                .ThenBy(a => a.Letra))
-            {
-                bool disponible = string.Equals(
-                    asiento.Estado,
-                    "Libre",
-                    StringComparison.OrdinalIgnoreCase);
-
-                var boton = new Button
-                {
-                    Text = asiento.CodigoAsiento,
-                    Width = 55,
-                    Height = 45,
-                    Margin = new Padding(6),
-                    Tag = asiento,
-                    Enabled = disponible
-                };
-
-                if (disponible)
-                {
-                    boton.BackColor = System.Drawing.Color.White;
-                    boton.ForeColor = System.Drawing.Color.Black;
-                }
-                else
-                {
-                    boton.BackColor = System.Drawing.Color.LightGray;
-                    boton.ForeColor = System.Drawing.Color.DarkGray;
-                }
-
-                boton.Click += Asiento_Click;
-
-                flpAsientos.Controls.Add(boton);
-            }
+            _idAsientoSeleccionado = null;
+            _mapaAsientos.Cargar(asientos);
         }
 
-        private void Asiento_Click(object? sender, EventArgs e)
+        private void Mapa_AsientoSeleccionado(
+            object? sender,
+            AsientoResponse asiento)
         {
-            if (sender is not Button boton ||
-                boton.Tag is not AsientoResponse asiento)
-                return;
-
             _idAsientoSeleccionado = asiento.IdAsiento;
-
-            foreach (Control control in flpAsientos.Controls)
-            {
-                if (control is Button btn && btn.Enabled)
-                {
-                    btn.BackColor = System.Drawing.Color.White;
-                    btn.ForeColor = System.Drawing.Color.Black;
-                }
-            }
-
-            boton.BackColor = System.Drawing.Color.DodgerBlue;
-            boton.ForeColor = System.Drawing.Color.White;
         }
 
         private void LimpiarAsientos()
         {
             _idAsientoSeleccionado = null;
-
-            if (flpAsientos != null)
-            {
-                flpAsientos.Controls.Clear();
-            }
-
+            _mapaAsientos.Cargar(new List<AsientoResponse>());
             lblTarifa.Text = "TOTAL: $0";
         }
 

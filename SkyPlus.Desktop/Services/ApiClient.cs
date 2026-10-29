@@ -1,6 +1,9 @@
-﻿using System.Net.Http;
+﻿using SkyPlus.Desktop.Models;
+using System.Net.Http;
+using System.Net.Http.Headers;
 using System.Net.Http.Json;
 using System.Text.Json;
+using SkyPlus.Desktop;
 
 namespace SkyPlus.Desktop.Services
 {
@@ -18,6 +21,7 @@ namespace SkyPlus.Desktop.Services
 
         public async Task<T?> GetAsync<T>(string endpoint)
         {
+            ConfigurarAutorizacion();
             var response = await _httpClient.GetAsync(endpoint);
 
             await VerificarRespuestaAsync(response);
@@ -29,6 +33,7 @@ namespace SkyPlus.Desktop.Services
             string endpoint,
             TRequest data)
         {
+            ConfigurarAutorizacion();
             var response = await _httpClient.PostAsJsonAsync(endpoint, data);
 
             await VerificarRespuestaAsync(response);
@@ -40,6 +45,7 @@ namespace SkyPlus.Desktop.Services
             string endpoint,
             TRequest data)
         {
+            ConfigurarAutorizacion();
             var response = await _httpClient.PutAsJsonAsync(endpoint, data);
 
             await VerificarRespuestaAsync(response);
@@ -49,6 +55,7 @@ namespace SkyPlus.Desktop.Services
 
         public async Task DeleteAsync(string endpoint)
         {
+            ConfigurarAutorizacion();
             var response = await _httpClient.DeleteAsync(endpoint);
 
             await VerificarRespuestaAsync(response);
@@ -56,6 +63,7 @@ namespace SkyPlus.Desktop.Services
 
         public async Task PatchAsync(string endpoint)
         {
+            ConfigurarAutorizacion();
             using var response = await _httpClient.PatchAsync(endpoint, null);
             await VerificarRespuestaAsync(response);
         }
@@ -90,5 +98,19 @@ namespace SkyPlus.Desktop.Services
                 null,
                 response.StatusCode);
         }
+
+        private void ConfigurarAutorizacion()
+        {
+            _httpClient.DefaultRequestHeaders.Authorization = null;
+
+            if (!string.IsNullOrWhiteSpace(SesionUsuario.Token))
+            {
+                _httpClient.DefaultRequestHeaders.Authorization =
+                    new AuthenticationHeaderValue(
+                        "Bearer",
+                        SesionUsuario.Token);
+            }
+        }
+
     }
 }

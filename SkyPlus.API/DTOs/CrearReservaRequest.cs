@@ -7,7 +7,5 @@
         public int IdVuelo { get; set; }
 
         public int IdAsiento { get; set; }
-
-        public int IdUsuarioAgente { get; set; }
     }
 }

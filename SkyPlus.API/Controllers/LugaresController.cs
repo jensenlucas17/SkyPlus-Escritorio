@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class LugaresController : ControllerBase
     {
         private readonly ILugarService _lugarService;
@@ -16,6 +18,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Administrador,Gerente,Agente de Reservas,Agente de Check-in")]
         public async Task<IActionResult> ObtenerTodos()
         {
             var lugares = await _lugarService.ObtenerTodosAsync();
@@ -24,6 +27,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Administrador,Gerente,Agente de Reservas,Agente de Check-in")]
         public async Task<IActionResult> ObtenerPorId(int id)
         {
             var lugar = await _lugarService.ObtenerPorIdAsync(id);
@@ -40,6 +44,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpPost]
+        [Authorize(Roles = "Administrador,Gerente")]
         public async Task<IActionResult> Crear(
             [FromBody] CrearLugarRequest request)
         {
@@ -71,6 +76,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpPut("{id}")]
+        [Authorize(Roles = "Administrador,Gerente")]
         public async Task<IActionResult> Actualizar(
             int id,
             [FromBody] ActualizarLugarRequest request)
@@ -103,6 +109,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpDelete("{id}")]
+        [Authorize(Roles = "Administrador,Gerente")]
         public async Task<IActionResult> Eliminar(int id)
         {
             var resultado = await _lugarService.EliminarAsync(id);
@@ -122,6 +129,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpPatch("{id}/reactivar")]
+        [Authorize(Roles = "Administrador,Gerente")]
         public async Task<IActionResult> Reactivar(int id)
         {
             var reactivado = await _lugarService.ReactivarAsync(id);

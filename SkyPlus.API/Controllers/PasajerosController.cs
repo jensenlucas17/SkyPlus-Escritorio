@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize(Roles = "Agente de Reservas")]
     public class PasajerosController : ControllerBase
     {
         private readonly IPasajeroService _pasajeroService;
@@ -64,8 +66,7 @@ namespace SkyPlus.API.Controllers
             {
                 return BadRequest(new
                 {
-                    mensaje =
-                        "El documento ya está registrado."
+                    mensaje = "No se pudo crear el pasajero. Verificá los datos ingresados o si el documento ya está registrado."
                 });
             }
 

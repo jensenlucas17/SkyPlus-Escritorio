@@ -1,6 +1,4 @@
-﻿using System.Security.Cryptography;
-using System.Text;
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SkyPlus.API.DTOs;
 using SkyPlus.Infrastructure.Data;
 
@@ -9,43 +7,59 @@ namespace SkyPlus.API.Services
     public class AuthService : IAuthService
     {
         private readonly SkyPlusDbContext _context;
+        private readonly JwtTokenService _jwtTokenService;
+        private readonly PasswordService _passwordService;
 
-        public AuthService(SkyPlusDbContext context)
+        public AuthService(
+            SkyPlusDbContext context,
+            JwtTokenService jwtTokenService,
+            PasswordService passwordService)
         {
             _context = context;
+            _jwtTokenService = jwtTokenService;
+            _passwordService = passwordService;
         }
 
-        public async Task<LoginResponse?> LoginAsync(LoginRequest request)
+        public async Task<LoginResponse?> LoginAsync(
+            LoginRequest request)
         {
+            var email = request.Email.Trim();
+
             var usuario = await _context.Usuarios
-                .FirstOrDefaultAsync(u => u.EmailCorporativo == request.Email);
+                .FirstOrDefaultAsync(u =>
+                    u.EmailCorporativo == email);
 
-            if (usuario == null)
+            if (usuario == null ||
+                usuario.EstadoCuenta != "Activo")
             {
                 return null;
             }
 
-            if (usuario.EstadoCuenta != "Activo")
-            {
-                return null;
-            }
+            bool passwordValida =
+                _passwordService.VerificarPassword(
+                    request.Password,
+                    usuario.ContrasenaHash);
 
-            string passwordHash = GenerarHash(request.Password);
-
-            if (usuario.ContrasenaHash != passwordHash)
+            if (!passwordValida)
             {
                 return null;
             }
 
             var rol = await _context.Roles
-                .FirstOrDefaultAsync(r => r.IdRol == usuario.IdRol);
+                .FirstOrDefaultAsync(r =>
+                    r.IdRol == usuario.IdRol);
 
             if (rol == null)
             {
                 return null;
             }
 
-            usuario.UltimaSesion = DateTime.Now;
+            var (token, expiracion) =
+                _jwtTokenService.GenerarToken(
+                    usuario,
+                    rol.NombreRol);
+
+            usuario.UltimaSesion = DateTime.UtcNow;
 
             await _context.SaveChangesAsync();
 
@@ -56,18 +70,10 @@ namespace SkyPlus.API.Services
                 Apellido = usuario.Apellido,
                 Email = usuario.EmailCorporativo,
                 IdRol = usuario.IdRol,
-                Rol = rol.NombreRol
+                Rol = rol.NombreRol,
+                Token = token,
+                ExpiracionToken = expiracion
             };
-        }
-
-        private static string GenerarHash(string password)
-        {
-            using SHA256 sha256 = SHA256.Create();
-
-            byte[] bytes = Encoding.UTF8.GetBytes(password);
-            byte[] hash = sha256.ComputeHash(bytes);
-
-            return Convert.ToHexString(hash).ToLower();
         }
     }
 }

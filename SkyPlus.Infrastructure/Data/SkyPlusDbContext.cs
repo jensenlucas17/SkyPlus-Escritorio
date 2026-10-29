@@ -24,6 +24,8 @@ namespace SkyPlus.Infrastructure.Data
         public DbSet<Pago> Pagos { get; set; }
         public DbSet<Reembolso> Reembolsos { get; set; }
         public DbSet<CheckIn> CheckIns { get; set; }
+        public DbSet<CargoAdicional> CargosAdicionales { get; set; }
+        public DbSet<PagoDetalle> PagosDetalle { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -446,6 +448,9 @@ namespace SkyPlus.Infrastructure.Data
                 entity.HasIndex(e => e.CodigoReserva)
                     .IsUnique();
 
+                entity.Property(e => e.FechaExpiracion)
+                    .HasColumnName("fecha_expiracion");
+
                 // Pasajero → Reservas
                 entity.HasOne(e => e.Pasajero)
                     .WithMany()
@@ -496,6 +501,15 @@ namespace SkyPlus.Infrastructure.Data
                 entity.Property(e => e.PesoKg)
                     .HasColumnName("peso_kg")
                     .HasPrecision(10, 2)
+                    .IsRequired(false);
+
+                entity.Property(e => e.LimiteKgContratado)
+                    .HasColumnName("limite_kg_contratado")
+                    .HasPrecision(10, 2)
+                    .IsRequired();
+
+                entity.Property(e => e.FechaContratacion)
+                    .HasColumnName("fecha_contratacion")
                     .IsRequired();
 
                 entity.Property(e => e.Costo)
@@ -505,8 +519,8 @@ namespace SkyPlus.Infrastructure.Data
 
                 entity.Property(e => e.Estado)
                     .HasColumnName("estado")
-                    .HasMaxLength(10)
-                    .HasDefaultValue("Activo")
+                    .HasMaxLength(20)
+                    .HasDefaultValue("PendientePago")
                     .IsRequired();
 
                 entity.HasOne(e => e.Reserva)
@@ -518,6 +532,68 @@ namespace SkyPlus.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(e => e.IdTipoEquipaje)
                     .OnDelete(DeleteBehavior.Restrict);
+            });
+
+
+
+            // =====================================================
+            // CARGO ADICIONAL
+            // =====================================================
+
+            modelBuilder.Entity<CargoAdicional>(entity =>
+            {
+                entity.ToTable("cargo_adicional");
+
+                entity.HasKey(e => e.IdCargoAdicional);
+
+                entity.Property(e => e.IdCargoAdicional)
+                    .HasColumnName("id_cargo_adicional");
+
+                entity.Property(e => e.IdReserva)
+                    .HasColumnName("id_reserva")
+                    .IsRequired();
+
+                entity.Property(e => e.IdEquipajeReserva)
+                    .HasColumnName("id_equipaje_reserva")
+                    .IsRequired(false);
+
+                entity.Property(e => e.TipoCargo)
+                    .HasColumnName("tipo_cargo")
+                    .HasMaxLength(30)
+                    .IsRequired();
+
+                entity.Property(e => e.Descripcion)
+                    .HasColumnName("descripcion")
+                    .HasMaxLength(500)
+                    .IsRequired();
+
+                entity.Property(e => e.Monto)
+                    .HasColumnName("monto")
+                    .HasPrecision(10, 2)
+                    .IsRequired();
+
+                entity.Property(e => e.Estado)
+                    .HasColumnName("estado")
+                    .HasMaxLength(20)
+                    .HasDefaultValue("Pendiente")
+                    .IsRequired();
+
+                entity.Property(e => e.FechaCreacion)
+                    .HasColumnName("fecha_creacion")
+                    .IsRequired();
+
+                entity.HasOne(e => e.Reserva)
+                    .WithMany()
+                    .HasForeignKey(e => e.IdReserva)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.EquipajeReserva)
+                    .WithMany()
+                    .HasForeignKey(e => e.IdEquipajeReserva)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.IdReserva);
+                entity.HasIndex(e => e.IdEquipajeReserva);
             });
 
 
@@ -561,9 +637,8 @@ namespace SkyPlus.Infrastructure.Data
                     .HasDefaultValue("Registrado")
                     .IsRequired();
 
-                // Una reserva tiene un pago
-                entity.HasIndex(e => e.IdReserva)
-                    .IsUnique();
+                // Una reserva puede tener múltiples pagos.
+                entity.HasIndex(e => e.IdReserva);
 
                 entity.HasOne(e => e.Reserva)
                     .WithMany()
@@ -574,7 +649,63 @@ namespace SkyPlus.Infrastructure.Data
                     .WithMany()
                     .HasForeignKey(e => e.IdUsuarioAgente)
                     .OnDelete(DeleteBehavior.Restrict);
+
+                entity.Property(e => e.TipoPago)
+                    .HasColumnName("tipo_pago")
+                    .HasMaxLength(20)
+                    .HasDefaultValue("Inicial")
+                    .IsRequired();
             });
+
+
+            // =====================================================
+            // PAGO DETALLE
+            // =====================================================
+
+            modelBuilder.Entity<PagoDetalle>(entity =>
+            {
+                entity.ToTable("pago_detalle");
+
+                entity.HasKey(e => e.IdPagoDetalle);
+
+                entity.Property(e => e.IdPagoDetalle)
+                    .HasColumnName("id_pago_detalle");
+
+                entity.Property(e => e.IdPago)
+                    .HasColumnName("id_pago")
+                    .IsRequired();
+
+                entity.Property(e => e.IdCargoAdicional)
+                    .HasColumnName("id_cargo_adicional")
+                    .IsRequired(false);
+
+                entity.Property(e => e.Concepto)
+                    .HasColumnName("concepto")
+                    .HasMaxLength(30)
+                    .IsRequired();
+
+                entity.Property(e => e.Monto)
+                    .HasColumnName("monto")
+                    .HasPrecision(10, 2)
+                    .IsRequired();
+
+                entity.HasOne(e => e.Pago)
+                    .WithMany(p => p.Detalles)
+                    .HasForeignKey(e => e.IdPago)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasOne(e => e.CargoAdicional)
+                    .WithMany()
+                    .HasForeignKey(e => e.IdCargoAdicional)
+                    .OnDelete(DeleteBehavior.Restrict);
+
+                entity.HasIndex(e => e.IdPago);
+
+                // Evita asociar el mismo cargo a varios detalles.
+                entity.HasIndex(e => e.IdCargoAdicional)
+                    .IsUnique();
+            });
+
 
 
             // =====================================================

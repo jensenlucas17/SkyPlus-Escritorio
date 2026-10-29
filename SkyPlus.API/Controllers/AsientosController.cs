@@ -1,11 +1,13 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
+using Microsoft.AspNetCore.Authorization;
 
 namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
+    [Authorize]
     public class AsientosController : ControllerBase
     {
         private readonly IAsientoService _asientoService;
@@ -17,6 +19,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpGet("vuelo/{idVuelo}")]
+        [Authorize(Roles = "Administrador,Gerente,Agente de Reservas,Agente de Check-in")]
         public async Task<IActionResult> ObtenerPorVuelo(
             int idVuelo)
         {
@@ -28,6 +31,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpGet("{id}")]
+        [Authorize(Roles = "Administrador,Gerente,Agente de Reservas,Agente de Check-in")]
         public async Task<IActionResult> ObtenerPorId(
             int id)
         {
@@ -46,6 +50,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpPost("generar/{idVuelo}")]
+        [Authorize(Roles = "Administrador,Gerente")]
         public async Task<IActionResult> Generar(
             int idVuelo)
         {
@@ -83,6 +88,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpPut("{id}/estado")]
+        [Authorize(Roles = "Administrador,Gerente")]
         public async Task<IActionResult> ActualizarEstado(
             int id,
             [FromBody] ActualizarEstadoAsientoRequest request)

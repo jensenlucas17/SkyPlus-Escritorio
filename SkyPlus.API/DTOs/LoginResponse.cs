@@ -8,5 +8,7 @@
         public string Email { get; set; } = string.Empty;
         public int IdRol { get; set; }
         public string Rol { get; set; } = string.Empty;
+        public string Token { get; set; } = string.Empty;
+        public DateTime ExpiracionToken { get; set; }
     }
 }

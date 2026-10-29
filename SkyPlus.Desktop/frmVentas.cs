@@ -1,229 +1,192 @@
 ﻿using SkyPlus.Desktop.Estilos;
+using SkyPlus.Desktop.Models;
+using SkyPlus.Desktop.Services;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net.Http;
+using System.Threading.Tasks;
 using System.Windows.Forms;
 
 namespace SkyPlus.Desktop
 {
     public partial class frmVentas : Form
     {
-        private class VentaDemo
+        private readonly PagoClient _pagoClient = new PagoClient();
+        private readonly ReservaClient _reservaClient = new ReservaClient();
+        private List<VentaFila> _ventas = new List<VentaFila>();
+
+        private class VentaFila
         {
+            public int IdPago { get; set; }
+            public int IdReserva { get; set; }
+            public int IdUsuarioAgente { get; set; }
             public string CodigoReserva { get; set; } = string.Empty;
             public string Pasajero { get; set; } = string.Empty;
             public string Vuelo { get; set; } = string.Empty;
             public string Asiento { get; set; } = string.Empty;
             public decimal Monto { get; set; }
             public string MetodoPago { get; set; } = string.Empty;
-            public string Fecha { get; set; } = string.Empty;
+            public DateTime FechaPago { get; set; }
+            public string Fecha => FechaPago.ToString("dd/MM/yyyy HH:mm");
             public string Estado { get; set; } = string.Empty;
         }
 
-        private readonly List<VentaDemo> _ventas = new();
-
-        // IMPORTANTE: InitializeComponent va en el constructor
         public frmVentas()
         {
             InitializeComponent();
         }
 
-        private void frmVentas_Load(object sender, EventArgs e)
+        private async void frmVentas_Load(object sender, EventArgs e)
         {
-            CargarDatosDemo();
             ConfigurarTabla();
-            AplicarFiltros();
-
             AppEstilos.EstilizarGrid(dgvVentas);
             AppEstilos.EstilizarBotonPrimario(btnBuscar);
             AppEstilos.EstilizarBotonSecundario(btnRefrescar);
             AppEstilos.EstilizarBotonSecundario(btnVerDetalle);
+            var btnRegistrar = new Button
+            {
+                Name = "btnRegistrarPago",
+                Text = "Registrar pago",
+                Size = new System.Drawing.Size(130, 30),
+                Location = new System.Drawing.Point(520, 10)
+            };
+            btnRegistrar.Click += btnRegistrarPago_Click;
+            pnlBotones.Controls.Add(btnRegistrar);
+            AppEstilos.EstilizarBotonPrimario(btnRegistrar);
+            await CargarVentasAsync();
         }
 
-        private void CargarDatosDemo()
+        private async Task CargarVentasAsync()
         {
-            _ventas.Clear();
-
-            _ventas.Add(new VentaDemo
+            try
             {
-                CodigoReserva = "SP4K8D",
-                Pasajero = "Gómez, Juan",
-                Vuelo = "SP101",
-                Asiento = "12A",
-                Monto = 185000,
-                MetodoPago = "Tarjeta",
-                Fecha = "22/09/2026",
-                Estado = "Pagado"
-            });
+                var pagos = await _pagoClient.ObtenerTodosAsync();
+                var reservas = await _reservaClient.ObtenerTodosAsync()
+                    ?? new List<ReservaResponse>();
+                var porId = reservas.ToDictionary(r => r.IdReserva);
 
-            _ventas.Add(new VentaDemo
+                _ventas = pagos.Select(p =>
+                {
+                    porId.TryGetValue(p.IdReserva, out var reserva);
+                    return new VentaFila
+                    {
+                        IdPago = p.IdPago,
+                        IdReserva = p.IdReserva,
+                        IdUsuarioAgente = p.IdUsuarioAgente,
+                        CodigoReserva = p.CodigoReserva,
+                        Pasajero = reserva?.Pasajero ?? string.Empty,
+                        Vuelo = reserva?.Vuelo ?? string.Empty,
+                        Asiento = reserva?.Asiento ?? string.Empty,
+                        Monto = p.Monto,
+                        MetodoPago = p.MetodoPago,
+                        FechaPago = p.FechaPago,
+                        Estado = p.EstadoPago
+                    };
+                }).OrderByDescending(v => v.FechaPago).ToList();
+                AplicarFiltros();
+            }
+            catch (HttpRequestException ex)
             {
-                CodigoReserva = "SP7M2Q",
-                Pasajero = "Fernández, María",
-                Vuelo = "SP205",
-                Asiento = "08C",
-                Monto = 220000,
-                MetodoPago = "Transferencia",
-                Fecha = "22/09/2026",
-                Estado = "Pagado"
-            });
-
-            _ventas.Add(new VentaDemo
+                MessageBox.Show(
+                    ex.StatusCode.HasValue ? ex.Message :
+                        "No se pudo conectar con la API de SkyPlus. Verificá que esté ejecutándose.",
+                    "Error al cargar ventas", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+            }
+            catch (Exception ex)
             {
-                CodigoReserva = "SP9L5A",
-                Pasajero = "Rodríguez, Carlos",
-                Vuelo = "SP310",
-                Asiento = "21F",
-                Monto = 175000,
-                MetodoPago = "Tarjeta",
-                Fecha = "21/09/2026",
-                Estado = "Pagado"
-            });
-
-            _ventas.Add(new VentaDemo
-            {
-                CodigoReserva = "SP2N6B",
-                Pasajero = "Martínez, Ana",
-                Vuelo = "SP412",
-                Asiento = "05B",
-                Monto = 198000,
-                MetodoPago = "Efectivo",
-                Fecha = "21/09/2026",
-                Estado = "Pagado"
-            });
+                MessageBox.Show("No se pudieron cargar las ventas.\n\n" + ex.Message,
+                    "Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+            }
         }
 
         private void ConfigurarTabla()
         {
             dgvVentas.AutoGenerateColumns = false;
             dgvVentas.Columns.Clear();
-
-            // Hace que las columnas ocupen todo el ancho disponible
             dgvVentas.AutoSizeColumnsMode = DataGridViewAutoSizeColumnsMode.Fill;
 
-            dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colReserva",
-                HeaderText = "Reserva",
-                DataPropertyName = "CodigoReserva",
-                FillWeight = 80
-            });
-
-            dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colPasajero",
-                HeaderText = "Pasajero",
-                DataPropertyName = "Pasajero",
-                FillWeight = 150
-            });
-
-            dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colVuelo",
-                HeaderText = "Vuelo",
-                DataPropertyName = "Vuelo",
-                FillWeight = 70
-            });
-
-            dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colAsiento",
-                HeaderText = "Asiento",
-                DataPropertyName = "Asiento",
-                FillWeight = 70
-            });
-
+            AgregarColumna("colReserva", "Reserva", "CodigoReserva", 80);
+            AgregarColumna("colPasajero", "Pasajero", "Pasajero", 150);
+            AgregarColumna("colVuelo", "Vuelo", "Vuelo", 70);
+            AgregarColumna("colAsiento", "Asiento", "Asiento", 70);
             dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
             {
                 Name = "colMonto",
                 HeaderText = "Monto",
                 DataPropertyName = "Monto",
                 FillWeight = 100,
-                DefaultCellStyle = new DataGridViewCellStyle
-                {
-                    Format = "C2"
-                }
+                DefaultCellStyle = new DataGridViewCellStyle { Format = "C2" }
             });
+            AgregarColumna("colMetodo", "Método de pago", "MetodoPago", 110);
+            AgregarColumna("colFecha", "Fecha", "Fecha", 100);
+            AgregarColumna("colEstado", "Estado", "Estado", 80);
+        }
 
+        private void AgregarColumna(string nombre, string titulo, string propiedad, float ancho)
+        {
             dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
             {
-                Name = "colMetodo",
-                HeaderText = "Método de pago",
-                DataPropertyName = "MetodoPago",
-                FillWeight = 110
-            });
-
-            dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colFecha",
-                HeaderText = "Fecha",
-                DataPropertyName = "Fecha",
-                FillWeight = 90
-            });
-
-            dgvVentas.Columns.Add(new DataGridViewTextBoxColumn
-            {
-                Name = "colEstado",
-                HeaderText = "Estado",
-                DataPropertyName = "Estado",
-                FillWeight = 80
+                Name = nombre,
+                HeaderText = titulo,
+                DataPropertyName = propiedad,
+                FillWeight = ancho
             });
         }
 
         private void AplicarFiltros()
         {
-            string texto = txtBuscar.Text.Trim().ToLower();
-
-            var resultado = _ventas
-                .Where(v =>
-                    string.IsNullOrEmpty(texto) ||
-                    v.CodigoReserva.ToLower().Contains(texto) ||
-                    v.Pasajero.ToLower().Contains(texto) ||
-                    v.Vuelo.ToLower().Contains(texto))
+            var texto = txtBuscar.Text.Trim();
+            var resultado = _ventas.Where(v =>
+                string.IsNullOrWhiteSpace(texto) ||
+                v.CodigoReserva.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
+                v.Pasajero.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
+                v.Vuelo.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
+                v.MetodoPago.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
+                v.Estado.Contains(texto, StringComparison.OrdinalIgnoreCase))
                 .ToList();
 
             dgvVentas.DataSource = null;
             dgvVentas.DataSource = resultado;
-
             lblCantidad.Text = $"Ventas: {resultado.Count}";
         }
 
-        private void txtBuscar_TextChanged(object sender, EventArgs e)
-        {
-            AplicarFiltros();
-        }
+        private void txtBuscar_TextChanged(object sender, EventArgs e) => AplicarFiltros();
+        private void btnBuscar_Click(object sender, EventArgs e) => AplicarFiltros();
 
-        private void btnBuscar_Click(object sender, EventArgs e)
-        {
-            AplicarFiltros();
-        }
-
-        private void btnRefrescar_Click(object sender, EventArgs e)
+        private async void btnRefrescar_Click(object sender, EventArgs e)
         {
             txtBuscar.Clear();
-            CargarDatosDemo();
-            AplicarFiltros();
+            await CargarVentasAsync();
         }
 
         private void btnVerDetalle_Click(object sender, EventArgs e)
         {
-            if (dgvVentas.CurrentRow == null)
+            if (dgvVentas.CurrentRow?.DataBoundItem is not VentaFila venta)
             {
-                MessageBox.Show(
-                    "Seleccione una venta.",
-                    "Ventas",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
-
+                MessageBox.Show("Seleccione una venta.", "Ventas",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
 
             MessageBox.Show(
-                "Vista de detalle de venta.\n\n" +
-                "Esta función estará disponible en una próxima versión.",
-                "Detalle de venta",
-                MessageBoxButtons.OK,
-                MessageBoxIcon.Information);
+                $"Pago N.º: {venta.IdPago}\n" +
+                $"Reserva: {venta.CodigoReserva} (ID {venta.IdReserva})\n" +
+                $"Pasajero: {venta.Pasajero}\n" +
+                $"Vuelo: {venta.Vuelo}\n" +
+                $"Asiento: {venta.Asiento}\n" +
+                $"Monto: {venta.Monto:C2}\n" +
+                $"Método: {venta.MetodoPago}\n" +
+                $"Fecha: {venta.Fecha}\n" +
+                $"Estado: {venta.Estado}\n" +
+                $"Agente (ID): {venta.IdUsuarioAgente}",
+                "Detalle de venta", MessageBoxButtons.OK, MessageBoxIcon.Information);
+        }
+        private async void btnRegistrarPago_Click(object? sender, EventArgs e)
+        {
+            using var formulario = new frmRegistrarPago();
+            if (formulario.ShowDialog(this) == DialogResult.OK)
+                await CargarVentasAsync();
         }
     }
 }
