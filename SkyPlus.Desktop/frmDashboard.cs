@@ -7,7 +7,7 @@ namespace SkyPlus.Desktop
 {
     public partial class frmDashboard : Form
     {
-        // TODO: confirmar con Lucas los nombres exactos de rol que devuelve la API (RolResponse.NombreRol)
+        
         private readonly (string Texto, string[] Roles)[] _modulos = new (string, string[])[]
         {
             ("Usuarios",       new[] { "Administrador" }),

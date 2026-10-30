@@ -1,14 +1,15 @@
 ﻿// SkyPlus.Desktop/frmVuelos.cs
 
+using SkyPlus.Desktop.Estilos;
+using SkyPlus.Desktop.Models;
+using SkyPlus.Desktop.Services;
+using SkyPlus.Desktop.Utilidades;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
-using SkyPlus.Desktop.Models;
-using SkyPlus.Desktop.Services;
-using SkyPlus.Desktop.Estilos;
 
 namespace SkyPlus.Desktop
 {
@@ -296,64 +297,55 @@ namespace SkyPlus.Desktop
             }
         }
 
-        private async void btnEliminar_Click(
-            object sender,
-            EventArgs e)
+        private async void btnEliminar_Click(object sender, EventArgs e)
         {
-            var seleccionado =
-                ObtenerSeleccionado();
+            var vuelo = ObtenerSeleccionado();
+            if (vuelo == null) return;
 
-            if (seleccionado == null)
-                return;
-
-            // TODO: reemplazar DELETE fisico por baja logica (EstadoVuelo = "Cancelado")
-            // para no romper reservas asociadas al vuelo. Pendiente definir con Lucas
-            // el metodo de actualizacion real (ver charla sobre integridad referencial).
-            var confirmacion =
-                MessageBox.Show(
-                    $"¿Confirmás eliminar el vuelo " +
-                    $"{seleccionado.NumeroVuelo}?",
-                    "Confirmar eliminación",
-                    MessageBoxButtons.YesNo,
-                    MessageBoxIcon.Warning);
-
-            if (confirmacion !=
-                DialogResult.Yes)
+            if (vuelo.EstadoVuelo == "Cancelado")
             {
+                MessageBox.Show("Este vuelo ya está cancelado.", "Vuelos",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
                 return;
             }
+
+            if (vuelo.EstadoVuelo == "En vuelo" || vuelo.EstadoVuelo == "Finalizado")
+            {
+                MessageBox.Show("No se puede cancelar un vuelo en vuelo o finalizado.", "Vuelos",
+                    MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                return;
+            }
+
+            var confirmacion = MessageBox.Show(
+                $"¿Confirmás cancelar el vuelo {vuelo.NumeroVuelo}? Las reservas asociadas se verán afectadas.",
+                "Cancelar vuelo", MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+
+            if (confirmacion != DialogResult.Yes) return;
 
             try
             {
-                await _vueloClient.EliminarAsync(
-                    seleccionado.IdVuelo);
+                await _vueloClient.ActualizarAsync(
+                    vuelo.IdVuelo,
+                    vuelo.NumeroVuelo,
+                    vuelo.IdAeronave,
+                    vuelo.IdUsuarioOperador,
+                    vuelo.IdLugarOrigen,
+                    vuelo.IdLugarDestino,
+                    vuelo.Salida,
+                    vuelo.Llegada,
+                    "Cancelado",
+                    vuelo.Tarifa);
 
-                MessageBox.Show(
-                    "Vuelo eliminado correctamente.",
-                    "Éxito",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Information);
+                MessageBox.Show("Vuelo cancelado correctamente.", "Vuelos",
+                    MessageBoxButtons.OK, MessageBoxIcon.Information);
 
                 await CargarVuelos();
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                MessageBox.Show(
-                    "No se pudo conectar con la API.\n\n" +
-                    "Verificá que SkyPlus.API esté ejecutándose.",
-                    "Error de conexión",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
-            }
-            catch (Exception ex)
-            {
-                MessageBox.Show(
-                    "No se pudo eliminar el vuelo:\n\n" +
-                    ex.Message,
-                    "Error",
-                    MessageBoxButtons.OK,
-                    MessageBoxIcon.Error);
+                MensajesApi.MostrarError(ex);
             }
         }
     }
+    
  }
