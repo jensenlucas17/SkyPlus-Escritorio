@@ -28,7 +28,6 @@
         /// </summary>
         private void InitializeComponent()
         {
-            dgvReporte = new DataGridView();
             pnlBotones = new Panel();
             lblResultado = new Label();
             pnlFiltros = new Panel();
@@ -39,20 +38,10 @@
             dtpDesde = new DateTimePicker();
             cmbTipoReporte = new ComboBox();
             btnGenerar = new Button();
-            ((System.ComponentModel.ISupportInitialize)dgvReporte).BeginInit();
+            pnlResultados = new Panel();
             pnlBotones.SuspendLayout();
             pnlFiltros.SuspendLayout();
             SuspendLayout();
-            // 
-            // dgvReporte
-            // 
-            dgvReporte.ColumnHeadersHeightSizeMode = DataGridViewColumnHeadersHeightSizeMode.AutoSize;
-            dgvReporte.Dock = DockStyle.Fill;
-            dgvReporte.Location = new Point(0, 126);
-            dgvReporte.Name = "dgvReporte";
-            dgvReporte.ReadOnly = true;
-            dgvReporte.Size = new Size(800, 224);
-            dgvReporte.TabIndex = 14;
             // 
             // pnlBotones
             // 
@@ -148,18 +137,25 @@
             btnGenerar.UseVisualStyleBackColor = true;
             btnGenerar.Click += btnGenerar_Click;
             // 
+            // pnlResultados
+            // 
+            pnlResultados.Dock = DockStyle.Fill;
+            pnlResultados.Location = new Point(0, 126);
+            pnlResultados.Name = "pnlResultados";
+            pnlResultados.Size = new Size(800, 224);
+            pnlResultados.TabIndex = 14;
+            // 
             // frmReportes
             // 
             AutoScaleDimensions = new SizeF(7F, 15F);
             AutoScaleMode = AutoScaleMode.Font;
             ClientSize = new Size(800, 450);
-            Controls.Add(dgvReporte);
+            Controls.Add(pnlResultados);
             Controls.Add(pnlBotones);
             Controls.Add(pnlFiltros);
             Name = "frmReportes";
             Text = "Form1";
             Load += frmReportes_Load;
-            ((System.ComponentModel.ISupportInitialize)dgvReporte).EndInit();
             pnlBotones.ResumeLayout(false);
             pnlBotones.PerformLayout();
             pnlFiltros.ResumeLayout(false);
@@ -168,8 +164,6 @@
         }
 
         #endregion
-
-        private DataGridView dgvReporte;
         private Panel pnlBotones;
         private Panel pnlFiltros;
         private ComboBox cmbTipoReporte;
@@ -180,5 +174,6 @@
         private Label label1;
         private Label label3;
         private Label lblResultado;
+        private Panel pnlResultados;
     }
 }
