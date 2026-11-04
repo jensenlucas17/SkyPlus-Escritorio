@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
 using SkyPlus.API.Exceptions;
@@ -9,7 +10,7 @@ namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Agente de Reservas")]
+    [Authorize]
     public class ReservasController : ControllerBase
     {
         private readonly IReservaService _reservaService;
@@ -19,14 +20,19 @@ namespace SkyPlus.API.Controllers
             _reservaService = reservaService;
         }
 
+        // CONSULTAR TODAS LAS RESERVAS
         [HttpGet]
+        [Authorize(Roles = "Agente de Reservas,Agente de Check-in")]
         public async Task<IActionResult> ObtenerTodos()
         {
             var reservas = await _reservaService.ObtenerTodosAsync();
+
             return Ok(reservas);
         }
 
+        // CONSULTAR RESERVA POR ID
         [HttpGet("{id}")]
+        [Authorize(Roles = "Agente de Reservas,Agente de Check-in")]
         public async Task<IActionResult> ObtenerPorId(int id)
         {
             var reserva = await _reservaService.ObtenerPorIdAsync(id);
@@ -42,7 +48,9 @@ namespace SkyPlus.API.Controllers
             return Ok(reserva);
         }
 
+        // CONSULTAR RESERVAS DE UN PASAJERO
         [HttpGet("pasajero/{idPasajero}")]
+        [Authorize(Roles = "Agente de Reservas,Agente de Check-in")]
         public async Task<IActionResult> ObtenerPorPasajero(
             int idPasajero)
         {
@@ -52,8 +60,9 @@ namespace SkyPlus.API.Controllers
             return Ok(reservas);
         }
 
-
+        // CREAR RESERVA
         [HttpPost]
+        [Authorize(Roles = "Agente de Reservas")]
         public async Task<IActionResult> Crear(
             [FromBody] CrearReservaRequest request)
         {
@@ -106,7 +115,9 @@ namespace SkyPlus.API.Controllers
             }
         }
 
+        // CANCELAR RESERVA
         [HttpPut("{id}/cancelar")]
+        [Authorize(Roles = "Agente de Reservas")]
         public async Task<IActionResult> Cancelar(int id)
         {
             try

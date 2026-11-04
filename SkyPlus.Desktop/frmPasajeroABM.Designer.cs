@@ -47,42 +47,42 @@
             // 
             // txtNombre
             // 
-            txtNombre.Location = new Point(257, 54);
+            txtNombre.Location = new Point(247, 51);
             txtNombre.Name = "txtNombre";
             txtNombre.Size = new Size(156, 23);
             txtNombre.TabIndex = 0;
             // 
             // txtApellido
             // 
-            txtApellido.Location = new Point(257, 113);
+            txtApellido.Location = new Point(247, 101);
             txtApellido.Name = "txtApellido";
             txtApellido.Size = new Size(156, 23);
             txtApellido.TabIndex = 1;
             // 
             // txtEmail
             // 
-            txtEmail.Location = new Point(257, 283);
+            txtEmail.Location = new Point(247, 254);
             txtEmail.Name = "txtEmail";
             txtEmail.Size = new Size(156, 23);
-            txtEmail.TabIndex = 2;
+            txtEmail.TabIndex = 4;
             // 
             // txtNacionalidad
             // 
-            txtNacionalidad.Location = new Point(257, 230);
+            txtNacionalidad.Location = new Point(247, 201);
             txtNacionalidad.Name = "txtNacionalidad";
             txtNacionalidad.Size = new Size(156, 23);
             txtNacionalidad.TabIndex = 3;
             // 
             // txtDocumento
             // 
-            txtDocumento.Location = new Point(257, 171);
+            txtDocumento.Location = new Point(247, 151);
             txtDocumento.Name = "txtDocumento";
             txtDocumento.Size = new Size(156, 23);
-            txtDocumento.TabIndex = 4;
+            txtDocumento.TabIndex = 2;
             // 
             // txtTelefono
             // 
-            txtTelefono.Location = new Point(257, 341);
+            txtTelefono.Location = new Point(247, 303);
             txtTelefono.Name = "txtTelefono";
             txtTelefono.Size = new Size(156, 23);
             txtTelefono.TabIndex = 5;
@@ -91,7 +91,7 @@
             // 
             lblMensaje.AutoSize = true;
             lblMensaje.ForeColor = Color.Red;
-            lblMensaje.Location = new Point(261, 367);
+            lblMensaje.Location = new Point(195, 362);
             lblMensaje.Name = "lblMensaje";
             lblMensaje.Size = new Size(38, 15);
             lblMensaje.TabIndex = 6;
@@ -101,7 +101,7 @@
             // label1
             // 
             label1.AutoSize = true;
-            label1.Location = new Point(153, 54);
+            label1.Location = new Point(73, 54);
             label1.Name = "label1";
             label1.Size = new Size(54, 15);
             label1.TabIndex = 7;
@@ -110,16 +110,16 @@
             // label2
             // 
             label2.AutoSize = true;
-            label2.Location = new Point(153, 341);
+            label2.Location = new Point(73, 306);
             label2.Name = "label2";
-            label2.Size = new Size(56, 15);
+            label2.Size = new Size(55, 15);
             label2.TabIndex = 8;
             label2.Text = "Telefono:";
             // 
             // label3
             // 
             label3.AutoSize = true;
-            label3.Location = new Point(153, 283);
+            label3.Location = new Point(73, 257);
             label3.Name = "label3";
             label3.Size = new Size(39, 15);
             label3.TabIndex = 9;
@@ -128,7 +128,7 @@
             // label4
             // 
             label4.AutoSize = true;
-            label4.Location = new Point(153, 230);
+            label4.Location = new Point(73, 204);
             label4.Name = "label4";
             label4.Size = new Size(80, 15);
             label4.TabIndex = 10;
@@ -137,7 +137,7 @@
             // label5
             // 
             label5.AutoSize = true;
-            label5.Location = new Point(153, 171);
+            label5.Location = new Point(73, 154);
             label5.Name = "label5";
             label5.Size = new Size(73, 15);
             label5.TabIndex = 11;
@@ -146,7 +146,7 @@
             // label6
             // 
             label6.AutoSize = true;
-            label6.Location = new Point(153, 113);
+            label6.Location = new Point(73, 104);
             label6.Name = "label6";
             label6.Size = new Size(54, 15);
             label6.TabIndex = 12;
@@ -154,7 +154,7 @@
             // 
             // btnGuardar
             // 
-            btnGuardar.Location = new Point(158, 405);
+            btnGuardar.Location = new Point(124, 405);
             btnGuardar.Name = "btnGuardar";
             btnGuardar.Size = new Size(75, 23);
             btnGuardar.TabIndex = 13;
@@ -164,7 +164,7 @@
             // 
             // btnCancelar
             // 
-            btnCancelar.Location = new Point(306, 405);
+            btnCancelar.Location = new Point(312, 405);
             btnCancelar.Name = "btnCancelar";
             btnCancelar.Size = new Size(75, 23);
             btnCancelar.TabIndex = 14;

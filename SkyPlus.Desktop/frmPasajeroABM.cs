@@ -1,9 +1,10 @@
-﻿// SkyPlus.Desktop/frmPasajeroABM.cs
-
+﻿
 using SkyPlus.Desktop.Estilos;
 using SkyPlus.Desktop.Models;
 using SkyPlus.Desktop.Services;
 using System;
+using System.Drawing;
+using System.Net;
 using System.Net.Http;
 using System.Windows.Forms;
 
@@ -14,9 +15,12 @@ namespace SkyPlus.Desktop
         private readonly PasajeroClient _pasajeroClient;
         private readonly PasajeroResponse? _pasajeroEdicion;
 
-        public frmPasajeroABM(PasajeroClient pasajeroClient, PasajeroResponse? pasajeroExistente)
+        public frmPasajeroABM(
+            PasajeroClient pasajeroClient,
+            PasajeroResponse? pasajeroExistente)
         {
             InitializeComponent();
+
             _pasajeroClient = pasajeroClient;
             _pasajeroEdicion = pasajeroExistente;
         }
@@ -24,9 +28,14 @@ namespace SkyPlus.Desktop
         private void frmPasajeroABM_Load(object sender, EventArgs e)
         {
             lblMensaje.Visible = false;
-            Text = _pasajeroEdicion == null ? "Nuevo pasajero" : "Editar pasajero";
+
+            Text = _pasajeroEdicion == null
+                ? "Nuevo pasajero"
+                : "Editar pasajero";
+
             AppEstilos.EstilizarBotonPrimario(btnGuardar);
             AppEstilos.EstilizarBotonSecundario(btnCancelar);
+
             if (_pasajeroEdicion != null)
             {
                 txtNombre.Text = _pasajeroEdicion.Nombre;
@@ -42,13 +51,44 @@ namespace SkyPlus.Desktop
         {
             lblMensaje.Visible = false;
 
-            if (string.IsNullOrWhiteSpace(txtNombre.Text) ||
-                string.IsNullOrWhiteSpace(txtApellido.Text) ||
-                string.IsNullOrWhiteSpace(txtDocumento.Text))
+            // Validaciones básicas de interfaz
+            if (string.IsNullOrWhiteSpace(txtNombre.Text))
             {
-                MostrarError("Nombre, apellido y documento son obligatorios.");
+                MostrarError("El nombre es obligatorio.");
+                txtNombre.Focus();
                 return;
             }
+
+            if (string.IsNullOrWhiteSpace(txtApellido.Text))
+            {
+                MostrarError("El apellido es obligatorio.");
+                txtApellido.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtDocumento.Text))
+            {
+                MostrarError("El documento es obligatorio.");
+                txtDocumento.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtNacionalidad.Text))
+            {
+                MostrarError("La nacionalidad es obligatoria.");
+                txtNacionalidad.Focus();
+                return;
+            }
+
+            if (string.IsNullOrWhiteSpace(txtEmail.Text))
+            {
+                MostrarError("El email es obligatorio.");
+                txtEmail.Focus();
+                return;
+            }
+
+            // El teléfono es opcional.
+            // Las validaciones de formato se realizan en la API.
 
             btnGuardar.Enabled = false;
 
@@ -56,6 +96,7 @@ namespace SkyPlus.Desktop
             {
                 if (_pasajeroEdicion == null)
                 {
+                    // CREAR PASAJERO
                     await _pasajeroClient.CrearAsync(
                         txtNombre.Text.Trim(),
                         txtApellido.Text.Trim(),
@@ -66,6 +107,7 @@ namespace SkyPlus.Desktop
                 }
                 else
                 {
+                    // ACTUALIZAR PASAJERO
                     await _pasajeroClient.ActualizarAsync(
                         _pasajeroEdicion.IdPasajero,
                         txtNombre.Text.Trim(),
@@ -81,21 +123,25 @@ namespace SkyPlus.Desktop
             }
             catch (HttpRequestException ex)
             {
-                if (ex.StatusCode == System.Net.HttpStatusCode.Unauthorized)
+                if (ex.StatusCode == HttpStatusCode.Unauthorized)
                 {
-                    MostrarError("Tu sesión expiró o no es válida. Iniciá sesión nuevamente.");
+                    MostrarError(
+                        "Tu sesión expiró o no es válida. Iniciá sesión nuevamente.");
                 }
-                else if (ex.StatusCode == System.Net.HttpStatusCode.Forbidden)
+                else if (ex.StatusCode == HttpStatusCode.Forbidden)
                 {
-                    MostrarError("No tenés permisos para realizar esta operación.");
+                    MostrarError(
+                        "No tenés permisos para realizar esta operación.");
                 }
                 else if (ex.StatusCode.HasValue)
                 {
+                    // Mostrar el mensaje específico enviado por la API
                     MostrarError(ex.Message);
                 }
                 else
                 {
-                    MostrarError("No se pudo conectar con la API: " + ex.Message);
+                    MostrarError(
+                        "No se pudo conectar con la API: " + ex.Message);
                 }
             }
             catch (Exception ex)
@@ -117,7 +163,20 @@ namespace SkyPlus.Desktop
         private void MostrarError(string mensaje)
         {
             lblMensaje.Text = mensaje;
+            lblMensaje.ForeColor = Color.Red;
+
+            lblMensaje.AutoSize = false;
+            lblMensaje.TextAlign = ContentAlignment.MiddleCenter;
+
+            lblMensaje.Width = ClientSize.Width - 30;
+            lblMensaje.Height = 48;
+
+            lblMensaje.Left = 15;
+            lblMensaje.Top =
+                btnGuardar.Top - lblMensaje.Height - 12;
+
             lblMensaje.Visible = true;
+            lblMensaje.BringToFront();
         }
     }
 }

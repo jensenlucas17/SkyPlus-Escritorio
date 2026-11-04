@@ -55,13 +55,33 @@ namespace SkyPlus.API.Controllers
                 });
             }
 
+            if (!System.Net.Mail.MailAddress.TryCreate(
+                    request.EmailCorporativo, out var direccion) ||
+                direccion.Address != request.EmailCorporativo ||
+                !request.EmailCorporativo.Contains('@') ||
+                !request.EmailCorporativo.Split('@')[1].Contains('.'))
+            {
+                return BadRequest(new
+                {
+                    mensaje = "Ingresá un email corporativo válido."
+                });
+            }
+
+            if (request.Password.Length < 12)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "La contraseña debe tener al menos 12 caracteres."
+                });
+            }
+
             var usuario = await _usuarioService.CrearAsync(request);
 
             if (usuario == null)
             {
                 return BadRequest(new
                 {
-                    mensaje = "No se pudo crear el usuario. Verificá el rol, nombre, apellido, DNI, email y contraseña (mínimo 12 caracteres)."
+                    mensaje = "No se pudo crear el usuario. Verificá los datos ingresados o si ya existe el DNI o email."
                 });
             }
 
@@ -83,6 +103,18 @@ namespace SkyPlus.API.Controllers
                 return BadRequest(new
                 {
                     mensaje = "Los campos obligatorios deben estar completos."
+                });
+            }
+
+            if (!System.Net.Mail.MailAddress.TryCreate(
+                    request.EmailCorporativo, out var direccion) ||
+                direccion.Address != request.EmailCorporativo ||
+                !request.EmailCorporativo.Contains('@') ||
+                !request.EmailCorporativo.Split('@')[1].Contains('.'))
+            {
+                return BadRequest(new
+                {
+                    mensaje = "Ingresá un email corporativo válido."
                 });
             }
 

@@ -1,6 +1,12 @@
-﻿using Microsoft.EntityFrameworkCore;
+﻿
+using Microsoft.EntityFrameworkCore;
 using SkyPlus.API.DTOs;
 using SkyPlus.Infrastructure.Data;
+using System;
+using System.Collections.Generic;
+using System.Net.Mail;
+using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 
 namespace SkyPlus.API.Services
 {
@@ -58,23 +64,22 @@ namespace SkyPlus.API.Services
             request.Email = request.Email?.Trim() ?? string.Empty;
             request.Telefono = request.Telefono?.Trim() ?? string.Empty;
 
-            if (!NombreValido(request.Nombre) ||
-                !NombreValido(request.Apellido) ||
-                !DocumentoValido(request.Documento) ||
-                !NombreValido(request.Nacionalidad) ||
-                !EmailValido(request.Email) ||
-                !TelefonoValido(request.Telefono))
-            {
-                return null;
-            }
+            ValidarPasajero(
+                request.Nombre,
+                request.Apellido,
+                request.Documento,
+                request.Nacionalidad,
+                request.Email,
+                request.Telefono);
 
-            var documentoExiste =
-                await _context.Pasajeros
-                    .AnyAsync(p =>
-                        p.Documento == request.Documento);
+            var documentoExiste = await _context.Pasajeros
+                .AnyAsync(p => p.Documento == request.Documento);
 
             if (documentoExiste)
-                return null;
+            {
+                throw new ValidacionPasajeroException(
+                    "Ya existe un pasajero registrado con ese documento.");
+            }
 
             var pasajero = new Domain.Entities.Pasajero
             {
@@ -90,18 +95,15 @@ namespace SkyPlus.API.Services
 
             await _context.SaveChangesAsync();
 
-            return await ObtenerPorIdAsync(
-                pasajero.IdPasajero);
+            return await ObtenerPorIdAsync(pasajero.IdPasajero);
         }
 
         public async Task<PasajeroResponse?> ActualizarAsync(
             int id,
             ActualizarPasajeroRequest request)
         {
-            var pasajero =
-                await _context.Pasajeros
-                    .FirstOrDefaultAsync(p =>
-                        p.IdPasajero == id);
+            var pasajero = await _context.Pasajeros
+                .FirstOrDefaultAsync(p => p.IdPasajero == id);
 
             if (pasajero == null)
                 return null;
@@ -113,24 +115,24 @@ namespace SkyPlus.API.Services
             request.Email = request.Email?.Trim() ?? string.Empty;
             request.Telefono = request.Telefono?.Trim() ?? string.Empty;
 
-            if (!NombreValido(request.Nombre) ||
-                !NombreValido(request.Apellido) ||
-                !DocumentoValido(request.Documento) ||
-                !NombreValido(request.Nacionalidad) ||
-                !EmailValido(request.Email) ||
-                !TelefonoValido(request.Telefono))
-            {
-                return null;
-            }
+            ValidarPasajero(
+                request.Nombre,
+                request.Apellido,
+                request.Documento,
+                request.Nacionalidad,
+                request.Email,
+                request.Telefono);
 
-            var documentoExiste =
-                await _context.Pasajeros
-                    .AnyAsync(p =>
-                        p.Documento == request.Documento &&
-                        p.IdPasajero != id);
+            var documentoExiste = await _context.Pasajeros
+                .AnyAsync(p =>
+                    p.Documento == request.Documento &&
+                    p.IdPasajero != id);
 
             if (documentoExiste)
-                return null;
+            {
+                throw new ValidacionPasajeroException(
+                    "Ya existe otro pasajero registrado con ese documento.");
+            }
 
             pasajero.Nombre = request.Nombre;
             pasajero.Apellido = request.Apellido;
@@ -173,14 +175,93 @@ namespace SkyPlus.API.Services
             pasajero.Estado = "Activo";
 
             await _context.SaveChangesAsync();
+
             return true;
+        }
+
+        // VALIDACIONES CENTRALIZADAS
+
+        private static void ValidarPasajero(
+            string? nombre,
+            string? apellido,
+            string? documento,
+            string? nacionalidad,
+            string? email,
+            string? telefono)
+        {
+            if (string.IsNullOrWhiteSpace(nombre))
+            {
+                throw new ValidacionPasajeroException(
+                    "El nombre es obligatorio.");
+            }
+
+            if (!NombreValido(nombre))
+            {
+                throw new ValidacionPasajeroException(
+                    "El nombre solo puede contener letras, espacios, apóstrofes y guiones.");
+            }
+
+            if (string.IsNullOrWhiteSpace(apellido))
+            {
+                throw new ValidacionPasajeroException(
+                    "El apellido es obligatorio.");
+            }
+
+            if (!NombreValido(apellido))
+            {
+                throw new ValidacionPasajeroException(
+                    "El apellido solo puede contener letras, espacios, apóstrofes y guiones.");
+            }
+
+            if (string.IsNullOrWhiteSpace(documento))
+            {
+                throw new ValidacionPasajeroException(
+                    "El documento es obligatorio.");
+            }
+
+            if (!DocumentoValido(documento))
+            {
+                throw new ValidacionPasajeroException(
+                    "El documento debe tener entre 3 y 30 caracteres. Se permiten letras, números, espacios y guiones internos.");
+            }
+
+            if (string.IsNullOrWhiteSpace(nacionalidad))
+            {
+                throw new ValidacionPasajeroException(
+                    "La nacionalidad es obligatoria.");
+            }
+
+            if (!NombreValido(nacionalidad))
+            {
+                throw new ValidacionPasajeroException(
+                    "La nacionalidad solo puede contener letras, espacios, apóstrofes y guiones.");
+            }
+
+            if (string.IsNullOrWhiteSpace(email))
+            {
+                throw new ValidacionPasajeroException(
+                    "El email es obligatorio.");
+            }
+
+            if (!EmailValido(email))
+            {
+                throw new ValidacionPasajeroException(
+                    "Ingresá un email válido. Ejemplo: pasajero@correo.com.");
+            }
+
+            if (!TelefonoValido(telefono))
+            {
+                throw new ValidacionPasajeroException(
+                    "El teléfono debe contener entre 7 y 15 dígitos, con + opcional.");
+            }
         }
 
         private static bool NombreValido(string? valor)
         {
             return !string.IsNullOrWhiteSpace(valor) &&
-                System.Text.RegularExpressions.Regex.IsMatch(
-                    valor, @"^\p{L}+(?:[ '\-]\p{L}+)*$");
+                Regex.IsMatch(
+                    valor.Trim(),
+                    @"^\p{L}+(?:[ '\-]\p{L}+)*$");
         }
 
         private static bool DocumentoValido(string? documento)
@@ -192,24 +273,39 @@ namespace SkyPlus.API.Services
 
             return documento.Length >= 3 &&
                    documento.Length <= 30 &&
-                   System.Text.RegularExpressions.Regex.IsMatch(
+                   Regex.IsMatch(
                        documento,
                        @"^[A-Za-z0-9]+(?:[ -][A-Za-z0-9]+)*$");
         }
 
         private static bool EmailValido(string? email)
         {
-            return !string.IsNullOrWhiteSpace(email) &&
-                System.Net.Mail.MailAddress.TryCreate(
-                    email, out var direccion) &&
-                direccion.Address == email;
+            if (string.IsNullOrWhiteSpace(email))
+                return false;
+
+            email = email.Trim();
+
+            if (!MailAddress.TryCreate(email, out var direccion))
+                return false;
+
+            var partes = email.Split('@');
+
+            return partes.Length == 2 &&
+                   direccion.Address == email &&
+                   partes[1].Contains('.') &&
+                   !partes[1].StartsWith('.') &&
+                   !partes[1].EndsWith('.');
         }
 
         private static bool TelefonoValido(string? telefono)
         {
-            return !string.IsNullOrWhiteSpace(telefono) &&
-                System.Text.RegularExpressions.Regex.IsMatch(
-                    telefono, @"^\+?[0-9]{7,15}$");
+            // El teléfono es opcional
+            if (string.IsNullOrWhiteSpace(telefono))
+                return true;
+
+            return Regex.IsMatch(
+                telefono.Trim(),
+                @"^\+?[0-9]{7,15}$");
         }
     }
 }

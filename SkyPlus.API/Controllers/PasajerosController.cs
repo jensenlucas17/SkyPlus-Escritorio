@@ -1,7 +1,10 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
-using Microsoft.AspNetCore.Authorization;
+using System;
+using System.Threading.Tasks;
 
 namespace SkyPlus.API.Controllers
 {
@@ -48,35 +51,31 @@ namespace SkyPlus.API.Controllers
         public async Task<IActionResult> Crear(
             [FromBody] CrearPasajeroRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Nombre) ||
-                string.IsNullOrWhiteSpace(request.Apellido) ||
-                string.IsNullOrWhiteSpace(request.Documento))
+            try
+            {
+                var pasajero =
+                    await _pasajeroService.CrearAsync(request);
+
+                if (pasajero == null)
+                {
+                    return BadRequest(new
+                    {
+                        mensaje = "No se pudo crear el pasajero."
+                    });
+                }
+
+                return CreatedAtAction(
+                    nameof(ObtenerPorId),
+                    new { id = pasajero.IdPasajero },
+                    pasajero);
+            }
+            catch (ValidacionPasajeroException ex)
             {
                 return BadRequest(new
                 {
-                    mensaje =
-                        "Nombre, apellido y documento son obligatorios."
+                    mensaje = ex.Message
                 });
             }
-
-            var pasajero =
-                await _pasajeroService.CrearAsync(request);
-
-            if (pasajero == null)
-            {
-                return BadRequest(new
-                {
-                    mensaje = "No se pudo crear el pasajero. Verificá los datos ingresados o si el documento ya está registrado."
-                });
-            }
-
-            return CreatedAtAction(
-                nameof(ObtenerPorId),
-                new
-                {
-                    id = pasajero.IdPasajero
-                },
-                pasajero);
         }
 
         [HttpPut("{id}")]
@@ -84,33 +83,30 @@ namespace SkyPlus.API.Controllers
             int id,
             [FromBody] ActualizarPasajeroRequest request)
         {
-            if (string.IsNullOrWhiteSpace(request.Nombre) ||
-                string.IsNullOrWhiteSpace(request.Apellido) ||
-                string.IsNullOrWhiteSpace(request.Documento))
+            try
+            {
+                var pasajero =
+                    await _pasajeroService.ActualizarAsync(
+                        id,
+                        request);
+
+                if (pasajero == null)
+                {
+                    return NotFound(new
+                    {
+                        mensaje = "Pasajero no encontrado."
+                    });
+                }
+
+                return Ok(pasajero);
+            }
+            catch (ValidacionPasajeroException ex)
             {
                 return BadRequest(new
                 {
-                    mensaje =
-                        "Nombre, apellido y documento son obligatorios."
+                    mensaje = ex.Message
                 });
             }
-
-            var pasajero =
-                await _pasajeroService.ActualizarAsync(
-                    id,
-                    request);
-
-            if (pasajero == null)
-            {
-                return BadRequest(new
-                {
-                    mensaje =
-                        "El pasajero no existe o el documento " +
-                        "ya está registrado."
-                });
-            }
-
-            return Ok(pasajero);
         }
 
         [HttpDelete("{id}")]
@@ -123,26 +119,34 @@ namespace SkyPlus.API.Controllers
             {
                 return NotFound(new
                 {
-                    mensaje = "Pasajero no encontrado."
+                    mensaje = "El pasajero no existe o ya está inactivo."
                 });
             }
 
             return Ok(new
             {
-                mensaje =
-                    "Pasajero eliminado correctamente."
+                mensaje = "Pasajero eliminado correctamente."
             });
         }
 
         [HttpPatch("{id}/reactivar")]
         public async Task<IActionResult> Reactivar(int id)
         {
-            var reactivado = await _pasajeroService.ReactivarAsync(id);
+            var reactivado =
+                await _pasajeroService.ReactivarAsync(id);
 
             if (!reactivado)
-                return BadRequest("El pasajero no existe o ya está activo.");
+            {
+                return BadRequest(new
+                {
+                    mensaje = "El pasajero no existe o ya está activo."
+                });
+            }
 
-            return Ok(new { mensaje = "Pasajero reactivado correctamente." });
+            return Ok(new
+            {
+                mensaje = "Pasajero reactivado correctamente."
+            });
         }
     }
 }

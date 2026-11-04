@@ -1,8 +1,9 @@
-﻿using SkyPlus.Desktop.Estilos;
+﻿
+using SkyPlus.Desktop.Estilos;
 using SkyPlus.Desktop.Models;
 using SkyPlus.Desktop.Services;
 using System;
-using System.Linq;
+using System.Drawing;
 using System.Net;
 using System.Windows.Forms;
 
@@ -13,7 +14,9 @@ namespace SkyPlus.Desktop
         private readonly UsuarioClient _usuarioClient = new UsuarioClient();
         private readonly RolClient _rolClient = new RolClient();
 
-        private readonly int? _idUsuarioEdicion; // null = alta, con valor = edición
+        // null = alta, con valor = edición
+        private readonly int? _idUsuarioEdicion;
+
         private string _estadoInicial = "Activo";
 
         // Constructor para ALTA
@@ -37,7 +40,7 @@ namespace SkyPlus.Desktop
 
             _estadoInicial = usuarioExistente.EstadoCuenta;
 
-            // Se utiliza Tag para conservar el rol actual
+            // Conservar el rol actual del usuario
             Tag = usuarioExistente.IdRol;
         }
 
@@ -49,15 +52,14 @@ namespace SkyPlus.Desktop
 
             Text = esEdicion ? "Editar usuario" : "Nuevo usuario";
 
-            // Contraseña solo se solicita al crear
+            // Contraseña solo al crear
             lblPassword.Visible = !esEdicion;
             txtPassword.Visible = !esEdicion;
 
-            // Estado solo se muestra al editar
+            // Estado solo al editar
             lblEstado.Visible = esEdicion;
             cmbEstado.Visible = esEdicion;
 
-            // Opciones de estado
             cmbEstado.Items.Clear();
             cmbEstado.Items.Add("Activo");
             cmbEstado.Items.Add("Inactivo");
@@ -83,45 +85,41 @@ namespace SkyPlus.Desktop
                 cmbRol.ValueMember = nameof(RolResponse.IdRol);
                 cmbRol.DataSource = roles;
 
-                // Si es edición, seleccionar el rol que ya tenía el usuario
+                // Seleccionar el rol existente al editar
                 if (Tag is int idRolActual)
                 {
                     cmbRol.SelectedValue = idRolActual;
                 }
             }
+            catch (HttpRequestException ex)
+            {
+                MostrarError(
+                    "No se pudieron cargar los roles: " + ex.Message);
+            }
             catch (Exception ex)
             {
-                MostrarError("No se pudieron cargar los roles: " + ex.Message);
+                MostrarError(
+                    "Ocurrió un error al cargar los roles: " + ex.Message);
             }
-        }
-
-        private static bool NombreValido(string? valor)
-        {
-            return !string.IsNullOrWhiteSpace(valor) &&
-                System.Text.RegularExpressions.Regex.IsMatch(
-                    valor,
-                    @"^\p{L}+(?:[ '\-]\p{L}+)*$");
         }
 
         private async void btnGuardar_Click(object sender, EventArgs e)
         {
             lblMensaje.Visible = false;
 
+            string nombre = txtNombre.Text.Trim();
+            string apellido = txtApellido.Text.Trim();
             string dni = txtDni.Text.Trim();
+            string email = txtEmail.Text.Trim();
 
-            // Validaciones básicas (RF#18)
-            if (string.IsNullOrWhiteSpace(txtNombre.Text) ||
-                string.IsNullOrWhiteSpace(txtApellido.Text) ||
-                string.IsNullOrWhiteSpace(txtEmail.Text) ||
+            // Validaciones básicas de interfaz
+            if (string.IsNullOrWhiteSpace(nombre) ||
+                string.IsNullOrWhiteSpace(apellido) ||
+                string.IsNullOrWhiteSpace(email) ||
                 string.IsNullOrWhiteSpace(dni))
             {
-                MostrarError("Nombre, apellido, email y DNI son obligatorios.");
-                return;
-            }
-
-            if (!txtEmail.Text.Contains("@"))
-            {
-                MostrarError("Ingresá un email corporativo válido.");
+                MostrarError(
+                    "Nombre, apellido, email y DNI son obligatorios.");
                 return;
             }
 
@@ -131,24 +129,10 @@ namespace SkyPlus.Desktop
                 return;
             }
 
-            if (!System.Text.RegularExpressions.Regex.IsMatch(
-                dni, @"^[0-9]{7,8}$"))
+            if (!_idUsuarioEdicion.HasValue &&
+                string.IsNullOrWhiteSpace(txtPassword.Text))
             {
-                MostrarError("El DNI debe contener 7 u 8 números, sin puntos.");
-                return;
-            }
-
-            if (!NombreValido(txtNombre.Text.Trim()))
-            {
-                MostrarError("El nombre solo puede contener letras.");
-                txtNombre.Focus();
-                return;
-            }
-
-            if (!NombreValido(txtApellido.Text.Trim()))
-            {
-                MostrarError("El apellido solo puede contener letras.");
-                txtApellido.Focus();
+                MostrarError("La contraseña es obligatoria.");
                 return;
             }
 
@@ -162,39 +146,35 @@ namespace SkyPlus.Desktop
                     var request = new ActualizarUsuarioRequest
                     {
                         IdRol = idRolSeleccionado,
-                        Nombre = txtNombre.Text.Trim(),
-                        Apellido = txtApellido.Text.Trim(),
+                        Nombre = nombre,
+                        Apellido = apellido,
                         Dni = dni,
-                        EmailCorporativo = txtEmail.Text.Trim(),
-                        EstadoCuenta = cmbEstado.SelectedItem?.ToString() ?? "Activo"
+                        EmailCorporativo = email,
+                        EstadoCuenta =
+                            cmbEstado.SelectedItem?.ToString() ?? "Activo"
                     };
 
                     var resultado = await _usuarioClient.ActualizarAsync(
-                        _idUsuarioEdicion.Value, request);
+                        _idUsuarioEdicion.Value,
+                        request);
 
                     if (resultado == null)
                     {
-                        MostrarError("No se pudo actualizar el usuario. Verificá los datos ingresados.");
+                        MostrarError(
+                            "No se pudo actualizar el usuario.");
                         return;
                     }
                 }
                 else
                 {
                     // ALTA
-                    if (string.IsNullOrWhiteSpace(txtPassword.Text) || txtPassword.Text.Length < 6)
-                    {
-                        MostrarError("La contraseña debe tener al menos 6 caracteres.");
-                        btnGuardar.Enabled = true;
-                        return;
-                    }
-
                     var request = new CrearUsuarioRequest
                     {
                         IdRol = idRolSeleccionado,
-                        Nombre = txtNombre.Text.Trim(),
-                        Apellido = txtApellido.Text.Trim(),
+                        Nombre = nombre,
+                        Apellido = apellido,
                         Dni = dni,
-                        EmailCorporativo = txtEmail.Text.Trim(),
+                        EmailCorporativo = email,
                         Password = txtPassword.Text
                     };
 
@@ -202,7 +182,8 @@ namespace SkyPlus.Desktop
 
                     if (resultado == null)
                     {
-                        MostrarError("No se pudo crear el usuario. Verificá que el DNI y el email no estén registrados.");
+                        MostrarError(
+                            "No se pudo crear el usuario.");
                         return;
                     }
                 }
@@ -210,15 +191,33 @@ namespace SkyPlus.Desktop
                 DialogResult = DialogResult.OK;
                 Close();
             }
-            catch (HttpRequestException)
+            catch (HttpRequestException ex)
             {
-                MostrarError(
-                    "No se pudo guardar el usuario. " +
-                    "Verificá los datos o si ya existe el DNI o email.");
+                if (ex.StatusCode == HttpStatusCode.Unauthorized)
+                {
+                    MostrarError(
+                        "Tu sesión expiró. Iniciá sesión nuevamente.");
+                }
+                else if (ex.StatusCode == HttpStatusCode.Forbidden)
+                {
+                    MostrarError(
+                        "No tenés permisos para gestionar usuarios.");
+                }
+                else if (ex.StatusCode.HasValue)
+                {
+                    // Mostrar el mensaje enviado por la API
+                    MostrarError(ex.Message);
+                }
+                else
+                {
+                    MostrarError(
+                        "No se pudo conectar con la API: " + ex.Message);
+                }
             }
             catch (Exception ex)
             {
-                MostrarError("Ocurrió un error: " + ex.Message);
+                MostrarError(
+                    "Ocurrió un error: " + ex.Message);
             }
             finally
             {
@@ -244,7 +243,8 @@ namespace SkyPlus.Desktop
             lblMensaje.Height = 48;
 
             lblMensaje.Left = 20;
-            lblMensaje.Top = btnGuardar.Top - lblMensaje.Height - 12;
+            lblMensaje.Top =
+                btnGuardar.Top - lblMensaje.Height - 12;
 
             lblMensaje.Visible = true;
             lblMensaje.BringToFront();

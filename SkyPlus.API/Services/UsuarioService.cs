@@ -64,6 +64,14 @@ namespace SkyPlus.API.Services
                     return null;
                 }
 
+            request.EmailCorporativo =
+                request.EmailCorporativo?.Trim() ?? string.Empty;
+
+            if (!EmailValido(request.EmailCorporativo))
+            {
+                return null;
+            }
+
             var rolExiste = await _context.Roles
                 .AnyAsync(r => r.IdRol == request.IdRol);
 
@@ -124,6 +132,14 @@ namespace SkyPlus.API.Services
                 {
                     return null;
                 }
+
+            request.EmailCorporativo =
+                request.EmailCorporativo?.Trim() ?? string.Empty;
+
+            if (!EmailValido(request.EmailCorporativo))
+            {
+                return null;
+            }
 
             var usuario = await _context.Usuarios
                 .FirstOrDefaultAsync(u => u.IdUsuario == id);
@@ -195,6 +211,16 @@ namespace SkyPlus.API.Services
                 System.Text.RegularExpressions.Regex.IsMatch(
                     valor,
                     @"^\p{L}+(?:[ '\-]\p{L}+)*$");
+        }
+
+        private static bool EmailValido(string? email)
+        {
+            return !string.IsNullOrWhiteSpace(email) &&
+                System.Net.Mail.MailAddress.TryCreate(
+                    email, out var direccion) &&
+                direccion.Address == email &&
+                email.Contains('@') &&
+                email.Split('@')[1].Contains('.');
         }
     }
 }
