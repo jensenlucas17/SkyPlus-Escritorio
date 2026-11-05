@@ -37,20 +37,17 @@ namespace SkyPlus.API.Services
                     EstadoVuelo = v.EstadoVuelo,
                     Tarifa = v.Tarifa,
 
-                    Aeronave =
-                        v.Aeronave.Matricula +
-                        " - " +
-                        v.Aeronave.Modelo,
+                    Aeronave = v.Aeronave != null
+                        ? v.Aeronave.Matricula + " - " + v.Aeronave.Modelo
+                        : "Sin aeronave",
 
-                    LugarOrigen =
-                        v.LugarOrigen.CodigoIata +
-                        " - " +
-                        v.LugarOrigen.Ciudad,
+                                        LugarOrigen = v.LugarOrigen != null
+                        ? v.LugarOrigen.CodigoIata + " - " + v.LugarOrigen.Ciudad
+                        : "Sin origen",
 
-                    LugarDestino =
-                        v.LugarDestino.CodigoIata +
-                        " - " +
-                        v.LugarDestino.Ciudad
+                                        LugarDestino = v.LugarDestino != null
+                        ? v.LugarDestino.CodigoIata + " - " + v.LugarDestino.Ciudad
+                        : "Sin destino"
                 })
                 .ToListAsync();
         }
@@ -75,20 +72,17 @@ namespace SkyPlus.API.Services
                     EstadoVuelo = v.EstadoVuelo,
                     Tarifa = v.Tarifa,
 
-                    Aeronave =
-                        v.Aeronave.Matricula +
-                        " - " +
-                        v.Aeronave.Modelo,
+                    Aeronave = v.Aeronave != null
+                        ? v.Aeronave.Matricula + " - " + v.Aeronave.Modelo
+                        : "Sin aeronave",
 
-                    LugarOrigen =
-                        v.LugarOrigen.CodigoIata +
-                        " - " +
-                        v.LugarOrigen.Ciudad,
+                                        LugarOrigen = v.LugarOrigen != null
+                        ? v.LugarOrigen.CodigoIata + " - " + v.LugarOrigen.Ciudad
+                        : "Sin origen",
 
-                    LugarDestino =
-                        v.LugarDestino.CodigoIata +
-                        " - " +
-                        v.LugarDestino.Ciudad
+                                        LugarDestino = v.LugarDestino != null
+                        ? v.LugarDestino.CodigoIata + " - " + v.LugarDestino.Ciudad
+                        : "Sin destino"
                 })
                 .FirstOrDefaultAsync();
         }

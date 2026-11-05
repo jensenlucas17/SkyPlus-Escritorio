@@ -258,7 +258,6 @@
 
         private ComboBox cmbPasajero;
         private ComboBox cmbVuelo;
-        private ComboBox cmbAsiento;
         private Label lblTarifa;
         private Label lblMensaje;
         private Label label1;
@@ -266,7 +265,6 @@
         private Label label3;
         private Button btnGuardar;
         private Button btnCancelar;
-        private Button btnRefrescar;
         private Label label4;
         private Label label5;
         private Button btnNuevoPasajero;

@@ -31,7 +31,9 @@ namespace SkyPlus.API.Services
                     EmailCorporativo = u.EmailCorporativo,
                     EstadoCuenta = u.EstadoCuenta,
                     UltimaSesion = u.UltimaSesion,
-                    Rol = u.Rol.NombreRol
+                    Rol = u.Rol != null
+                        ? u.Rol.NombreRol
+                        : "Sin rol"
                 })
                 .ToListAsync();
         }
@@ -51,7 +53,9 @@ namespace SkyPlus.API.Services
                     EmailCorporativo = u.EmailCorporativo,
                     EstadoCuenta = u.EstadoCuenta,
                     UltimaSesion = u.UltimaSesion,
-                    Rol = u.Rol.NombreRol
+                    Rol = u.Rol != null
+                        ? u.Rol.NombreRol
+                        : "Sin rol"
                 })
                 .FirstOrDefaultAsync();
         }
