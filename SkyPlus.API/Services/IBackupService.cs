@@ -8,6 +8,9 @@ namespace SkyPlus.API.Services
             int idAdministrador,
             CancellationToken cancellationToken = default);
 
+        Task<string> GenerarBackupAutomaticoAsync(
+            CancellationToken cancellationToken = default);
+
         Task<List<BackupHistorialDto>> ObtenerHistorialAsync(
             CancellationToken cancellationToken = default);
 

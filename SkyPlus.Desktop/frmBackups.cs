@@ -129,13 +129,16 @@ namespace SkyPlus.Desktop
                 b.Estado,
                 TamanoMb = (b.TamanoBytes / 1024.0 / 1024.0)
                     .ToString("N2") + " MB",
-                b.IdAdministrador
+                IdAdministrador = b.IdAdministrador == 0
+                    ? "Sistema"
+                    : b.IdAdministrador.ToString()
             }).ToList();
 
             dgvBackups.DataSource = null;
             dgvBackups.DataSource = datos;
             dgvBackups.ClearSelection();
         }
+
 
         private BackupResponse? ObtenerSeleccionado()
         {

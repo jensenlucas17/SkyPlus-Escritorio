@@ -307,6 +307,24 @@ namespace SkyPlus.API.Services
                     "Administrador inválido.");
             }
 
+            return await GenerarBackupInternoAsync(
+                idAdministrador, "Manual", cancellationToken);
+        }
+
+        // Invocado exclusivamente por un proceso interno de confianza,
+        // nunca desde un endpoint público sin autorización.
+        public Task<string> GenerarBackupAutomaticoAsync(
+            CancellationToken cancellationToken = default)
+        {
+            return GenerarBackupInternoAsync(
+                0, "Automatico", cancellationToken);
+        }
+
+        private async Task<string> GenerarBackupInternoAsync(
+            int idAdministrador,
+            string tipo,
+            CancellationToken cancellationToken)
+        {
             await _semaforo.WaitAsync(cancellationToken);
 
             string? rutaArchivo = null;
@@ -457,7 +475,7 @@ namespace SkyPlus.API.Services
                     Archivo = nombreArchivo,
                     FechaUtc = DateTime.UtcNow,
                     IdAdministrador = idAdministrador,
-                    Tipo = "Manual",
+                    Tipo = tipo,
                     Estado = "Disponible",
                     TamanoBytes = info.Length,
                     Sha256 = hash
@@ -468,6 +486,26 @@ namespace SkyPlus.API.Services
                     cancellationToken);
 
                 registrado = true;
+
+                // La limpieza es posterior al registro exitoso y
+                // nunca afecta a los respaldos manuales.
+                if (tipo == "Automatico")
+                {
+                    try
+                    {
+                        await AplicarRetencionAutomaticaAsync(
+                            historial, cancellationToken);
+                    }
+                    catch (Exception ex)
+                    {
+                        Trace.TraceError(
+                            "Falló la retención automática: {0}", ex);
+
+                        throw new InvalidOperationException(
+                            "El backup se generó correctamente, pero falló la retención automática.",
+                            ex);
+                    }
+                }
 
                 return nombreArchivo;
             }
@@ -514,6 +552,68 @@ namespace SkyPlus.API.Services
             {
                 proceso?.Dispose();
                 _semaforo.Release();
+            }
+        }
+
+        // =========================================
+        // RETENCIÓN DE BACKUPS AUTOMÁTICOS
+        // =========================================
+
+        private async Task AplicarRetencionAutomaticaAsync(
+            List<BackupHistorialDto> historial,
+            CancellationToken cancellationToken)
+        {
+            int maximo = _configuration.GetValue<int?>(
+                "Backup:MaxAutomaticBackups") ?? 10;
+
+            if (maximo < 1)
+                throw new InvalidOperationException(
+                    "MaxAutomaticBackups debe ser mayor que cero.");
+
+            var excedentes = historial
+                .Where(x => x.Tipo == "Automatico" &&
+                            x.Estado == "Disponible")
+                .OrderByDescending(x => x.FechaUtc)
+                .Skip(maximo)
+                .ToList();
+
+            foreach (var backup in excedentes)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                ValidarNombreArchivo(backup.Archivo);
+
+                string ruta = Path.Combine(
+                    DirectorioBackups, backup.Archivo);
+
+                // Si no se puede borrar, conservar el registro como
+                // disponible y reintentar en una ejecución posterior.
+                try
+                {
+                    if (File.Exists(ruta))
+                        File.Delete(ruta);
+                }
+                catch (IOException ex)
+                {
+                    Trace.TraceError(
+                        "No se pudo eliminar backup antiguo: {0}",
+                        ex.GetType().Name);
+                    continue;
+                }
+                catch (UnauthorizedAccessException ex)
+                {
+                    Trace.TraceError(
+                        "Sin permiso para eliminar backup antiguo: {0}",
+                        ex.GetType().Name);
+                    continue;
+                }
+
+                backup.Estado = "Eliminado";
+                backup.FechaEliminacionUtc = DateTime.UtcNow;
+                backup.IdAdministradorEliminacion = null;
+
+                // Persistir cada eliminación para evitar perder el
+                // progreso de la limpieza si hay un fallo posterior.
+                await GuardarHistorialAsync(historial, cancellationToken);
             }
         }
 
