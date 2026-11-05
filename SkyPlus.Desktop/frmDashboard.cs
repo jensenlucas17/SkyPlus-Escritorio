@@ -11,18 +11,19 @@ namespace SkyPlus.Desktop
         private readonly (string Texto, string[] Roles)[] _modulos = new (string, string[])[]
         {
             ("Usuarios",       new[] { "Administrador" }),
+            ("Aeronaves",      new[] { "Administrador", "Gerente" }),
             ("Vuelos",         new[] { "Administrador", "Gerente" }),
             ("Lugares",        new[] { "Administrador", "Gerente" }),
             ("Pasajeros",      new[] { "Agente de Reservas" }),
             ("Reservas",       new[] { "Agente de Reservas" }),
             ("Ventas",         new[] { "Agente de Reservas" }),
             ("Cancelaciones",  new[] { "Agente de Reservas" }),
-            ("Reembolsos",     new[] { "Agente de Reservas" }),
             ("Check-in",       new[] { "Agente de Check-in" }),
             ("Boarding Pass",  new[] { "Agente de Check-in" }),
-            ("Reportes",       new[] { "Administrador", "Gerente" }),
-            ("Configuración",  new[] { "Administrador", "Gerente", "Agente de Reservas", "Agente de Check-in" }),
-            ("Aeronaves",      new[] { "Administrador", "Gerente" }),
+            ("Reportes", new[] { "Administrador", "Gerente" }),
+            ("Backups", new[] { "Administrador", "Gerente" }),
+            ("Configuración", new[] { "Administrador", "Gerente", "Agente de Reservas", "Agente de Check-in" }),
+
         };
 
         public frmDashboard()
@@ -77,6 +78,8 @@ namespace SkyPlus.Desktop
                 "Check-in" => new frmCheckin(),
                 "Boarding Pass" => new frmBoardingPass(),
                 "Reportes" => new frmReportes(),
+                "Backups" => new frmBackups(
+                    SesionUsuario.Rol == "Administrador"),
                 "Configuración" => new frmConfiguracion(),
                 "Cancelaciones" => new frmCancelaciones(),
                 _ => null

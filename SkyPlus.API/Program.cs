@@ -34,6 +34,8 @@ builder.Services.AddScoped<IEquipajeService, EquipajeService>();
 builder.Services.AddScoped<ICheckInService, CheckInService>();
 builder.Services.AddScoped<BoardingPassService>();
 builder.Services.AddScoped<IReporteService, ReporteService>();
+builder.Services.AddSingleton<IBackupService, BackupService>();
+builder.Services.AddScoped<AutorizacionRestauracionService>();
 
 // Servicios
 builder.Services.AddControllers();
