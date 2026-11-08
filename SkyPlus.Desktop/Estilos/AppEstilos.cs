@@ -3,6 +3,7 @@
 // Cambiar un valor acá cambia el aspecto de TODOS los formularios.
 
 using System.Drawing;
+using System.Runtime.CompilerServices;
 using System.Windows.Forms;
 
 namespace SkyPlus.Desktop.Estilos
@@ -23,6 +24,7 @@ namespace SkyPlus.Desktop.Estilos
         public static readonly Color ColorTarjeta = Color.White;
         public static readonly Color ColorBorde = ColorTranslator.FromHtml("#E2E7F0");
         public static readonly Color ColorFilaAlterna = ColorTranslator.FromHtml("#F8FAFC");
+        public static readonly Color ColorDeshabilitado = ColorTranslator.FromHtml("#CBD5E1");
 
         public static readonly Color ColorTextoClaro = Color.White;
         public static readonly Color ColorTextoOscuro = ColorTranslator.FromHtml("#172033");
@@ -53,6 +55,32 @@ namespace SkyPlus.Desktop.Estilos
             boton.Cursor = Cursors.Hand;
             boton.Height = 36;
             boton.UseVisualStyleBackColor = false;
+
+            // Cuando el botón está deshabilitado se ve gris (si no, parece que se puede tocar)
+            boton.EnabledChanged -= AplicarEstadoBoton;
+            boton.EnabledChanged += AplicarEstadoBoton;
+            AplicarEstadoBoton(boton, EventArgs.Empty);
+        }
+
+        // Color de cada botón primario cuando está habilitado (por defecto, ColorPrimario)
+        private static readonly ConditionalWeakTable<Button, object> _colorActivo = new();
+
+        // Para un botón primario de otro color (ej. "Cobrar" en naranja)
+        public static void CambiarColorBoton(Button boton, Color color)
+        {
+            _colorActivo.AddOrUpdate(boton, color);
+            boton.FlatAppearance.MouseOverBackColor = ControlPaint.Dark(color, 0.05f);
+            boton.FlatAppearance.MouseDownBackColor = ControlPaint.Dark(color, 0.1f);
+            AplicarEstadoBoton(boton, EventArgs.Empty);
+        }
+
+        private static void AplicarEstadoBoton(object? sender, EventArgs e)
+        {
+            if (sender is not Button boton) return;
+            Color activo = _colorActivo.TryGetValue(boton, out var c) ? (Color)c : ColorPrimario;
+            boton.BackColor = boton.Enabled ? activo : ColorDeshabilitado;
+            boton.ForeColor = boton.Enabled ? ColorTextoClaro : ColorTextoSuave;
+            boton.Cursor = boton.Enabled ? Cursors.Hand : Cursors.Default;
         }
 
         public static void EstilizarBotonSecundario(Button boton)

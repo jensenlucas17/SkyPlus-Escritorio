@@ -1,4 +1,4 @@
-using Microsoft.EntityFrameworkCore;
+﻿using Microsoft.EntityFrameworkCore;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Exceptions;
 using SkyPlus.Domain.Entities;
@@ -51,7 +51,9 @@ namespace SkyPlus.API.Services
                     "El método de pago es obligatorio.");
         }
 
-        private async Task<Usuario> ValidarAgenteAsync(int idUsuario)
+        private async Task<Usuario> ValidarAgenteAsync(
+            int idUsuario,
+            bool permitirAgenteCheckIn = false)
         {
             var agente = await _context.Usuarios
                 .Include(u => u.Rol)
@@ -65,9 +67,14 @@ namespace SkyPlus.API.Services
                 throw new ValidacionNegocioException(
                     "El agente está inactivo.");
 
-            if (agente.Rol?.NombreRol != "Agente de Reservas")
+            bool esReservas = agente.Rol?.NombreRol == "Agente de Reservas";
+            bool esCheckIn = agente.Rol?.NombreRol == "Agente de Check-in";
+
+            if (!esReservas && !(permitirAgenteCheckIn && esCheckIn))
                 throw new ValidacionNegocioException(
-                    "Solo los Agentes de Reservas pueden registrar pagos.");
+                    permitirAgenteCheckIn
+                        ? "Solo los Agentes de Reservas o de Check-in pueden registrar este pago."
+                        : "Solo los Agentes de Reservas pueden registrar pagos.");
 
             return agente;
         }
@@ -199,17 +206,29 @@ namespace SkyPlus.API.Services
                         "en reservas confirmadas.");
 
                 var agente = await ValidarAgenteAsync(
-                    idUsuarioAutenticado);
+                    idUsuarioAutenticado,
+                    permitirAgenteCheckIn: true);
+
+                // El Agente de Check-in cobra en el mostrador solo lo
+                // relacionado al equipaje: valijas agregadas en el
+                // mostrador y excesos de peso detectados al pesarlas.
+                bool soloEquipaje =
+                    agente.Rol?.NombreRol == "Agente de Check-in";
 
                 var cargos = await _context.CargosAdicionales
                     .Where(c =>
                         c.IdReserva == reserva.IdReserva &&
-                        c.Estado == "Pendiente")
+                        c.Estado == "Pendiente" &&
+                        (!soloEquipaje ||
+                         c.TipoCargo == "ExcesoPeso" ||
+                         c.TipoCargo == "Equipaje"))
                     .ToListAsync();
 
                 if (cargos.Count == 0)
                     throw new ValidacionNegocioException(
-                        "La reserva no tiene cargos pendientes.");
+                        soloEquipaje
+                            ? "La reserva no tiene equipaje ni excesos de peso pendientes de pago."
+                            : "La reserva no tiene cargos pendientes.");
 
                 if (cargos.Any(c => c.Monto < 0))
                     throw new ValidacionNegocioException(

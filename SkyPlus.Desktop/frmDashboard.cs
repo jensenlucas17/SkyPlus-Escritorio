@@ -325,9 +325,9 @@ namespace SkyPlus.Desktop
                 TextFormatFlags.HorizontalCenter | TextFormatFlags.VerticalCenter);
 
             TextRenderer.DrawText(g, "SkyPlus", FuenteMarca,
-                new Point(46, 20), Color.White);
+                new Point(46, 14), Color.White);
             TextRenderer.DrawText(g, "Venta de pasajes", AppEstilos.FuentePequena,
-                new Point(48, 42), AppEstilos.ColorLateralTitulo);
+                new Point(48, 46), AppEstilos.ColorLateralTitulo);
         }
 
         private void DibujarUsuario(object? sender, PaintEventArgs e)

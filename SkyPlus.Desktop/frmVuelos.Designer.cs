@@ -102,7 +102,7 @@
             // 
             // btnEliminar
             // 
-            btnEliminar.Location = new Point(471, 33);
+            btnEliminar.Location = new Point(471, 41);
             btnEliminar.Name = "btnEliminar";
             btnEliminar.Size = new Size(105, 36);
             btnEliminar.TabIndex = 2;

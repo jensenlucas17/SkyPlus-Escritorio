@@ -44,16 +44,8 @@ namespace SkyPlus.Desktop
             AppEstilos.EstilizarBotonPrimario(btnBuscar);
             AppEstilos.EstilizarBotonSecundario(btnRefrescar);
             AppEstilos.EstilizarBotonSecundario(btnVerDetalle);
-            var btnRegistrar = new Button
-            {
-                Name = "btnRegistrarPago",
-                Text = "Registrar pago",
-                Size = new System.Drawing.Size(130, 30),
-                Location = new System.Drawing.Point(520, 10)
-            };
-            btnRegistrar.Click += btnRegistrarPago_Click;
-            pnlBotones.Controls.Add(btnRegistrar);
-            AppEstilos.EstilizarBotonPrimario(btnRegistrar);
+            // El pago ahora se registra en la misma venta (Nueva reserva → equipaje → pago),
+            // así que acá ya no hay reservas pendientes de cobro: esta pantalla es solo de consulta.
             await CargarVentasAsync();
         }
 
@@ -181,12 +173,6 @@ namespace SkyPlus.Desktop
                 $"Estado: {venta.Estado}\n" +
                 $"Agente (ID): {venta.IdUsuarioAgente}",
                 "Detalle de venta", MessageBoxButtons.OK, MessageBoxIcon.Information);
-        }
-        private async void btnRegistrarPago_Click(object? sender, EventArgs e)
-        {
-            using var formulario = new frmRegistrarPago();
-            if (formulario.ShowDialog(this) == DialogResult.OK)
-                await CargarVentasAsync();
         }
     }
 }

@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 namespace SkyPlus.Desktop.Models
 {
     public class PagoResponse
@@ -11,5 +11,8 @@ namespace SkyPlus.Desktop.Models
         public string MetodoPago { get; set; } = string.Empty;
         public DateTime FechaPago { get; set; }
         public string EstadoPago { get; set; } = string.Empty;
+
+        // "Inicial" (pasaje + equipaje de la compra) o "Adicional" (equipaje/exceso cobrados después)
+        public string TipoPago { get; set; } = string.Empty;
     }
 }
