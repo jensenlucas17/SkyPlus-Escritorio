@@ -147,7 +147,9 @@ namespace SkyPlus.Desktop
             }));
 
             var graficoEstados = new GraficoBarras { Horizontal = true };
+            // Solo los estados reales de una venta: confirmada o cancelada
             graficoEstados.CargarDatos(reservas.ReservasPorEstado
+                .Where(r => r.Estado == "Confirmada" || r.Estado == "Cancelada")
                 .OrderByDescending(r => r.Cantidad)
                 .Select(r => (NombreEstado(r.Estado), (decimal)r.Cantidad, ColorEstado(r.Estado))));
 
@@ -198,19 +200,20 @@ namespace SkyPlus.Desktop
 
             var reservasHoy = reservas.Where(r => FechaLocal(r.FechaReserva).Date == hoy).ToList();
             var pagosHoy = pagos.Where(p => p.EstadoPago == "Registrado" && FechaLocal(p.FechaPago).Date == hoy).ToList();
-            int pendientes = reservas.Count(r => r.EstadoReserva == "PendientePago");
+            // Pasajes vendidos para los vuelos de los próximos 7 días
+            var vuelosSemana = vuelosEnVenta.Where(v => v.Salida <= ahora.AddDays(7)).Select(v => v.IdVuelo).ToHashSet();
+            int vendidosSemana = reservas.Count(r => r.EstadoReserva == "Confirmada" && vuelosSemana.Contains(r.IdVuelo));
 
             AgregarFila(CrearFilaIndicadores(
                 AppEstilos.CrearIndicador("Vuelos en venta (7 días)",
                     vuelosEnVenta.Count(v => v.Salida <= ahora.AddDays(7)).ToString(),
                     $"{vuelosEnVenta.Count} vuelos futuros en total"),
-                AppEstilos.CrearIndicador("Reservas de hoy",
-                    reservasHoy.Count.ToString(),
-                    $"{reservasHoy.Count(r => r.EstadoReserva == "Confirmada")} ya confirmadas"),
-                AppEstilos.CrearIndicador("Pendientes de pago",
-                    pendientes.ToString(),
-                    "Vencen a los 5 minutos si no se pagan",
-                    pendientes > 0 ? AppEstilos.ColorAcento : null),
+                AppEstilos.CrearIndicador("Ventas de hoy",
+                    reservasHoy.Count(r => r.EstadoReserva == "Confirmada").ToString(),
+                    $"{reservasHoy.Count(r => r.EstadoReserva == "Cancelada")} canceladas en el día"),
+                AppEstilos.CrearIndicador("Pasajes vendidos (7 días)",
+                    vendidosSemana.ToString(),
+                    $"de {vuelosSemana.Count * AsientosPorVuelo} asientos en {vuelosSemana.Count} vuelos"),
                 AppEstilos.CrearIndicador("Cobrado hoy",
                     FormatearMoneda(pagosHoy.Sum(p => p.Monto)),
                     $"{pagosHoy.Count} pagos registrados",
@@ -222,7 +225,7 @@ namespace SkyPlus.Desktop
             graficoReservas.CargarDatos(Enumerable.Range(0, 7).Select(i =>
             {
                 DateTime dia = hoy.AddDays(i - 6);
-                int cantidad = reservas.Count(r => FechaLocal(r.FechaReserva).Date == dia);
+                int cantidad = reservas.Count(r => r.EstadoReserva != "Expirada" && FechaLocal(r.FechaReserva).Date == dia);
                 return (dia == hoy ? "Hoy" : Capitalizar(dia.ToString("ddd d", Cultura).Replace(".", "")), (decimal)cantidad);
             }));
 

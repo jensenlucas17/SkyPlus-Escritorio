@@ -33,6 +33,19 @@ namespace SkyPlus.Desktop
             AppEstilos.EstilizarBotonSecundario(btnEliminar);
             AppEstilos.EstilizarBotonSecundario(btnBuscar);
             AppEstilos.EstilizarBotonSecundario(btnReactivar);
+            AppEstilos.ConfigurarBusqueda(txtBuscar, btnBuscar,
+                "Buscar por matrícula o modelo",
+                AplicarFiltro, CargarAeronaves,
+                label1);
+        }
+
+        private void AplicarFiltro()
+        {
+            var texto = txtBuscar.Text.Trim();
+            dgvAeronaves.DataSource = null;
+            dgvAeronaves.DataSource = _aeronaves
+                .Where(a => AppEstilos.Coincide(texto, a.Matricula, a.Modelo))
+                .ToList();
         }
 
         private async Task CargarAeronaves()
@@ -45,8 +58,7 @@ namespace SkyPlus.Desktop
                 _aeronaves = aeronaves ??
                     new List<AeronaveResponse>();
 
-                dgvAeronaves.DataSource = null;
-                dgvAeronaves.DataSource = _aeronaves;
+                AplicarFiltro();
             }
             catch (HttpRequestException)
             {
@@ -183,11 +195,11 @@ namespace SkyPlus.Desktop
             }
         }
 
-        private async void btnActualizar_Click(
+        // El botón Buscar filtra (lo configura AppEstilos.ConfigurarBusqueda)
+        private void btnActualizar_Click(
             object sender,
             EventArgs e)
         {
-            await CargarAeronaves();
         }
 
         private async void btnReactivar_Click(object sender, EventArgs e)

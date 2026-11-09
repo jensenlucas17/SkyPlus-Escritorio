@@ -41,8 +41,10 @@ namespace SkyPlus.Desktop
         {
             ConfigurarTabla();
             AppEstilos.EstilizarGrid(dgvVentas);
-            AppEstilos.EstilizarBotonPrimario(btnBuscar);
-            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
+            AppEstilos.ConfigurarBusqueda(txtBuscar, btnBuscar,
+                "Buscar por código de reserva, pasajero, vuelo o método de pago",
+                AplicarFiltros, CargarVentasAsync,
+                lblTitulo, lblBuscar, btnRefrescar);
             AppEstilos.EstilizarBotonSecundario(btnVerDetalle);
             // El pago ahora se registra en la misma venta (Nueva reserva → equipaje → pago),
             // así que acá ya no hay reservas pendientes de cobro: esta pantalla es solo de consulta.
@@ -129,13 +131,8 @@ namespace SkyPlus.Desktop
         private void AplicarFiltros()
         {
             var texto = txtBuscar.Text.Trim();
-            var resultado = _ventas.Where(v =>
-                string.IsNullOrWhiteSpace(texto) ||
-                v.CodigoReserva.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
-                v.Pasajero.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
-                v.Vuelo.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
-                v.MetodoPago.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
-                v.Estado.Contains(texto, StringComparison.OrdinalIgnoreCase))
+            var resultado = _ventas
+                .Where(v => AppEstilos.Coincide(texto, v.CodigoReserva, v.Pasajero, v.Vuelo, v.MetodoPago, v.Estado))
                 .ToList();
 
             dgvVentas.DataSource = null;

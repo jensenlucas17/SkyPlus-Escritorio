@@ -481,7 +481,7 @@ namespace SkyPlus.Desktop
             _lblAsiento.ForeColor = AppEstilos.ColorTextoSuave;
         }
 
-        private void btnGuardar_Click(object sender, EventArgs e)
+        private async void btnGuardar_Click(object sender, EventArgs e)
         {
             lblMensaje.Visible = false;
 
@@ -527,6 +527,17 @@ namespace SkyPlus.Desktop
                 return;
             }
 
+            // Regla: el pasajero no puede tener otra reserva en este vuelo ni en un vuelo superpuesto
+            btnGuardar.Enabled = false;
+            string? conflicto = await BuscarConflictoPasajeroAsync(idPasajero, vuelo);
+            btnGuardar.Enabled = true;
+            if (conflicto != null)
+            {
+                MessageBox.Show(conflicto, "Reserva no permitida", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MostrarError(conflicto);
+                return;
+            }
+
             // Siguiente paso de la venta: equipaje y pago (la reserva se crea al confirmar el pago)
             using var confirmar = new frmConfirmarVenta(
                 idPasajero,
@@ -543,6 +554,40 @@ namespace SkyPlus.Desktop
             {
                 // Si el asiento se ocupó mientras tanto, se actualiza el mapa
                 cmbVuelo_SelectedIndexChanged(cmbVuelo, EventArgs.Empty);
+            }
+        }
+
+        // Devuelve el motivo si el pasajero ya está ocupado en ese horario; null si puede viajar.
+        // (La API valida lo mismo; acá se avisa antes de pasar al equipaje y al pago.)
+        private async Task<string?> BuscarConflictoPasajeroAsync(int idPasajero, VueloResponse vuelo)
+        {
+            try
+            {
+                var tReservas = _reservaClient.ObtenerTodosAsync();
+                var tVuelos = new VueloClient().ObtenerTodosAsync();
+                await Task.WhenAll(tReservas, tVuelos);
+
+                var vuelos = (tVuelos.Result ?? new List<VueloResponse>()).ToDictionary(v => v.IdVuelo);
+                var activas = (tReservas.Result ?? new List<ReservaResponse>())
+                    .Where(r => r.IdPasajero == idPasajero && r.EstadoReserva == "Confirmada");
+
+                foreach (var r in activas)
+                {
+                    if (r.IdVuelo == vuelo.IdVuelo)
+                        return $"{r.Pasajero} ya tiene un asiento reservado en este vuelo (reserva {r.CodigoReserva}, asiento {r.Asiento}).";
+
+                    if (vuelos.TryGetValue(r.IdVuelo, out var otro) &&
+                        otro.EstadoVuelo != "Cancelado" &&
+                        otro.Salida < vuelo.Llegada && otro.Llegada > vuelo.Salida)
+                        return $"{r.Pasajero} ya viaja en el vuelo {otro.NumeroVuelo} " +
+                               $"({otro.Salida:dd/MM HH:mm} a {otro.Llegada:HH:mm}, reserva {r.CodigoReserva}), " +
+                               "que se superpone con este horario.";
+                }
+                return null;
+            }
+            catch (HttpRequestException)
+            {
+                return null; // si no se pudo consultar, la API lo valida igual al confirmar
             }
         }
 

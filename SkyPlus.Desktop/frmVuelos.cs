@@ -39,9 +39,7 @@ namespace SkyPlus.Desktop
                 {
                     "Todos",
                     "Programado",
-                    "En embarque",
-                    "En vuelo",
-                    "Demorado",
+                    "Confirmado",
                     "Cancelado",
                     "Finalizado"
                 });
@@ -53,7 +51,10 @@ namespace SkyPlus.Desktop
             AppEstilos.EstilizarBotonPrimario(btnNuevo);
             AppEstilos.EstilizarBotonSecundario(btnEditar);
             AppEstilos.EstilizarBotonSecundario(btnEliminar);
-            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
+            AppEstilos.ConfigurarBusqueda(txtBuscar, btnRefrescar,
+                "Buscar por número de vuelo, origen o destino",
+                AplicarFiltros, CargarVuelos,
+                label1);
         }
 
         private void ConfigurarColumnas()
@@ -235,11 +236,11 @@ namespace SkyPlus.Desktop
             AplicarFiltros();
         }
 
-        private async void btnRefrescar_Click(
+        // Es el botón "Buscar": filtra (lo configura AppEstilos.ConfigurarBusqueda)
+        private void btnRefrescar_Click(
             object sender,
             EventArgs e)
         {
-            await CargarVuelos();
         }
 
         private VueloResponse? ObtenerSeleccionado()

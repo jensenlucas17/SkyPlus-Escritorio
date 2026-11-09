@@ -70,6 +70,31 @@ namespace SkyPlus.API.Services
                  (r.EstadoReserva == "PendientePago" && r.FechaExpiracion > ahora)));
             if (ocupada) throw new ValidacionNegocioException("El asiento ya tiene una reserva activa.");
 
+            // Regla: un pasajero no puede tener dos reservas activas en el mismo vuelo
+            // ni en vuelos cuyos horarios se superpongan (sí puede tener ida y vuelta).
+            var reservasDelPasajero = await _context.Reservas
+                .Include(r => r.Vuelo)
+                .Where(r => r.IdPasajero == request.IdPasajero &&
+                            (r.EstadoReserva == "Confirmada" ||
+                             (r.EstadoReserva == "PendientePago" && r.FechaExpiracion > ahora)))
+                .ToListAsync();
+
+            var mismoVuelo = reservasDelPasajero.FirstOrDefault(r => r.IdVuelo == request.IdVuelo);
+            if (mismoVuelo != null)
+                throw new ValidacionNegocioException(
+                    $"{pasajero.Nombre} {pasajero.Apellido} ya tiene una reserva en este vuelo ({mismoVuelo.CodigoReserva}).");
+
+            var superpuesta = reservasDelPasajero.FirstOrDefault(r =>
+                r.Vuelo != null &&
+                r.Vuelo.EstadoVuelo != "Cancelado" &&
+                r.Vuelo.Salida < vuelo.Llegada &&
+                r.Vuelo.Llegada > vuelo.Salida);
+            if (superpuesta != null)
+                throw new ValidacionNegocioException(
+                    $"{pasajero.Nombre} {pasajero.Apellido} ya tiene la reserva {superpuesta.CodigoReserva} en el vuelo " +
+                    $"{superpuesta.Vuelo!.NumeroVuelo} ({superpuesta.Vuelo.Salida:dd/MM HH:mm} a {superpuesta.Vuelo.Llegada:HH:mm}), " +
+                    "que se superpone con este horario.");
+
             var agente = await _context.Usuarios
                 .Include(u => u.Rol)
                 .FirstOrDefaultAsync(u =>

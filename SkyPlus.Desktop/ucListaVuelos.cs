@@ -109,6 +109,17 @@ namespace SkyPlus.Desktop
         [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
         public bool MostrarEmbarque { get; set; }
 
+        // Opcional: qué muestra la barra de cada vuelo (si no se indica, el avance del check-in/embarque)
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public Func<ResumenVuelo, (string Texto, int Hechos, int Total)>? Avance { get; set; }
+
+        [DesignerSerializationVisibility(DesignerSerializationVisibility.Hidden)]
+        public string MensajeVacio
+        {
+            get => _lblVacio.Text;
+            set => _lblVacio.Text = value;
+        }
+
         public ucListaVuelos()
         {
             BackColor = Color.White;
@@ -196,9 +207,18 @@ namespace SkyPlus.Desktop
                 new Point(x, b.Top + 34), AppEstilos.ColorTextoSuave);
 
             // Línea 3: barra de avance
-            int hechos = MostrarEmbarque ? r.Embarcados : r.CheckIns;
-            int total = MostrarEmbarque ? r.CheckIns : r.Confirmadas;
-            string texto = MostrarEmbarque ? $"{hechos}/{total} embarcados" : $"{hechos}/{total} check-in";
+            int hechos, total;
+            string texto;
+            if (Avance != null)
+            {
+                (texto, hechos, total) = Avance(r);
+            }
+            else
+            {
+                hechos = MostrarEmbarque ? r.Embarcados : r.CheckIns;
+                total = MostrarEmbarque ? r.CheckIns : r.Confirmadas;
+                texto = MostrarEmbarque ? $"{hechos}/{total} embarcados" : $"{hechos}/{total} check-in";
+            }
 
             var zonaTexto = new Rectangle(x, b.Top + 50, ancho, 18);
             TextRenderer.DrawText(g, texto, AppEstilos.FuentePequena, zonaTexto, AppEstilos.ColorTextoSuave, TextFormatFlags.Right);

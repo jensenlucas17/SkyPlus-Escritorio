@@ -194,6 +194,81 @@ namespace SkyPlus.Desktop.Estilos
             }
         }
 
+        // ---------- Búsqueda (mismo criterio en todas las pantallas) ----------
+        // - Filtra mientras se escribe (y también con el botón Buscar).
+        // - Cuando la caja queda vacía, vuelve a traer la lista completa desde la API.
+        // - No hay botón Refrescar: los controles de 'ocultar' (etiquetas viejas, Refrescar) se esconden.
+        public static void ConfigurarBusqueda(
+            TextBox txt,
+            Button btnBuscar,
+            string placeholder,
+            Action filtrar,
+            Func<Task> recargar,
+            params Control?[] ocultar)
+        {
+            foreach (var c in ocultar)
+            {
+                if (c == null) continue;
+                // Si lo que se oculta es una etiqueta a la izquierda de la caja, la caja ocupa su lugar
+                if (c is Label && c.Left < txt.Left && Math.Abs(c.Top - txt.Top) < 30)
+                {
+                    txt.Width += txt.Left - c.Left;
+                    txt.Left = c.Left;
+                }
+                c.Visible = false;
+            }
+
+            txt.PlaceholderText = placeholder;
+            txt.BorderStyle = BorderStyle.FixedSingle;
+            txt.Font = FuenteNormal;
+
+            // La caja llega hasta el botón Buscar si está en la misma fila
+            if (btnBuscar.Left > txt.Left && Math.Abs(btnBuscar.Top - txt.Top) < 40)
+                txt.Width = Math.Max(txt.Width, btnBuscar.Left - 12 - txt.Left);
+
+            btnBuscar.Text = "Buscar";
+            btnBuscar.Visible = true;
+            EstilizarBotonPrimario(btnBuscar);
+            btnBuscar.Click += (s, e) => filtrar();
+
+            bool estabaVacia = string.IsNullOrWhiteSpace(txt.Text);
+            txt.TextChanged += async (s, e) =>
+            {
+                bool vacia = string.IsNullOrWhiteSpace(txt.Text);
+                if (vacia && !estabaVacia)
+                {
+                    estabaVacia = true;
+                    await recargar();   // lista completa y actualizada
+                }
+                else if (!vacia)
+                {
+                    estabaVacia = false;
+                    filtrar();
+                }
+            };
+        }
+
+        // true si TODAS las palabras buscadas aparecen en alguno de los campos
+        // (así "valentina lopez" encuentra a "López, Valentina"; no distingue mayúsculas ni tildes)
+        public static bool Coincide(string busqueda, params string?[] campos)
+        {
+            if (string.IsNullOrWhiteSpace(busqueda)) return true;
+            string texto = SinTildes(string.Join(" ", campos.Where(c => c != null))).ToLowerInvariant();
+            return SinTildes(busqueda).ToLowerInvariant()
+                .Split(' ', StringSplitOptions.RemoveEmptyEntries)
+                .All(palabra => texto.Contains(palabra));
+        }
+
+        private static string SinTildes(string texto)
+        {
+            var normalizado = texto.Normalize(System.Text.NormalizationForm.FormD);
+            var sb = new System.Text.StringBuilder(normalizado.Length);
+            foreach (char ch in normalizado)
+                if (System.Globalization.CharUnicodeInfo.GetUnicodeCategory(ch) != System.Globalization.UnicodeCategory.NonSpacingMark)
+                    sb.Append(ch);
+            return sb.ToString().Normalize(System.Text.NormalizationForm.FormC);
+        }
+
         // ---------- Piezas para pantallas nuevas ----------
         public static Label CrearTitulo(string texto) => new Label
         {

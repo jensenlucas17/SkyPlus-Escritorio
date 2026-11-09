@@ -1,12 +1,13 @@
 ﻿// SkyPlus.Desktop/frmReservas.cs
-// Reservas por vuelo (Agente de Reservas):
-//   1. Arriba se filtra por origen, destino y vuelo.
-//   2. En la lista aparecen las reservas de esos vuelos, con lo que pagó cada pasajero.
-//   3. "Nueva reserva" abre la venta (asiento → equipaje → pago).
-//   4. "Cancelar y reembolsar" devuelve todo lo pagado y cancela la reserva en un solo paso:
-//      primero se reembolsan los pagos adicionales y al final el pago inicial,
-//      que es el que cancela la reserva y libera el asiento (regla de la API).
-//      Solo se puede si el pasajero NO hizo check-in y el vuelo todavía no salió.
+// Reservas organizadas por vuelo (Agente de Reservas):
+//   1. Primero se elige qué vuelos ver: Próximos, Finalizados o Cancelados
+//      (y opcionalmente se filtra por origen y destino).
+//   2. Se elige el vuelo: a la derecha se ven sus números y SUS reservas.
+//   3. Próximos y cancelados: "Cancelar y reembolsar" (si el pasajero no hizo check-in
+//      y el vuelo no salió). Finalizados: solo consulta, con el resultado de cada
+//      reserva (voló / no se presentó / cancelada).
+// Cada vuelo guarda su información: las reservas de vuelos terminados quedan en
+// "Finalizados" y no se mezclan con las de los vuelos que todavía no salieron.
 
 using SkyPlus.Desktop.Estilos;
 using SkyPlus.Desktop.Models;
@@ -17,6 +18,10 @@ namespace SkyPlus.Desktop
 {
     public partial class frmReservas : Form
     {
+        private const int AsientosPorVuelo = 180;
+
+        private enum Vista { Proximos, Finalizados, Cancelados }
+
         private readonly ReservaClient _reservaClient = new ReservaClient();
         private readonly VueloClient _vueloClient = new VueloClient();
         private readonly PagoClient _pagoClient = new PagoClient();
@@ -27,16 +32,21 @@ namespace SkyPlus.Desktop
         private List<ReservaResponse> _reservas = new();
         private List<PagoResponse> _pagos = new();
         private HashSet<int> _pagosReembolsados = new();
-        private HashSet<int> _reservasConCheckIn = new();
-        private Dictionary<int, VueloResponse> _vuelosPorId = new();
+        private Dictionary<int, CheckInResponse> _checkIns = new();
+
+        private Vista _vista = Vista.Proximos;
+        private VueloResponse? _vueloActual;
         private bool _cargandoFiltros;
 
+        private Button _btnProximos = null!;
+        private Button _btnFinalizados = null!;
+        private Button _btnCancelados = null!;
         private ComboBox _cmbOrigen = null!;
         private ComboBox _cmbDestino = null!;
-        private ComboBox _cmbVuelo = null!;
-        private ComboBox _cmbEstado = null!;
+        private ucListaVuelos _listaVuelos = null!;
+        private EncabezadoVuelo _encabezado = null!;
         private TextBox _txtBuscar = null!;
-        private Label _lblResumen = null!;
+        private ComboBox _cmbEstado = null!;
         private DataGridView _dgv = null!;
         private Label _lblSeleccion = null!;
         private Button _btnCancelar = null!;
@@ -66,6 +76,8 @@ namespace SkyPlus.Desktop
         // =====================================================================
         private async Task CargarDatosAsync()
         {
+            int? idVuelo = _vueloActual?.IdVuelo;
+
             try
             {
                 _btnRefrescar.Enabled = false;
@@ -77,22 +89,20 @@ namespace SkyPlus.Desktop
                 var tCheckIns = _checkInClient.ObtenerTodosAsync();
                 await Task.WhenAll(tVuelos, tReservas, tPagos, tReembolsos, tCheckIns);
 
-                // Vuelos desde hoy (también los cancelados, para poder reembolsar a sus pasajeros)
-                _vuelos = (tVuelos.Result ?? new List<VueloResponse>())
-                    .Where(v => v.Salida.Date >= DateTime.Today && v.EstadoVuelo != "Finalizado")
-                    .OrderBy(v => v.Salida)
+                _vuelos = tVuelos.Result ?? new List<VueloResponse>();
+                // Las reservas expiradas nunca fueron ventas (no se pagaron): no se muestran
+                _reservas = (tReservas.Result ?? new List<ReservaResponse>())
+                    .Where(r => r.EstadoReserva != "Expirada" && r.EstadoReserva != "PendientePago")
                     .ToList();
-                _vuelosPorId = _vuelos.ToDictionary(v => v.IdVuelo);
-                _reservas = tReservas.Result ?? new List<ReservaResponse>();
-                _reservasConCheckIn = (tCheckIns.Result ?? new List<CheckInResponse>())
-                    .Select(c => c.IdReserva)
-                    .ToHashSet();
                 _pagos = tPagos.Result ?? new List<PagoResponse>();
                 _pagosReembolsados = (tReembolsos.Result ?? new List<ReembolsoResponse>())
                     .Select(r => r.IdPago)
                     .ToHashSet();
+                _checkIns = (tCheckIns.Result ?? new List<CheckInResponse>())
+                    .GroupBy(c => c.IdReserva)
+                    .ToDictionary(g => g.Key, g => g.First());
 
-                CargarOrigenes();
+                CargarOrigenes(idVuelo);
             }
             catch (HttpRequestException ex)
             {
@@ -104,85 +114,148 @@ namespace SkyPlus.Desktop
             }
         }
 
-        // Pagos de la reserva que todavía se pueden reembolsar
+        private static Vista VistaDe(VueloResponse v) => v.EstadoVuelo switch
+        {
+            "Finalizado" => Vista.Finalizados,
+            "Cancelado" => Vista.Cancelados,
+            _ => Vista.Proximos
+        };
+
+        private IEnumerable<VueloResponse> VuelosDeLaVista() => _vuelos.Where(v => VistaDe(v) == _vista);
+
+        private List<ReservaResponse> ReservasDe(int idVuelo) =>
+            _reservas.Where(r => r.IdVuelo == idVuelo).ToList();
+
         private List<PagoResponse> PagosReembolsables(int idReserva) =>
             _pagos.Where(p => p.IdReserva == idReserva &&
                               p.EstadoPago == "Registrado" &&
                               !_pagosReembolsados.Contains(p.IdPago))
                   .ToList();
 
+        // Resultado de una reserva de un vuelo finalizado
+        private string Resultado(ReservaResponse r)
+        {
+            if (r.EstadoReserva != "Confirmada") return NombreEstado(r.EstadoReserva);
+            if (_checkIns.TryGetValue(r.IdReserva, out var c))
+                return c.EstadoCheckin == "Embarcado" ? "Voló" : "Check-in sin embarque";
+            return "No se presentó";
+        }
+
         // Reglas para cancelar y reembolsar (las mismas que valida la API).
         // Devuelve null si se puede; si no, el motivo para mostrarle al agente.
         private string? MotivoNoReembolsable(ReservaResponse r)
         {
+            if (_vueloActual?.EstadoVuelo == "Finalizado")
+                return "Vuelo finalizado: solo consulta.";
+
             if (r.EstadoReserva != "Confirmada")
                 return $"La reserva está {NombreEstado(r.EstadoReserva).ToLower()}.";
 
-            if (_reservasConCheckIn.Contains(r.IdReserva))
+            if (_checkIns.ContainsKey(r.IdReserva))
                 return "El pasajero ya hizo el check-in: no se puede cancelar ni reembolsar.";
 
-            if (_vuelosPorId.TryGetValue(r.IdVuelo, out var vuelo) &&
-                vuelo.EstadoVuelo != "Cancelado" && vuelo.Salida <= DateTime.Now)
+            if (_vueloActual != null && _vueloActual.EstadoVuelo != "Cancelado" && _vueloActual.Salida <= DateTime.Now)
                 return "El vuelo ya salió: no se puede cancelar ni reembolsar.";
 
             return null;
         }
 
         // =====================================================================
-        // Filtros: origen → destino → vuelo
+        // Columna izquierda: vista → origen → destino → vuelo
         // =====================================================================
-        private void CargarOrigenes()
+        private void CambiarVista(Vista vista)
         {
-            int? origenAnterior = (_cmbOrigen.SelectedItem as Opcion)?.Id;
+            _vista = vista;
+            foreach (var (boton, v) in new[] { (_btnProximos, Vista.Proximos), (_btnFinalizados, Vista.Finalizados), (_btnCancelados, Vista.Cancelados) })
+            {
+                if (v == vista) AppEstilos.EstilizarBotonPrimario(boton);
+                else AppEstilos.EstilizarBotonSecundario(boton);
+                boton.Height = 34;
+            }
+
+            _listaVuelos.MensajeVacio = vista switch
+            {
+                Vista.Finalizados => "Todavía no hay vuelos finalizados.",
+                Vista.Cancelados => "No hay vuelos cancelados.",
+                _ => "No hay vuelos próximos."
+            };
+            _listaVuelos.Avance = vista switch
+            {
+                Vista.Finalizados => r => ($"{ContarEmbarcados(r.Vuelo.IdVuelo)}/{r.Confirmadas} volaron", ContarEmbarcados(r.Vuelo.IdVuelo), r.Confirmadas),
+                Vista.Cancelados => r =>
+                {
+                    int canceladas = ReservasDe(r.Vuelo.IdVuelo).Count(x => x.EstadoReserva == "Cancelada");
+                    int pendientes = r.Confirmadas;
+                    return (pendientes == 0 ? "todo reembolsado" : $"{pendientes} por reembolsar", canceladas, canceladas + pendientes);
+                },
+                _ => r => ($"{r.Confirmadas}/{AsientosPorVuelo} vendidos", r.Confirmadas, AsientosPorVuelo)
+            };
+
+            _cmbEstado.Items.Clear();
+            _cmbEstado.Items.AddRange(vista == Vista.Finalizados
+                ? new object[] { "Todas", "Voló", "No se presentó", "Cancelada" }
+                : new object[] { "Todas", "Confirmada", "Cancelada" });
+            _cmbEstado.SelectedIndex = 0;
+
+            _vueloActual = null;
+            CargarOrigenes(null);
+        }
+
+        private int ContarEmbarcados(int idVuelo) =>
+            _reservas.Count(r => r.IdVuelo == idVuelo && r.EstadoReserva == "Confirmada" &&
+                                 _checkIns.TryGetValue(r.IdReserva, out var c) && c.EstadoCheckin == "Embarcado");
+
+        private void CargarOrigenes(int? idVuelo)
+        {
+            int? anterior = (_cmbOrigen.SelectedItem as Opcion)?.Id;
             var opciones = new List<Opcion> { new Opcion { Id = 0, Texto = "Todos los orígenes" } };
-            opciones.AddRange(_vuelos
+            opciones.AddRange(VuelosDeLaVista()
                 .GroupBy(v => v.IdLugarOrigen)
                 .Select(g => new Opcion { Id = g.Key, Texto = g.First().LugarOrigen })
                 .OrderBy(o => o.Texto));
-
-            LlenarCombo(_cmbOrigen, opciones, origenAnterior);
-            CargarDestinos();
+            LlenarCombo(_cmbOrigen, opciones, anterior);
+            CargarDestinos(idVuelo);
         }
 
-        private void CargarDestinos()
+        private void CargarDestinos(int? idVuelo)
         {
             int idOrigen = (_cmbOrigen.SelectedItem as Opcion)?.Id ?? 0;
-            int? destinoAnterior = (_cmbDestino.SelectedItem as Opcion)?.Id;
-
+            int? anterior = (_cmbDestino.SelectedItem as Opcion)?.Id;
             var opciones = new List<Opcion> { new Opcion { Id = 0, Texto = "Todos los destinos" } };
-            opciones.AddRange(_vuelos
+            opciones.AddRange(VuelosDeLaVista()
                 .Where(v => idOrigen == 0 || v.IdLugarOrigen == idOrigen)
                 .GroupBy(v => v.IdLugarDestino)
                 .Select(g => new Opcion { Id = g.Key, Texto = g.First().LugarDestino })
                 .OrderBy(o => o.Texto));
-
-            LlenarCombo(_cmbDestino, opciones, destinoAnterior);
-            CargarVuelos();
+            LlenarCombo(_cmbDestino, opciones, anterior);
+            CargarListaVuelos(idVuelo);
         }
 
-        private void CargarVuelos()
+        private void CargarListaVuelos(int? idVuelo)
         {
             int idOrigen = (_cmbOrigen.SelectedItem as Opcion)?.Id ?? 0;
             int idDestino = (_cmbDestino.SelectedItem as Opcion)?.Id ?? 0;
-            int? vueloAnterior = (_cmbVuelo.SelectedItem as Opcion)?.Id;
 
-            var opciones = new List<Opcion> { new Opcion { Id = 0, Texto = "Todos los vuelos" } };
-            opciones.AddRange(VuelosFiltrados(idOrigen, idDestino, 0)
-                .Select(v => new Opcion
-                {
-                    Id = v.IdVuelo,
-                    Texto = $"{v.NumeroVuelo} · {v.Salida:dd/MM HH:mm}" + (v.EstadoVuelo == "Cancelado" ? " · CANCELADO" : "")
-                }));
+            var vuelos = VuelosDeLaVista()
+                .Where(v => (idOrigen == 0 || v.IdLugarOrigen == idOrigen) &&
+                            (idDestino == 0 || v.IdLugarDestino == idDestino));
 
-            LlenarCombo(_cmbVuelo, opciones, vueloAnterior);
-            LlenarGrilla();
+            // Próximos: el que sale antes primero. Finalizados y cancelados: el más reciente primero.
+            vuelos = _vista == Vista.Proximos ? vuelos.OrderBy(v => v.Salida) : vuelos.OrderByDescending(v => v.Salida);
+
+            var resumen = vuelos.Select(v => new ResumenVuelo
+            {
+                Vuelo = v,
+                Pasajeros = ReservasDe(v.IdVuelo)
+                    .Where(r => r.EstadoReserva == "Confirmada")
+                    .Select(r => new PasajeroVuelo { Reserva = r, CheckIn = _checkIns.GetValueOrDefault(r.IdReserva) })
+                    .ToList()
+            }).ToList();
+
+            _listaVuelos.Mostrar(resumen, idVuelo);
+            if (resumen.Count == 0)
+                MostrarVuelo(null);
         }
-
-        private IEnumerable<VueloResponse> VuelosFiltrados(int idOrigen, int idDestino, int idVuelo) =>
-            _vuelos.Where(v =>
-                (idOrigen == 0 || v.IdLugarOrigen == idOrigen) &&
-                (idDestino == 0 || v.IdLugarDestino == idDestino) &&
-                (idVuelo == 0 || v.IdVuelo == idVuelo));
 
         private void LlenarCombo(ComboBox combo, List<Opcion> opciones, int? idAnterior)
         {
@@ -194,51 +267,84 @@ namespace SkyPlus.Desktop
         }
 
         // =====================================================================
-        // Lista de reservas
+        // Columna derecha: el vuelo elegido y sus reservas
         // =====================================================================
-        private void LlenarGrilla()
+        private void MostrarVuelo(ResumenVuelo? resumen)
         {
-            int idOrigen = (_cmbOrigen.SelectedItem as Opcion)?.Id ?? 0;
-            int idDestino = (_cmbDestino.SelectedItem as Opcion)?.Id ?? 0;
-            int idVuelo = (_cmbVuelo.SelectedItem as Opcion)?.Id ?? 0;
-            string estado = _cmbEstado.SelectedItem as string ?? "Todas";
-            string texto = _txtBuscar.Text.Trim();
+            _vueloActual = resumen?.Vuelo;
+            var reservas = resumen == null ? new List<ReservaResponse>() : ReservasDe(resumen.Vuelo.IdVuelo);
+            int confirmadas = reservas.Count(r => r.EstadoReserva == "Confirmada");
+            int canceladas = reservas.Count(r => r.EstadoReserva == "Cancelada");
+            int conCheckIn = reservas.Count(r => r.EstadoReserva == "Confirmada" && _checkIns.ContainsKey(r.IdReserva));
 
-            var vuelos = VuelosFiltrados(idOrigen, idDestino, idVuelo).ToDictionary(v => v.IdVuelo);
-
-            var lista = _reservas
-                .Where(r => vuelos.ContainsKey(r.IdVuelo))
-                .Where(r => estado == "Todas" || NombreEstado(r.EstadoReserva) == estado)
-                .Where(r => texto == "" ||
-                            r.CodigoReserva.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
-                            r.Pasajero.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
-                            r.Asiento.Contains(texto, StringComparison.OrdinalIgnoreCase))
-                .OrderBy(r => vuelos[r.IdVuelo].Salida)
-                .ThenBy(r => r.Pasajero)
-                .ToList();
-
-            _dgv.Rows.Clear();
-            foreach (var r in lista)
+            switch (_vista)
             {
-                var v = vuelos[r.IdVuelo];
-                decimal pagado = PagosReembolsables(r.IdReserva).Sum(p => p.Monto);
-                int fila = _dgv.Rows.Add(
-                    r.CodigoReserva,
-                    r.Pasajero,
-                    $"{v.NumeroVuelo} · {v.Salida:dd/MM HH:mm}",
-                    r.Asiento,
-                    NombreEstado(r.EstadoReserva),
-                    _reservasConCheckIn.Contains(r.IdReserva) ? "Sí" : "—",
-                    pagado > 0 ? pagado.ToString("C0") : "—");
-                _dgv.Rows[fila].Tag = r;
+                case Vista.Finalizados:
+                    int volaron = resumen == null ? 0 : ContarEmbarcados(resumen.Vuelo.IdVuelo);
+                    _encabezado.Mostrar(resumen,
+                        ("Pasajes vendidos", confirmadas, AppEstilos.ColorTextoOscuro),
+                        ("Volaron", volaron, AppEstilos.ColorExito),
+                        ("No se presentaron", confirmadas - volaron, (confirmadas - volaron) > 0 ? AppEstilos.ColorAcento : AppEstilos.ColorTextoOscuro),
+                        ("Canceladas", canceladas, AppEstilos.ColorTextoSuave));
+                    break;
+
+                case Vista.Cancelados:
+                    _encabezado.Mostrar(resumen,
+                        ("Por reembolsar", confirmadas, confirmadas > 0 ? AppEstilos.ColorAcento : AppEstilos.ColorTextoOscuro),
+                        ("Reembolsadas", canceladas, AppEstilos.ColorExito),
+                        ("Reservas totales", reservas.Count, AppEstilos.ColorTextoOscuro));
+                    break;
+
+                default:
+                    _encabezado.Mostrar(resumen,
+                        ("Confirmadas", confirmadas, AppEstilos.ColorTextoOscuro),
+                        ("Con check-in", conCheckIn, AppEstilos.ColorExito),
+                        ("Canceladas", canceladas, AppEstilos.ColorTextoSuave),
+                        ("Asientos libres", resumen == null ? 0 : AsientosPorVuelo - confirmadas, AppEstilos.ColorPrimario));
+                    break;
             }
 
-            int confirmadas = lista.Count(r => r.EstadoReserva == "Confirmada");
-            int canceladas = lista.Count(r => r.EstadoReserva == "Cancelada");
-            _lblResumen.Text = idVuelo != 0 && vuelos.TryGetValue(idVuelo, out var vuelo)
-                ? $"{vuelo.NumeroVuelo} · {vuelo.LugarOrigen} → {vuelo.LugarDestino} · Sale {vuelo.Salida:dddd dd/MM HH:mm} · {vuelo.EstadoVuelo}   |   " +
-                  $"{confirmadas} confirmadas · {canceladas} canceladas · {180 - confirmadas} asientos libres"
-                : $"{vuelos.Count} vuelos   |   {lista.Count} reservas · {confirmadas} confirmadas · {canceladas} canceladas";
+            _dgv.Columns["Resultado"]!.HeaderText = _vista == Vista.Finalizados ? "Resultado" : "Check-in";
+            LlenarGrilla();
+        }
+
+        private void LlenarGrilla()
+        {
+            _dgv.Rows.Clear();
+
+            if (_vueloActual != null)
+            {
+                string filtro = _cmbEstado.SelectedItem as string ?? "Todas";
+                string texto = _txtBuscar.Text.Trim();
+
+                var lista = ReservasDe(_vueloActual.IdVuelo)
+                    .Where(r => texto == "" ||
+                                r.CodigoReserva.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
+                                r.Pasajero.Contains(texto, StringComparison.OrdinalIgnoreCase) ||
+                                r.Asiento.Contains(texto, StringComparison.OrdinalIgnoreCase))
+                    .Where(r => filtro == "Todas" ||
+                                (_vista == Vista.Finalizados ? Resultado(r) : NombreEstado(r.EstadoReserva)) == filtro)
+                    .OrderBy(r => r.EstadoReserva == "Confirmada" ? 0 : 1)
+                    .ThenBy(r => r.Pasajero);
+
+                foreach (var r in lista)
+                {
+                    string columnaResultado = _vista == Vista.Finalizados
+                        ? Resultado(r)
+                        : !_checkIns.TryGetValue(r.IdReserva, out var c) ? "—"
+                        : c.EstadoCheckin == "Embarcado" ? "Embarcó" : "Sí";
+
+                    decimal pagado = PagosReembolsables(r.IdReserva).Sum(p => p.Monto);
+                    int fila = _dgv.Rows.Add(
+                        r.CodigoReserva,
+                        r.Pasajero,
+                        r.Asiento,
+                        NombreEstado(r.EstadoReserva),
+                        columnaResultado,
+                        pagado > 0 ? pagado.ToString("C0") : "—");
+                    _dgv.Rows[fila].Tag = r;
+                }
+            }
 
             ActualizarAcciones();
         }
@@ -247,14 +353,23 @@ namespace SkyPlus.Desktop
 
         private void ActualizarAcciones()
         {
+            _btnCancelar.Visible = _vista != Vista.Finalizados;
+
             var r = Seleccionada();
             string? motivo = r == null ? null : MotivoNoReembolsable(r);
             _btnCancelar.Enabled = r != null && motivo == null;
 
             if (r == null)
             {
-                _lblSeleccion.Text = "Elegí una reserva de la lista.";
+                _lblSeleccion.Text = _vueloActual == null ? "Elegí un vuelo de la lista." : "Elegí una reserva de la lista.";
                 _lblSeleccion.ForeColor = AppEstilos.ColorTextoSuave;
+                return;
+            }
+
+            if (_vista == Vista.Finalizados)
+            {
+                _lblSeleccion.Text = $"{r.Pasajero} · {r.CodigoReserva} · asiento {r.Asiento} — {Resultado(r)}";
+                _lblSeleccion.ForeColor = AppEstilos.ColorTextoOscuro;
                 return;
             }
 
@@ -301,15 +416,10 @@ namespace SkyPlus.Desktop
                 UseWaitCursor = true;
 
                 if (pagos.Count == 0)
-                {
-                    // Sin pagos (no debería pasar con la venta nueva): cancelación directa
                     await _reservaClient.CancelarAsync(r.IdReserva);
-                }
                 else
-                {
                     foreach (var pago in pagos)
                         await _reembolsoClient.CrearAsync(pago.IdPago, SesionUsuario.IdUsuario, motivo);
-                }
 
                 UseWaitCursor = false;
                 MessageBox.Show(
@@ -352,13 +462,7 @@ namespace SkyPlus.Desktop
                 Location = new Point(24, 52)
             };
             var lblMotivo = new Label { Text = "Motivo", Font = AppEstilos.FuenteBoton, AutoSize = true, Location = new Point(24, 126) };
-            var cmbMotivo = new ComboBox
-            {
-                Location = new Point(24, 150),
-                Width = 430,
-                DropDownStyle = ComboBoxStyle.DropDown,
-                Font = AppEstilos.FuenteNormal
-            };
+            var cmbMotivo = new ComboBox { Location = new Point(24, 150), Width = 430, DropDownStyle = ComboBoxStyle.DropDown, Font = AppEstilos.FuenteNormal };
             cmbMotivo.Items.AddRange(new object[]
             {
                 "Cambio de planes del pasajero",
@@ -367,6 +471,8 @@ namespace SkyPlus.Desktop
                 "Cancelación del vuelo por la aerolínea",
                 "Error en la emisión"
             });
+            if (_vueloActual?.EstadoVuelo == "Cancelado")
+                cmbMotivo.Text = "Cancelación del vuelo por la aerolínea";
 
             var lblError = new Label { ForeColor = AppEstilos.ColorError, AutoSize = true, Location = new Point(24, 182), Visible = false, Text = "Escribí o elegí un motivo." };
 
@@ -403,57 +509,72 @@ namespace SkyPlus.Desktop
             Padding = new Padding(24, 20, 24, 20);
             Font = AppEstilos.FuenteNormal;
 
-            // ----- Filtros -----
-            var tarjetaFiltros = new Panel { Dock = DockStyle.Top, Height = 132, BackColor = Color.White, Padding = new Padding(20, 14, 20, 12) };
-            tarjetaFiltros.Paint += DibujarBorde;
+            // ---------- Columna izquierda: vuelos ----------
+            var tarjetaVuelos = new Panel { Dock = DockStyle.Left, Width = 340, BackColor = Color.White };
+            tarjetaVuelos.Paint += DibujarBorde;
 
-            var filaFiltros = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 60, BackColor = Color.White, WrapContents = false };
-            _cmbOrigen = CrearComboFiltro(240);
-            _cmbDestino = CrearComboFiltro(240);
-            _cmbVuelo = CrearComboFiltro(250);
-            _cmbOrigen.SelectedIndexChanged += (s, e) => { if (!_cargandoFiltros) CargarDestinos(); };
-            _cmbDestino.SelectedIndexChanged += (s, e) => { if (!_cargandoFiltros) CargarVuelos(); };
-            _cmbVuelo.SelectedIndexChanged += (s, e) => { if (!_cargandoFiltros) LlenarGrilla(); };
-            filaFiltros.Controls.Add(CrearCampo("Origen", _cmbOrigen));
-            filaFiltros.Controls.Add(CrearCampo("Destino", _cmbDestino));
-            filaFiltros.Controls.Add(CrearCampo("Vuelo", _cmbVuelo));
+            var cabecera = new FlowLayoutPanel
+            {
+                Dock = DockStyle.Top,
+                Height = 218,
+                FlowDirection = FlowDirection.TopDown,
+                WrapContents = false,
+                BackColor = Color.White,
+                Padding = new Padding(16, 14, 16, 8)
+            };
 
-            _btnNueva = new Button { Text = "+ Nueva reserva", Width = 170, Dock = DockStyle.Right };
+            var filaBotones = new FlowLayoutPanel { AutoSize = true, WrapContents = false, BackColor = Color.White, Margin = new Padding(0, 0, 0, 12) };
+            _btnNueva = new Button { Text = "+ Nueva reserva", Width = 196, Margin = new Padding(0, 0, 8, 0) };
             AppEstilos.EstilizarBotonPrimario(_btnNueva);
-            _btnNueva.Height = 40;
             _btnNueva.Click += btnNueva_Click;
-            _btnRefrescar = new Button { Text = "Refrescar", Width = 100, Dock = DockStyle.Right };
+            _btnRefrescar = new Button { Text = "Refrescar", Width = 100, Margin = Padding.Empty };
             AppEstilos.EstilizarBotonSecundario(_btnRefrescar);
-            _btnRefrescar.Height = 40;
             _btnRefrescar.Click += async (s, e) => await CargarDatosAsync();
+            filaBotones.Controls.Add(_btnNueva);
+            filaBotones.Controls.Add(_btnRefrescar);
 
-            var botonesArriba = new Panel { Dock = DockStyle.Right, Width = 290, BackColor = Color.White, Padding = new Padding(0, 18, 0, 2) };
-            botonesArriba.Controls.Add(_btnRefrescar);
-            botonesArriba.Controls.Add(new Panel { Dock = DockStyle.Right, Width = 10, BackColor = Color.White });
-            botonesArriba.Controls.Add(_btnNueva);
+            // Selector de vista: Próximos | Finalizados | Cancelados
+            var filaVistas = new FlowLayoutPanel { AutoSize = true, WrapContents = false, BackColor = Color.White, Margin = new Padding(0, 0, 0, 10) };
+            _btnProximos = new Button { Text = "Próximos", Width = 100, Margin = new Padding(0, 0, 4, 0) };
+            _btnFinalizados = new Button { Text = "Finalizados", Width = 100, Margin = new Padding(0, 0, 4, 0) };
+            _btnCancelados = new Button { Text = "Cancelados", Width = 100, Margin = Padding.Empty };
+            _btnProximos.Click += (s, e) => CambiarVista(Vista.Proximos);
+            _btnFinalizados.Click += (s, e) => CambiarVista(Vista.Finalizados);
+            _btnCancelados.Click += (s, e) => CambiarVista(Vista.Cancelados);
+            filaVistas.Controls.AddRange(new Control[] { _btnProximos, _btnFinalizados, _btnCancelados });
 
-            var arriba = new Panel { Dock = DockStyle.Top, Height = 60, BackColor = Color.White };
-            arriba.Controls.Add(filaFiltros);
-            arriba.Controls.Add(botonesArriba);
-            filaFiltros.Dock = DockStyle.Fill;
-            filaFiltros.BringToFront();
+            _cmbOrigen = CrearComboFiltro();
+            _cmbDestino = CrearComboFiltro();
+            _cmbOrigen.SelectedIndexChanged += (s, e) => { if (!_cargandoFiltros) CargarDestinos(null); };
+            _cmbDestino.SelectedIndexChanged += (s, e) => { if (!_cargandoFiltros) CargarListaVuelos(null); };
 
-            _lblResumen = new Label { Dock = DockStyle.Bottom, Height = 34, Font = AppEstilos.FuenteBoton, ForeColor = AppEstilos.ColorTextoOscuro, TextAlign = ContentAlignment.MiddleLeft, AutoEllipsis = true };
-            tarjetaFiltros.Controls.Add(arriba);
-            tarjetaFiltros.Controls.Add(_lblResumen);
+            cabecera.Controls.Add(filaBotones);
+            cabecera.Controls.Add(filaVistas);
+            cabecera.Controls.Add(_cmbOrigen);
+            cabecera.Controls.Add(_cmbDestino);
 
-            // ----- Lista -----
+            _listaVuelos = new ucListaVuelos { Dock = DockStyle.Fill };
+            _listaVuelos.VueloSeleccionado += (s, vuelo) => MostrarVuelo(vuelo);
+
+            var separador = new Panel { Dock = DockStyle.Top, Height = 1, BackColor = AppEstilos.ColorBorde };
+            tarjetaVuelos.Controls.Add(_listaVuelos);
+            tarjetaVuelos.Controls.Add(separador);
+            tarjetaVuelos.Controls.Add(cabecera);
+            _listaVuelos.BringToFront();
+
+            // ---------- Columna derecha ----------
+            var derecha = new Panel { Dock = DockStyle.Fill, BackColor = AppEstilos.ColorSecundario };
+            _encabezado = new EncabezadoVuelo { Dock = DockStyle.Top };
+
             var tarjetaLista = new Panel { Dock = DockStyle.Fill, BackColor = Color.White, Padding = new Padding(16, 12, 16, 12) };
             tarjetaLista.Paint += DibujarBorde;
 
             var barra = new FlowLayoutPanel { Dock = DockStyle.Top, Height = 42, BackColor = Color.White, WrapContents = false };
-            var lblLista = new Label { Text = "Reservas", Font = AppEstilos.FuenteSubtitulo, ForeColor = AppEstilos.ColorTextoOscuro, AutoSize = true, Margin = new Padding(0, 6, 24, 0) };
-            _txtBuscar = new TextBox { Width = 300, Font = AppEstilos.FuenteNormal, BorderStyle = BorderStyle.FixedSingle, PlaceholderText = "Buscar por pasajero, código o asiento", Margin = new Padding(0, 3, 12, 0) };
+            var lblLista = new Label { Text = "Reservas del vuelo", Font = AppEstilos.FuenteSubtitulo, ForeColor = AppEstilos.ColorTextoOscuro, AutoSize = true, Margin = new Padding(0, 6, 24, 0) };
+            _txtBuscar = new TextBox { Width = 280, Font = AppEstilos.FuenteNormal, BorderStyle = BorderStyle.FixedSingle, PlaceholderText = "Buscar por pasajero, código o asiento", Margin = new Padding(0, 3, 12, 0) };
             _txtBuscar.TextChanged += (s, e) => LlenarGrilla();
-            _cmbEstado = new ComboBox { Width = 170, DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Font = AppEstilos.FuenteNormal, Margin = new Padding(0, 3, 0, 0) };
-            _cmbEstado.Items.AddRange(new object[] { "Todas", "Confirmada", "Cancelada", "Expirada", "Pendiente de pago" });
-            _cmbEstado.SelectedIndex = 0;
-            _cmbEstado.SelectedIndexChanged += (s, e) => LlenarGrilla();
+            _cmbEstado = new ComboBox { Width = 160, DropDownStyle = ComboBoxStyle.DropDownList, FlatStyle = FlatStyle.Flat, Font = AppEstilos.FuenteNormal, Margin = new Padding(0, 3, 0, 0) };
+            _cmbEstado.SelectedIndexChanged += (s, e) => { if (_dgv != null) LlenarGrilla(); };
             barra.Controls.AddRange(new Control[] { lblLista, _txtBuscar, _cmbEstado });
 
             _dgv = new DataGridView
@@ -468,23 +589,25 @@ namespace SkyPlus.Desktop
             AppEstilos.EstilizarGrid(_dgv);
             _dgv.Columns.Add("Codigo", "Reserva");
             _dgv.Columns.Add("Pasajero", "Pasajero");
-            _dgv.Columns.Add("Vuelo", "Vuelo");
             _dgv.Columns.Add("Asiento", "Asiento");
             _dgv.Columns.Add("Estado", "Estado");
-            _dgv.Columns.Add("CheckIn", "Check-in");
+            _dgv.Columns.Add("Resultado", "Check-in");
             _dgv.Columns.Add("Pagado", "Pagado");
-            _dgv.Columns["Pasajero"]!.FillWeight = 180;
-            _dgv.Columns["Vuelo"]!.FillWeight = 140;
+            _dgv.Columns["Pasajero"]!.FillWeight = 190;
             _dgv.CellFormatting += (s, e) =>
             {
-                if (e.RowIndex < 0 || _dgv.Columns[e.ColumnIndex].Name != "Estado" || e.Value is not string estado)
-                    return;
-                e.CellStyle!.ForeColor = estado switch
+                if (e.RowIndex < 0 || e.Value is not string valor) return;
+                string columna = _dgv.Columns[e.ColumnIndex].Name;
+                if (columna != "Estado" && columna != "Resultado") return;
+
+                Color? color = valor switch
                 {
-                    "Confirmada" => AppEstilos.ColorExito,
-                    "Cancelada" => AppEstilos.ColorAcento,
-                    _ => AppEstilos.ColorTextoSuave
+                    "Confirmada" or "Voló" or "Embarcó" or "Sí" => AppEstilos.ColorExito,
+                    "Cancelada" or "No se presentó" or "Check-in sin embarque" => AppEstilos.ColorAcento,
+                    _ => null
                 };
+                if (color == null) return;
+                e.CellStyle!.ForeColor = color.Value;
                 e.CellStyle.Font = AppEstilos.FuenteBoton;
             };
             _dgv.SelectionChanged += (s, e) => ActualizarAcciones();
@@ -494,7 +617,6 @@ namespace SkyPlus.Desktop
             tarjetaLista.Controls.Add(barra);
             _dgv.BringToFront();
 
-            // ----- Acciones -----
             var barraAcciones = new Panel { Dock = DockStyle.Bottom, Height = 72, BackColor = Color.White, Padding = new Padding(20, 14, 20, 14) };
             barraAcciones.Paint += DibujarBorde;
             _btnCancelar = new Button { Text = "Cancelar y reembolsar", Dock = DockStyle.Right, Width = 220, Enabled = false };
@@ -506,29 +628,27 @@ namespace SkyPlus.Desktop
             barraAcciones.Controls.Add(_btnCancelar);
             _lblSeleccion.BringToFront();
 
-            Controls.Add(tarjetaLista);
-            Controls.Add(new Panel { Dock = DockStyle.Top, Height = 14, BackColor = AppEstilos.ColorSecundario });
-            Controls.Add(tarjetaFiltros);
-            Controls.Add(new Panel { Dock = DockStyle.Bottom, Height = 14, BackColor = AppEstilos.ColorSecundario });
-            Controls.Add(barraAcciones);
+            derecha.Controls.Add(tarjetaLista);
+            derecha.Controls.Add(new Panel { Dock = DockStyle.Top, Height = 14, BackColor = AppEstilos.ColorSecundario });
+            derecha.Controls.Add(_encabezado);
+            derecha.Controls.Add(new Panel { Dock = DockStyle.Bottom, Height = 14, BackColor = AppEstilos.ColorSecundario });
+            derecha.Controls.Add(barraAcciones);
+
+            Controls.Add(derecha);
+            Controls.Add(new Panel { Dock = DockStyle.Left, Width = 16, BackColor = AppEstilos.ColorSecundario });
+            Controls.Add(tarjetaVuelos);
+
+            CambiarVista(Vista.Proximos);
         }
 
-        private static ComboBox CrearComboFiltro(int ancho) => new ComboBox
+        private static ComboBox CrearComboFiltro() => new ComboBox
         {
-            Width = ancho,
+            Width = 306,
             DropDownStyle = ComboBoxStyle.DropDownList,
             FlatStyle = FlatStyle.Flat,
             Font = AppEstilos.FuenteNormal,
-            Margin = Padding.Empty
+            Margin = new Padding(0, 0, 0, 8)
         };
-
-        private static Control CrearCampo(string titulo, Control control)
-        {
-            var campo = new FlowLayoutPanel { FlowDirection = FlowDirection.TopDown, WrapContents = false, AutoSize = true, BackColor = Color.White, Margin = new Padding(0, 0, 16, 0) };
-            campo.Controls.Add(new Label { Text = titulo, AutoSize = true, Font = AppEstilos.FuenteBoton, ForeColor = AppEstilos.ColorTextoSuave, Margin = new Padding(0, 0, 0, 4) });
-            campo.Controls.Add(control);
-            return campo;
-        }
 
         private static string NombreEstado(string estado) => estado == "PendientePago" ? "Pendiente de pago" : estado;
 

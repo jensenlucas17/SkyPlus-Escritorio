@@ -33,8 +33,7 @@ namespace SkyPlus.Desktop
                 ? "Nuevo pasajero"
                 : "Editar pasajero";
 
-            AppEstilos.EstilizarBotonPrimario(btnGuardar);
-            AppEstilos.EstilizarBotonSecundario(btnCancelar);
+            DisenarFormulario();
 
             if (_pasajeroEdicion != null)
             {
@@ -45,6 +44,96 @@ namespace SkyPlus.Desktop
                 txtEmail.Text = _pasajeroEdicion.Email;
                 txtTelefono.Text = _pasajeroEdicion.Telefono;
             }
+        }
+
+        // ---------------------------------------------------------------------
+        // Diseño: encabezado oscuro y campos en dos columnas (mismo estilo que Nueva reserva)
+        // ---------------------------------------------------------------------
+        private void DisenarFormulario()
+        {
+            Controls.Clear();
+            FormBorderStyle = FormBorderStyle.FixedDialog;
+            MaximizeBox = false;
+            MinimizeBox = false;
+            StartPosition = FormStartPosition.CenterParent;
+            ClientSize = new Size(640, 470);
+            BackColor = Color.White;
+            Font = AppEstilos.FuenteNormal;
+
+            var encabezado = new Panel { Dock = DockStyle.Top, Height = 72, BackColor = AppEstilos.ColorLateral, Padding = new Padding(28, 0, 28, 0) };
+            encabezado.Controls.Add(new Label
+            {
+                Text = _pasajeroEdicion == null ? "Nuevo pasajero" : "Editar pasajero",
+                Font = AppEstilos.FuenteTitulo,
+                ForeColor = Color.White,
+                AutoSize = true,
+                Location = new Point(28, 12)
+            });
+            encabezado.Controls.Add(new Label
+            {
+                Text = _pasajeroEdicion == null
+                    ? "Cargá los datos tal como figuran en el documento de viaje."
+                    : $"{_pasajeroEdicion.Apellido}, {_pasajeroEdicion.Nombre} · DNI {_pasajeroEdicion.Documento}",
+                Font = AppEstilos.FuenteNormal,
+                ForeColor = AppEstilos.ColorLateralTexto,
+                AutoSize = true,
+                Location = new Point(30, 44)
+            });
+            Controls.Add(encabezado);
+
+            const int izquierda = 32, derecha = 336, ancho = 272;
+            int y = 100;
+            void Campo(string titulo, TextBox caja, int x, int fila, string ayuda = "")
+            {
+                int top = y + fila * 78;
+                Controls.Add(new Label
+                {
+                    Text = titulo,
+                    Font = AppEstilos.FuenteBoton,
+                    ForeColor = AppEstilos.ColorTextoOscuro,
+                    AutoSize = true,
+                    Location = new Point(x, top)
+                });
+                caja.Font = new Font("Segoe UI", 11F);
+                caja.BorderStyle = BorderStyle.FixedSingle;
+                caja.PlaceholderText = ayuda;
+                caja.SetBounds(x, top + 24, ancho, 30);
+                Controls.Add(caja);
+            }
+
+            Campo("Nombre", txtNombre, izquierda, 0);
+            Campo("Apellido", txtApellido, derecha, 0);
+            Campo("Documento (DNI o pasaporte)", txtDocumento, izquierda, 1, "Sin puntos");
+            Campo("Nacionalidad", txtNacionalidad, derecha, 1, "Ej.: Argentina");
+            Campo("Email", txtEmail, izquierda, 2, "nombre@mail.com");
+            Campo("Teléfono", txtTelefono, derecha, 2, "Ej.: 379 4123456");
+
+            lblMensaje.AutoSize = true;
+            lblMensaje.MaximumSize = new Size(576, 0);
+            lblMensaje.Font = AppEstilos.FuenteBoton;
+            lblMensaje.ForeColor = AppEstilos.ColorError;
+            lblMensaje.Location = new Point(izquierda, y + 3 * 78 + 2);
+            Controls.Add(lblMensaje);
+
+            var pie = new Panel { Dock = DockStyle.Bottom, Height = 76, BackColor = AppEstilos.ColorFilaAlterna };
+            pie.Paint += (s, e) =>
+            {
+                using var lapiz = new Pen(AppEstilos.ColorBorde);
+                e.Graphics.DrawLine(lapiz, 0, 0, pie.Width, 0);
+            };
+            btnGuardar.Text = _pasajeroEdicion == null ? "Guardar pasajero" : "Guardar cambios";
+            btnCancelar.Text = "Cancelar";
+            AppEstilos.EstilizarBotonPrimario(btnGuardar);
+            AppEstilos.EstilizarBotonSecundario(btnCancelar);
+            btnGuardar.SetBounds(640 - 32 - 190, 18, 190, 40);
+            btnCancelar.SetBounds(btnGuardar.Left - 12 - 120, 18, 120, 40);
+            pie.Controls.Add(btnGuardar);
+            pie.Controls.Add(btnCancelar);
+            Controls.Add(pie);
+
+            AcceptButton = btnGuardar;
+            CancelButton = btnCancelar;
+            ActiveControl = txtNombre;
         }
 
         private async void btnGuardar_Click(object sender, EventArgs e)
@@ -162,18 +251,13 @@ namespace SkyPlus.Desktop
 
         private void MostrarError(string mensaje)
         {
-            lblMensaje.Text = mensaje;
-            lblMensaje.ForeColor = Color.Red;
-
-            lblMensaje.AutoSize = false;
-            lblMensaje.TextAlign = ContentAlignment.MiddleCenter;
-
-            lblMensaje.Width = ClientSize.Width - 30;
-            lblMensaje.Height = 48;
-
-            lblMensaje.Left = 15;
-            lblMensaje.Top =
-                btnGuardar.Top - lblMensaje.Height - 12;
+            // El mensaje va debajo de los campos, arriba de la barra de botones
+            lblMensaje.Text = "⚠  " + mensaje;
+            lblMensaje.ForeColor = AppEstilos.ColorError;
+            lblMensaje.Font = AppEstilos.FuenteBoton;
+            lblMensaje.AutoSize = true;
+            lblMensaje.MaximumSize = new Size(ClientSize.Width - 64, 0);
+            lblMensaje.Location = new Point(32, 344);
 
             lblMensaje.Visible = true;
             lblMensaje.BringToFront();
