@@ -2,6 +2,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net.Http;
 using System.Threading.Tasks;
 using System.Windows.Forms;
@@ -31,6 +32,19 @@ namespace SkyPlus.Desktop
             AppEstilos.EstilizarBotonSecundario(btnEliminar);
             AppEstilos.EstilizarBotonSecundario(btnBuscar);
             AppEstilos.EstilizarBotonSecundario(btnReactivar);
+            AppEstilos.ConfigurarBusqueda(txtBuscar, btnBuscar,
+                "Buscar por nombre, apellido o DNI",
+                AplicarFiltro, CargarPasajeros,
+                label1);
+        }
+
+        private void AplicarFiltro()
+        {
+            var texto = txtBuscar.Text.Trim();
+            dgvPasajeros.DataSource = null;
+            dgvPasajeros.DataSource = _pasajeros
+                .Where(p => AppEstilos.Coincide(texto, p.Nombre, p.Apellido, p.Documento, p.Email))
+                .ToList();
         }
 
         private async Task CargarPasajeros()
@@ -39,9 +53,7 @@ namespace SkyPlus.Desktop
             {
                 var pasajeros = await _pasajeroClient.ObtenerTodosAsync();
                 _pasajeros = pasajeros ?? new List<PasajeroResponse>();
-
-                dgvPasajeros.DataSource = null;
-                dgvPasajeros.DataSource = _pasajeros;
+                AplicarFiltro();
             }
             catch (HttpRequestException)
             {
@@ -55,9 +67,9 @@ namespace SkyPlus.Desktop
             }
         }
 
-        private async void btnBuscar_Click(object sender, EventArgs e)
+        // El botón Buscar filtra (lo configura AppEstilos.ConfigurarBusqueda)
+        private void btnBuscar_Click(object sender, EventArgs e)
         {
-            await CargarPasajeros();
         }
 
         private async void btnNuevo_Click(object sender, EventArgs e)

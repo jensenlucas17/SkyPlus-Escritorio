@@ -29,8 +29,11 @@ namespace SkyPlus.Desktop
             AppEstilos.EstilizarBotonPrimario(btnNuevo);
             AppEstilos.EstilizarBotonSecundario(btnEditar);
             AppEstilos.EstilizarBotonSecundario(btnEliminar);
-            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
             AppEstilos.EstilizarBotonSecundario(btnReactivar);
+            AppEstilos.ConfigurarBusqueda(txtBuscar, btnRefrescar,
+                "Buscar por código IATA, nombre, ciudad o país",
+                AplicarFiltros, CargarLugares,
+                label1);
         }
 
         private void ConfigurarColumnas()
@@ -107,13 +110,9 @@ namespace SkyPlus.Desktop
         {
             var texto = txtBuscar.Text.Trim().ToLower();
 
-            var filtrados = _lugaresCache.Where(l =>
-                string.IsNullOrEmpty(texto) ||
-                l.CodigoIata.ToLower().Contains(texto) ||
-                l.Nombre.ToLower().Contains(texto) ||
-                l.Ciudad.ToLower().Contains(texto) ||
-                l.Pais.ToLower().Contains(texto)
-            ).ToList();
+            var filtrados = _lugaresCache
+                .Where(l => AppEstilos.Coincide(texto, l.CodigoIata, l.Nombre, l.Ciudad, l.Pais))
+                .ToList();
 
             dgvLugares.DataSource = filtrados;
         }
@@ -123,9 +122,9 @@ namespace SkyPlus.Desktop
             AplicarFiltros();
         }
 
-        private async void btnRefrescar_Click(object sender, EventArgs e)
+        // Es el botón "Buscar": filtra (lo configura AppEstilos.ConfigurarBusqueda)
+        private void btnRefrescar_Click(object sender, EventArgs e)
         {
-            await CargarLugares();
         }
 
         private LugarResponse? ObtenerSeleccionado()

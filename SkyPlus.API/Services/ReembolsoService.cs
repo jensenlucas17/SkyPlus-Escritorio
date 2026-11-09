@@ -129,6 +129,18 @@ namespace SkyPlus.API.Services
                     throw new ValidacionNegocioException(
                         "Solo se pueden reembolsar reservas confirmadas.");
 
+                // Regla: no se reembolsa un vuelo que ya salió o finalizó
+                // (los vuelos cancelados sí se pueden reembolsar).
+                var vuelo = await _context.Vuelos
+                    .AsNoTracking()
+                    .FirstOrDefaultAsync(v => v.IdVuelo == reserva.IdVuelo);
+
+                if (vuelo != null &&
+                    vuelo.EstadoVuelo != "Cancelado" &&
+                    (vuelo.EstadoVuelo == "Finalizado" || vuelo.Salida <= DateTime.Now))
+                    throw new ValidacionNegocioException(
+                        "El vuelo ya salió: la reserva no se puede reembolsar.");
+
                 var agente = await _context.Usuarios
                     .Include(u => u.Rol)
                     .FirstOrDefaultAsync(u =>

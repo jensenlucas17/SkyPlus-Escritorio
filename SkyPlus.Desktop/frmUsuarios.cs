@@ -24,7 +24,7 @@ namespace SkyPlus.Desktop
             AppEstilos.EstilizarGrid(dgvUsuarios);
             AppEstilos.EstilizarBotonPrimario(btnNuevo);
             AppEstilos.EstilizarBotonSecundario(btnEditar);
-            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
+
             AppEstilos.EstilizarBotonSecundario(btnDesactivarReactivar);
             cmbEstadoFiltro.Items.Clear();
             cmbEstadoFiltro.Items.AddRange(new object[]
@@ -37,6 +37,10 @@ namespace SkyPlus.Desktop
 
             _ = CargarRolesFiltroAsync();
             _ = CargarUsuariosAsync();
+
+            AppEstilos.ConfigurarBusqueda(txtBuscar, btnRefrescar,
+                "Buscar por nombre, apellido, email o DNI",
+                AplicarFiltros, CargarUsuariosAsync);
         }
 
         private void ConfigurarColumnas()
@@ -73,11 +77,7 @@ namespace SkyPlus.Desktop
             var rolFiltro = cmbRolFiltro.SelectedItem?.ToString() ?? "Todos";
 
             var filtrados = _usuariosCache.Where(u =>
-                (string.IsNullOrEmpty(texto) ||
-                    u.Nombre.ToLower().Contains(texto) ||
-                    u.Apellido.ToLower().Contains(texto) ||
-                    u.EmailCorporativo.ToLower().Contains(texto) ||
-                     (u.Dni?.Contains(texto) ?? false))
+                AppEstilos.Coincide(texto, u.Nombre, u.Apellido, u.EmailCorporativo, u.Dni)
                 &&
                 (estadoFiltro == "Todos" || u.EstadoCuenta == estadoFiltro)
                 &&
@@ -91,17 +91,9 @@ namespace SkyPlus.Desktop
 
         private void cmbEstadoFiltro_SelectedIndexChanged(object sender, EventArgs e) => AplicarFiltros();
 
-        private async void btnRefrescar_Click(object sender, EventArgs e)
+        // Es el botón "Buscar": filtra (lo configura AppEstilos.ConfigurarBusqueda)
+        private void btnRefrescar_Click(object sender, EventArgs e)
         {
-            txtBuscar.Clear();
-
-            if (cmbEstadoFiltro.Items.Count > 0)
-                cmbEstadoFiltro.SelectedIndex = 0;
-
-            if (cmbRolFiltro.Items.Count > 0)
-                cmbRolFiltro.SelectedIndex = 0;
-
-            await CargarUsuariosAsync();
         }
 
         private void btnNuevo_Click(object sender, EventArgs e)

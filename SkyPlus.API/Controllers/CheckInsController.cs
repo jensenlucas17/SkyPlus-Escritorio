@@ -9,7 +9,10 @@ namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Agente de Check-in")]
+    // El Agente de Reservas solo puede CONSULTAR la lista de check-ins
+    // (para saber qué reservas ya no se pueden cancelar ni reembolsar).
+    // Todo lo demás es exclusivo del Agente de Check-in.
+    [Authorize(Roles = "Agente de Check-in,Agente de Reservas")]
     public class CheckInsController : ControllerBase
     {
         private readonly ICheckInService _checkInService;
@@ -30,6 +33,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "Agente de Check-in")]
         public async Task<IActionResult> ObtenerPorId(int id)
         {
             var checkIn = await _checkInService.ObtenerPorIdAsync(id);
@@ -40,6 +44,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpGet("estado/{idReserva:int}")]
+        [Authorize(Roles = "Agente de Check-in")]
         public async Task<IActionResult> ConsultarEstado(int idReserva)
         {
             try
@@ -57,6 +62,7 @@ namespace SkyPlus.API.Controllers
 
 
         [HttpPost]
+        [Authorize(Roles = "Agente de Check-in")]
         public async Task<IActionResult> Crear(
             [FromBody] CrearCheckInRequest request)
         {
@@ -90,6 +96,7 @@ namespace SkyPlus.API.Controllers
 
         // Descargar tarjeta de embarque en PDF con código QR.
         [HttpGet("{id:int}/boarding-pass")]
+        [Authorize(Roles = "Agente de Check-in")]
         public async Task<IActionResult> DescargarBoardingPass(int id)
         {
             try
@@ -131,6 +138,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpGet("validar-qr/{codigoQr}")]
+        [Authorize(Roles = "Agente de Check-in")]
         public async Task<IActionResult> ValidarQr(string codigoQr)
         {
             var resultado = await _checkInService.ValidarQrAsync(codigoQr);
@@ -139,6 +147,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpPost("embarcar")]
+        [Authorize(Roles = "Agente de Check-in")]
         public async Task<IActionResult> RegistrarEmbarque(
             [FromBody] RegistrarEmbarqueRequest request)
         {

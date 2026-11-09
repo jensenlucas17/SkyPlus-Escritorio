@@ -1,4 +1,4 @@
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Exceptions;
 using SkyPlus.API.Services;
@@ -9,7 +9,10 @@ namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    [Authorize(Roles = "Agente de Reservas")]
+    // Cada acción indica qué roles la pueden usar.
+    // El Agente de Check-in solo puede registrar el pago adicional
+    // (equipaje agregado y exceso de peso, cobrados en el mostrador).
+    [Authorize]
     public class PagosController : ControllerBase
     {
         private readonly IPagoService _pagoService;
@@ -20,10 +23,12 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpGet]
+        [Authorize(Roles = "Agente de Reservas")]
         public async Task<IActionResult> ObtenerTodos()
             => Ok(await _pagoService.ObtenerTodosAsync());
 
         [HttpGet("{id:int}")]
+        [Authorize(Roles = "Agente de Reservas,Agente de Check-in")]
         public async Task<IActionResult> ObtenerPorId(int id)
         {
             var pago = await _pagoService.ObtenerPorIdAsync(id);
@@ -35,6 +40,7 @@ namespace SkyPlus.API.Controllers
 
         // Pago inicial: pasaje + equipaje inicial.
         [HttpPost]
+        [Authorize(Roles = "Agente de Reservas")]
         public async Task<IActionResult> Crear(
             [FromBody] CrearPagoRequest request)
         {
@@ -73,7 +79,9 @@ namespace SkyPlus.API.Controllers
         }
 
         // Pago adicional: equipaje y cargos pendientes.
+        // El Agente de Check-in solo cobra equipaje y excesos de peso (ver PagoService).
         [HttpPost("adicional")]
+        [Authorize(Roles = "Agente de Reservas,Agente de Check-in")]
         public async Task<IActionResult> CrearAdicional(
             [FromBody] CrearPagoRequest request)
         {
@@ -112,6 +120,7 @@ namespace SkyPlus.API.Controllers
         }
 
         [HttpPut("{id:int}/anular")]
+        [Authorize(Roles = "Agente de Reservas")]
         public async Task<IActionResult> Anular(int id)
         {
             try

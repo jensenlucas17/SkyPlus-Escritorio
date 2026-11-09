@@ -28,8 +28,10 @@ namespace SkyPlus.Desktop
             await CargarCancelaciones();
 
             AppEstilos.EstilizarGrid(dgvCancelaciones);
-            AppEstilos.EstilizarBotonPrimario(btnBuscar);
-            AppEstilos.EstilizarBotonSecundario(btnRefrescar);
+            AppEstilos.ConfigurarBusqueda(txtBuscar, btnBuscar,
+                "Buscar por código de reserva o pasajero (nombre y apellido)",
+                AplicarFiltro, CargarCancelaciones,
+                lblCancelaciones, btnRefrescar);
         }
 
         private void ConfigurarColumnas()
@@ -72,11 +74,10 @@ namespace SkyPlus.Desktop
         {
             var texto = txtBuscar.Text.Trim().ToLower();
 
-            var filtradas = _canceladasCache.Where(r =>
-                string.IsNullOrEmpty(texto) ||
-                r.CodigoReserva.ToLower().Contains(texto) ||
-                r.Pasajero.ToLower().Contains(texto)
-            ).ToList();
+            var filtradas = _canceladasCache
+                .Where(r => AppEstilos.Coincide(texto, r.CodigoReserva, r.Pasajero))
+                .OrderByDescending(r => r.FechaCancelacion)
+                .ToList();
 
             dgvCancelaciones.DataSource = null;
             dgvCancelaciones.DataSource = filtradas;

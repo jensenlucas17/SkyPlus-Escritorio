@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
 using SkyPlus.Desktop.Models;
@@ -20,6 +20,15 @@ namespace SkyPlus.Desktop.Services
             {
                 idReserva,
                 idUsuarioAgente,
+                metodoPago
+            });
+
+        // Pago de cargos pendientes de una reserva confirmada.
+        // Si lo usa el Agente de Check-in, la API cobra solo el exceso de peso.
+        public Task<PagoResponse?> CrearAdicionalAsync(int idReserva, string metodoPago)
+            => _api.PostAsync<object, PagoResponse>("api/Pagos/adicional", new
+            {
+                idReserva,
                 metodoPago
             });
 

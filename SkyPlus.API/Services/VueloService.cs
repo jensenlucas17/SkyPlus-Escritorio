@@ -128,6 +128,10 @@ namespace SkyPlus.API.Services
                 throw new ValidacionNegocioException("La tarifa debe ser mayor que cero.");
             if (request.EstadoVuelo != "Programado" && request.EstadoVuelo != "Confirmado")
                 throw new ValidacionNegocioException("Un vuelo nuevo debe estar Programado o Confirmado.");
+            if (request.Salida <= DateTime.Now)
+                throw new ValidacionNegocioException("La salida de un vuelo nuevo debe ser posterior a la fecha y hora actual.");
+
+            await ValidarAeronaveDisponibleAsync(request.IdAeronave, request.Salida, request.Llegada, null);
 
             var vuelo = new Domain.Entities.Vuelo
             {
@@ -226,6 +230,12 @@ namespace SkyPlus.API.Services
                 throw new ValidacionNegocioException(
                     "El vuelo tiene reservas activas. No se pueden cambiar aeronave, ruta ni horarios sin gestionar las reservas.");
 
+            if (request.EstadoVuelo != "Finalizado" &&
+                (request.IdAeronave != vuelo.IdAeronave ||
+                 request.Salida != vuelo.Salida ||
+                 request.Llegada != vuelo.Llegada))
+                await ValidarAeronaveDisponibleAsync(request.IdAeronave, request.Salida, request.Llegada, vuelo.IdVuelo);
+
             vuelo.NumeroVuelo = request.NumeroVuelo;
             vuelo.IdAeronave = request.IdAeronave;
             vuelo.IdUsuarioOperador = request.IdUsuarioOperador;
@@ -264,6 +274,39 @@ namespace SkyPlus.API.Services
             await _context.SaveChangesAsync();
 
             return true;
+        }
+
+        // ---------------------------------------------------------------------
+        // Regla de negocio: una aeronave no puede tener dos vuelos superpuestos.
+        // Después de cada vuelo queda ocupada hasta la llegada + el tiempo de escala
+        // (desembarque, limpieza, carga de combustible y embarque del siguiente vuelo).
+        // Los vuelos cancelados no ocupan la aeronave.
+        // ---------------------------------------------------------------------
+        public const int MinutosEntreVuelos = 60;
+
+        private async Task ValidarAeronaveDisponibleAsync(
+            int idAeronave, DateTime salida, DateTime llegada, int? idVueloExcluido)
+        {
+            var desde = salida.AddMinutes(-MinutosEntreVuelos);
+            var hasta = llegada.AddMinutes(MinutosEntreVuelos);
+
+            var choque = await _context.Vuelos
+                .AsNoTracking()
+                .Where(v =>
+                    v.IdAeronave == idAeronave &&
+                    v.EstadoVuelo != "Cancelado" &&
+                    (idVueloExcluido == null || v.IdVuelo != idVueloExcluido) &&
+                    v.Salida < hasta &&
+                    v.Llegada > desde)
+                .OrderBy(v => v.Salida)
+                .FirstOrDefaultAsync();
+
+            if (choque != null)
+                throw new ValidacionNegocioException(
+                    $"La aeronave ya está asignada al vuelo {choque.NumeroVuelo} " +
+                    $"({choque.Salida:dd/MM HH:mm} a {choque.Llegada:dd/MM HH:mm}). " +
+                    $"Queda libre a partir de las {choque.Llegada.AddMinutes(MinutosEntreVuelos):dd/MM HH:mm} " +
+                    $"(llegada + {MinutosEntreVuelos} minutos de escala).");
         }
     }
 }
