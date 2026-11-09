@@ -35,13 +35,31 @@ namespace SkyPlus.Desktop
             });
             cmbEstadoFiltro.SelectedIndex = 0;
 
+            foreach (var combo in new[] { cmbRolFiltro, cmbEstadoFiltro })
+            {
+                combo.DropDownStyle = ComboBoxStyle.DropDownList;
+                combo.FlatStyle = FlatStyle.Flat;
+                combo.Font = AppEstilos.FuenteNormal;
+            }
+            cmbRolFiltro.Width = 190;
+            cmbEstadoFiltro.Width = 130;
+
+            Listados.ArmarFiltros(pnlFiltros, txtBuscar, btnRefrescar,
+                "Nombre, apellido, email o DNI",
+                ("Rol", cmbRolFiltro),
+                ("Estado", cmbEstadoFiltro));
+            Listados.ConectarBusqueda(txtBuscar, btnRefrescar, AplicarFiltros, CargarUsuariosAsync, () =>
+            {
+                if (cmbRolFiltro.Items.Count > 0) cmbRolFiltro.SelectedIndex = 0;
+                cmbEstadoFiltro.SelectedIndex = 0;
+            });
+            _lblResumen = Listados.CrearResumen(this, dgvUsuarios);
+
             _ = CargarRolesFiltroAsync();
             _ = CargarUsuariosAsync();
-
-            AppEstilos.ConfigurarBusqueda(txtBuscar, btnRefrescar,
-                "Buscar por nombre, apellido, email o DNI",
-                AplicarFiltros, CargarUsuariosAsync);
         }
+
+        private Label _lblResumen = null!;
 
         private void ConfigurarColumnas()
         {
@@ -85,13 +103,18 @@ namespace SkyPlus.Desktop
             ).ToList();
 
             dgvUsuarios.DataSource = filtrados;
+
+            if (_lblResumen != null)
+                _lblResumen.Text =
+                    $"{filtrados.Count} usuarios   |   {filtrados.Count(u => u.EstadoCuenta == "Activo")} activos   |   " +
+                    string.Join("  ·  ", filtrados.GroupBy(u => u.Rol).OrderBy(g => g.Key).Select(g => $"{g.Key}: {g.Count()}"));
         }
 
         private void txtBuscar_TextChanged(object sender, EventArgs e) => AplicarFiltros();
 
         private void cmbEstadoFiltro_SelectedIndexChanged(object sender, EventArgs e) => AplicarFiltros();
 
-        // Es el botón "Buscar": filtra (lo configura AppEstilos.ConfigurarBusqueda)
+        // Botón Refrescar (lo maneja Listados.ConectarBusqueda)
         private void btnRefrescar_Click(object sender, EventArgs e)
         {
         }

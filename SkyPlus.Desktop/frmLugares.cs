@@ -24,17 +24,31 @@ namespace SkyPlus.Desktop
         private async void frmLugares_Load(object sender, EventArgs e)
         {
             ConfigurarColumnas();
-            await CargarLugares();
             AppEstilos.EstilizarGrid(dgvLugares);
             AppEstilos.EstilizarBotonPrimario(btnNuevo);
             AppEstilos.EstilizarBotonSecundario(btnEditar);
             AppEstilos.EstilizarBotonSecundario(btnEliminar);
             AppEstilos.EstilizarBotonSecundario(btnReactivar);
-            AppEstilos.ConfigurarBusqueda(txtBuscar, btnRefrescar,
-                "Buscar por código IATA, nombre, ciudad o país",
-                AplicarFiltros, CargarLugares,
-                label1);
+
+            _cmbPais = Listados.Combo(160, Array.Empty<string>(), AplicarFiltros);
+            _cmbEstado = Listados.Combo(130, new[] { "Activo", "Inactivo" }, AplicarFiltros);
+            Listados.ArmarFiltros(pnlFiltros, txtBuscar, btnRefrescar,
+                "Código IATA, aeropuerto o ciudad",
+                ("País", _cmbPais),
+                ("Estado", _cmbEstado));
+            Listados.ConectarBusqueda(txtBuscar, btnRefrescar, AplicarFiltros, CargarLugares, () =>
+            {
+                _cmbPais.SelectedIndex = 0;
+                _cmbEstado.SelectedIndex = 0;
+            });
+            _lblResumen = Listados.CrearResumen(this, dgvLugares);
+
+            await CargarLugares();
         }
+
+        private ComboBox _cmbPais = null!;
+        private ComboBox _cmbEstado = null!;
+        private Label _lblResumen = null!;
 
         private void ConfigurarColumnas()
         {
@@ -85,6 +99,7 @@ namespace SkyPlus.Desktop
 
                 _lugaresCache = lugares ?? new List<LugarResponse>();
 
+                Listados.CargarOpciones(_cmbPais, _lugaresCache.Select(l => l.Pais).OrderBy(p => p));
                 AplicarFiltros();
             }
             catch (HttpRequestException)
@@ -108,13 +123,21 @@ namespace SkyPlus.Desktop
 
         private void AplicarFiltros()
         {
-            var texto = txtBuscar.Text.Trim().ToLower();
+            if (_lblResumen == null) return;
+
+            var texto = txtBuscar.Text.Trim();
 
             var filtrados = _lugaresCache
                 .Where(l => AppEstilos.Coincide(texto, l.CodigoIata, l.Nombre, l.Ciudad, l.Pais))
+                .Where(l => Listados.Pasa(_cmbPais, l.Pais))
+                .Where(l => Listados.Pasa(_cmbEstado, l.Estado))
                 .ToList();
 
             dgvLugares.DataSource = filtrados;
+
+            _lblResumen.Text =
+                $"{filtrados.Count} lugares   |   {filtrados.Count(l => l.Estado == "Activo")} activos   |   " +
+                $"{filtrados.Select(l => l.Pais).Distinct().Count()} países";
         }
 
         private void txtBuscar_TextChanged(object sender, EventArgs e)
@@ -122,7 +145,7 @@ namespace SkyPlus.Desktop
             AplicarFiltros();
         }
 
-        // Es el botón "Buscar": filtra (lo configura AppEstilos.ConfigurarBusqueda)
+        // Botón Refrescar (lo maneja Listados.ConectarBusqueda)
         private void btnRefrescar_Click(object sender, EventArgs e)
         {
         }

@@ -45,17 +45,45 @@ namespace SkyPlus.Desktop
                 });
 
             cmbEstadoFiltro.SelectedIndex = 0;
+            cmbEstadoFiltro.DropDownStyle = ComboBoxStyle.DropDownList;
+            cmbEstadoFiltro.FlatStyle = FlatStyle.Flat;
+            cmbEstadoFiltro.Font = AppEstilos.FuenteNormal;
+            cmbEstadoFiltro.Width = 140;
+            cmbEstadoFiltro.SelectedIndexChanged += (s, ev) => AplicarFiltros();
 
-            await CargarVuelos();
             AppEstilos.EstilizarGrid(dgvVuelos);
             AppEstilos.EstilizarBotonPrimario(btnNuevo);
             AppEstilos.EstilizarBotonSecundario(btnEditar);
             AppEstilos.EstilizarBotonSecundario(btnEliminar);
-            AppEstilos.ConfigurarBusqueda(txtBuscar, btnRefrescar,
-                "Buscar por número de vuelo, origen o destino",
-                AplicarFiltros, CargarVuelos,
-                label1);
+
+            // Filtros: cada uno con su título para que se entienda qué hace
+            _cmbOrigen = Listados.Combo(190, Array.Empty<string>(), AplicarFiltros);
+            _cmbDestino = Listados.Combo(190, Array.Empty<string>(), AplicarFiltros);
+            _dtpDia = Listados.Fecha(AplicarFiltros);
+
+            Listados.ArmarFiltros(panel1, txtBuscar, btnRefrescar,
+                "N° de vuelo / aeronave",
+                "Ej.: SP312 o LV-KAY",
+                ("Estado del vuelo", cmbEstadoFiltro),
+                ("Origen", _cmbOrigen),
+                ("Destino", _cmbDestino),
+                ("Día de salida", _dtpDia));
+            Listados.ConectarBusqueda(txtBuscar, btnRefrescar, AplicarFiltros, CargarVuelos, () =>
+            {
+                cmbEstadoFiltro.SelectedIndex = 0;
+                _cmbOrigen.SelectedIndex = 0;
+                _cmbDestino.SelectedIndex = 0;
+                _dtpDia.Checked = false;
+            });
+            _lblResumen = Listados.CrearResumen(this, dgvVuelos);
+
+            await CargarVuelos();
         }
+
+        private ComboBox _cmbOrigen = null!;
+        private ComboBox _cmbDestino = null!;
+        private DateTimePicker _dtpDia = null!;
+        private Label _lblResumen = null!;
 
         private void ConfigurarColumnas()
         {
@@ -161,6 +189,8 @@ namespace SkyPlus.Desktop
                     vuelos ??
                     new List<VueloResponse>();
 
+                Listados.CargarOpciones(_cmbOrigen, _vuelosCache.Select(v => v.LugarOrigen).OrderBy(x => x));
+                Listados.CargarOpciones(_cmbDestino, _vuelosCache.Select(v => v.LugarDestino).OrderBy(x => x));
                 AplicarFiltros();
             }
             catch (HttpRequestException)
@@ -185,41 +215,27 @@ namespace SkyPlus.Desktop
 
         private void AplicarFiltros()
         {
-            var texto =
-                txtBuscar.Text.Trim();
+            if (_lblResumen == null) return;
 
-            var estadoFiltro =
-                cmbEstadoFiltro.SelectedItem?.ToString()
-                ?? "Todos";
-
-            var filtrados =
-                _vuelosCache
-                    .Where(v =>
-                        (
-                            string.IsNullOrWhiteSpace(texto) ||
-                            (v.NumeroVuelo ?? string.Empty)
-                                .Contains(
-                                    texto,
-                                    StringComparison.OrdinalIgnoreCase) ||
-                            (v.LugarOrigen ?? string.Empty)
-                                .Contains(
-                                    texto,
-                                    StringComparison.OrdinalIgnoreCase) ||
-                            (v.LugarDestino ?? string.Empty)
-                                .Contains(
-                                    texto,
-                                    StringComparison.OrdinalIgnoreCase)
-                        )
-                        &&
-                        (
-                            estadoFiltro == "Todos" ||
-                            v.EstadoVuelo == estadoFiltro
-                        )
-                    )
-                    .ToList();
+            var texto = txtBuscar.Text.Trim();
+            var filtrados = _vuelosCache
+                .Where(v => AppEstilos.Coincide(texto, v.NumeroVuelo, v.Aeronave))
+                .Where(v => Listados.Pasa(cmbEstadoFiltro, v.EstadoVuelo))
+                .Where(v => Listados.Pasa(_cmbOrigen, v.LugarOrigen))
+                .Where(v => Listados.Pasa(_cmbDestino, v.LugarDestino))
+                .Where(v => !_dtpDia.Checked || v.Salida.Date == _dtpDia.Value.Date)
+                .OrderBy(v => v.EstadoVuelo == "Finalizado" || v.EstadoVuelo == "Cancelado" ? 1 : 0)
+                .ThenBy(v => v.Salida)
+                .ToList();
 
             dgvVuelos.DataSource = null;
             dgvVuelos.DataSource = filtrados;
+
+            _lblResumen.Text =
+                $"{filtrados.Count} vuelos   |   {filtrados.Count(v => v.EstadoVuelo == "Programado")} programados   |   " +
+                $"{filtrados.Count(v => v.EstadoVuelo == "Confirmado")} confirmados   |   " +
+                $"{filtrados.Count(v => v.EstadoVuelo == "Cancelado")} cancelados   |   " +
+                $"{filtrados.Count(v => v.EstadoVuelo == "Finalizado")} finalizados";
         }
 
         private void txtBuscar_TextChanged(
@@ -236,7 +252,7 @@ namespace SkyPlus.Desktop
             AplicarFiltros();
         }
 
-        // Es el botón "Buscar": filtra (lo configura AppEstilos.ConfigurarBusqueda)
+        // Botón Refrescar (lo maneja Listados.ConectarBusqueda)
         private void btnRefrescar_Click(
             object sender,
             EventArgs e)

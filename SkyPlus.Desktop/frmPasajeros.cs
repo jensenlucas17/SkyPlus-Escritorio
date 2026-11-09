@@ -22,29 +22,54 @@ namespace SkyPlus.Desktop
             InitializeComponent();
         }
 
+        private ComboBox _cmbEstado = null!;
+        private ComboBox _cmbNacionalidad = null!;
+        private Label _lblResumen = null!;
+
         private async void frmPasajeros_Load(object sender, EventArgs e)
         {
-            await CargarPasajeros();
-
             AppEstilos.EstilizarGrid(dgvPasajeros);
             AppEstilos.EstilizarBotonPrimario(btnNuevo);
             AppEstilos.EstilizarBotonSecundario(btnEditar);
             AppEstilos.EstilizarBotonSecundario(btnEliminar);
-            AppEstilos.EstilizarBotonSecundario(btnBuscar);
             AppEstilos.EstilizarBotonSecundario(btnReactivar);
-            AppEstilos.ConfigurarBusqueda(txtBuscar, btnBuscar,
-                "Buscar por nombre, apellido o DNI",
-                AplicarFiltro, CargarPasajeros,
-                label1);
+
+            // Filtros (el botón del diseñador "btnBuscar" pasa a ser Refrescar)
+            _cmbEstado = Listados.Combo(130, new[] { "Activo", "Inactivo" }, AplicarFiltro);
+            _cmbNacionalidad = Listados.Combo(160, Array.Empty<string>(), AplicarFiltro);
+            Listados.ArmarFiltros(pnlFiltros, txtBuscar, btnBuscar,
+                "Nombre, apellido, DNI o email",
+                ("Estado", _cmbEstado),
+                ("Nacionalidad", _cmbNacionalidad));
+            Listados.ConectarBusqueda(txtBuscar, btnBuscar, AplicarFiltro, CargarPasajeros, () =>
+            {
+                _cmbEstado.SelectedIndex = 0;
+                _cmbNacionalidad.SelectedIndex = 0;
+            });
+            _lblResumen = Listados.CrearResumen(this, dgvPasajeros);
+
+            await CargarPasajeros();
         }
 
         private void AplicarFiltro()
         {
+            if (_lblResumen == null) return;
+
             var texto = txtBuscar.Text.Trim();
-            dgvPasajeros.DataSource = null;
-            dgvPasajeros.DataSource = _pasajeros
+            var lista = _pasajeros
                 .Where(p => AppEstilos.Coincide(texto, p.Nombre, p.Apellido, p.Documento, p.Email))
+                .Where(p => Listados.Pasa(_cmbEstado, p.Estado))
+                .Where(p => Listados.Pasa(_cmbNacionalidad, p.Nacionalidad))
+                .OrderBy(p => p.Apellido).ThenBy(p => p.Nombre)
                 .ToList();
+
+            dgvPasajeros.DataSource = null;
+            dgvPasajeros.DataSource = lista;
+
+            _lblResumen.Text =
+                $"{lista.Count} pasajeros   |   {lista.Count(p => p.Estado == "Activo")} activos   |   " +
+                $"{lista.Count(p => p.Estado != "Activo")} inactivos   |   " +
+                $"{lista.Select(p => p.Nacionalidad).Distinct().Count()} nacionalidades";
         }
 
         private async Task CargarPasajeros()
@@ -53,6 +78,7 @@ namespace SkyPlus.Desktop
             {
                 var pasajeros = await _pasajeroClient.ObtenerTodosAsync();
                 _pasajeros = pasajeros ?? new List<PasajeroResponse>();
+                Listados.CargarOpciones(_cmbNacionalidad, _pasajeros.Select(p => p.Nacionalidad).OrderBy(n => n));
                 AplicarFiltro();
             }
             catch (HttpRequestException)
@@ -67,7 +93,7 @@ namespace SkyPlus.Desktop
             }
         }
 
-        // El botón Buscar filtra (lo configura AppEstilos.ConfigurarBusqueda)
+        // Este botón ahora es "Refrescar" (lo maneja Listados.ConectarBusqueda)
         private void btnBuscar_Click(object sender, EventArgs e)
         {
         }
