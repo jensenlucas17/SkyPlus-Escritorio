@@ -6,6 +6,7 @@ using QuestPDF.Infrastructure;
 using SkyPlus.API.Services;
 using SkyPlus.Infrastructure.Data;
 using System.Security.Claims;
+using SkyPlus.API.Middleware;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -36,6 +37,8 @@ builder.Services.AddScoped<BoardingPassService>();
 builder.Services.AddScoped<IReporteService, ReporteService>();
 builder.Services.AddSingleton<IBackupService, BackupService>();
 builder.Services.AddScoped<AutorizacionRestauracionService>();
+builder.Services.AddScoped<RestoreAuthorizationSigningService>();
+builder.Services.AddScoped<ProductionRestorePendingStateService>();
 
 // Servicios
 builder.Services.AddControllers();
@@ -165,6 +168,10 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+// Bloquear solicitudes durante el mantenimiento,
+// antes de intentar validar JWT contra MariaDB.
+app.UseMiddleware<ModoMantenimientoMiddleware>();
 
 app.UseAuthentication();
 app.UseAuthorization();

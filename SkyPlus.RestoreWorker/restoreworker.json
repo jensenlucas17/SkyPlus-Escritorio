@@ -1,0 +1,19 @@
+{
+  "Restore": {
+    "Database": "skyplus",
+    "TestDatabase": "skyplus_restauracion_test",
+    "BackupDirectory": "C:\\SkyPlus\\Backups",
+    "AuditDirectory": "C:\\SkyPlus\\Auditoria",
+    "MaintenanceFile": "C:\\SkyPlus\\Config\\mantenimiento.lock",
+    "MariaDbBinPath": "C:\\Program Files\\MariaDB 12.3\\bin",
+    "BackupCredentialsFile": "C:\\SkyPlus\\Config\\backup.cnf",
+    "PreventiveBackupDirectory": "C:\\SkyPlus\\BackupsPreventivos",
+    "MonitorCredentialsFile": "C:\\SkyPlus\\Config\\monitor.cnf",
+    "MaintenanceCredentialsFile": "C:\\SkyPlus\\Config\\maintenance.cnf",
+    "RestoreStateFile": "C:\\SkyPlus\\Auditoria\\restore-state.json",
+    "RestoreLockFile": "C:\\SkyPlus\\Auditoria\\restore.lock",
+    "ProductionRestoreCredentialsFile": "C:\\SkyPlus\\Config\\restore-prod.cnf",
+    "AuthorizationPublicKeyFile": "C:\\SkyPlus\\Config\\restore-public.pem",
+    "AccountAdminCredentialsFile": "C:\\SkyPlus\\Config\\account-admin.cnf"
+  }
+}

@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "SkyPlus.RestoreWorker": {
+      "commandName": "Project",
+      "commandLineArgs": "--verificar-integridad-validacion"
+    }
+  }
+}

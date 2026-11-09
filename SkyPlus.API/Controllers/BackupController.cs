@@ -1,9 +1,9 @@
-﻿
-using Microsoft.AspNetCore.Authorization;
+﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
 using System.Security.Claims;
+using System.Text.Json;
 
 namespace SkyPlus.API.Controllers
 {
@@ -299,6 +299,184 @@ namespace SkyPlus.API.Controllers
                     mensaje = "Error interno durante la restauración."
                 });
             }
+        }
+
+        [HttpPost("autorizar-restauracion-produccion")]
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> AutorizarRestauracionProduccion(
+            [FromBody] AutorizarRestauracionProduccionRequest request,
+            [FromServices] RestoreAuthorizationSigningService signingService)
+        {
+            var idClaim = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(idClaim, out int idSolicitante) ||
+                idSolicitante <= 0)
+            {
+                return Unauthorized(new
+                {
+                    mensaje = "Administrador no identificado."
+                });
+            }
+
+            if (request.BackupId == Guid.Empty)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "Debe seleccionar un backup válido."
+                });
+            }
+
+            var credenciales = new RestaurarBackupRequest
+            {
+                ConfirmarRestauracion = request.ConfirmarRestauracion,
+                EmailSegundoAdministrador =
+                    request.EmailSegundoAdministrador,
+                PasswordSegundoAdministrador =
+                    request.PasswordSegundoAdministrador
+            };
+
+            int? idAutorizante =
+                await _autorizacion.ValidarSegundoAdministradorAsync(
+                    idSolicitante,
+                    credenciales);
+
+            if (idAutorizante == null)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "La autorización del segundo administrador no es válida."
+                });
+            }
+
+            var ahora = DateTime.UtcNow;
+
+            var payload =
+                new SkyPlus.Domain.Backup.RestoreAuthorizationPayload
+                {
+                    OperationId = Guid.NewGuid(),
+                    BackupId = request.BackupId,
+                    FirstAdministratorId = idSolicitante,
+                    SecondAdministratorId = idAutorizante.Value,
+                    ApprovedAtUtc = ahora,
+                    ExpiresAtUtc = ahora.AddMinutes(10),
+                    Purpose = "ProductionRestore",
+                    TargetDatabase = "skyplus"
+                };
+
+            string autorizacionFirmada =
+                signingService.Firmar(payload);
+
+            return Ok(new
+            {
+                mensaje = "Autorización de producción firmada.",
+                operationId = payload.OperationId,
+                backupId = payload.BackupId,
+                expiresAtUtc = payload.ExpiresAtUtc,
+                autorizacionFirmada
+            });
+        }
+
+        [HttpPost("autorizar-continuacion-produccion")]
+        [Authorize(Roles = "Administrador")]
+        public async Task<IActionResult> AutorizarContinuacionProduccion(
+            [FromBody] AutorizarContinuacionProduccionRequest request,
+            [FromServices] RestoreAuthorizationSigningService signingService,
+            [FromServices] ProductionRestorePendingStateService pendingStateService,
+            CancellationToken cancellationToken)
+        {
+            var idClaim = User.FindFirstValue(
+                ClaimTypes.NameIdentifier);
+
+            if (!int.TryParse(idClaim, out int idSolicitante) ||
+                idSolicitante <= 0)
+            {
+                return Unauthorized(new
+                {
+                    mensaje = "Administrador no identificado."
+                });
+            }
+
+            if (request.OperationId == Guid.Empty ||
+                request.BackupId == Guid.Empty ||
+                !request.ConfirmarRestauracion)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "Datos de continuación inválidos."
+                });
+            }
+
+            var credenciales = new RestaurarBackupRequest
+            {
+                ConfirmarRestauracion = request.ConfirmarRestauracion,
+                EmailSegundoAdministrador =
+                    request.EmailSegundoAdministrador,
+                PasswordSegundoAdministrador =
+                    request.PasswordSegundoAdministrador
+            };
+
+            try
+            {
+                await pendingStateService.ValidarPendienteAsync(
+                    request.OperationId,
+                    request.BackupId,
+                    cancellationToken);
+            }
+            catch (InvalidOperationException)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "No existe una operación pendiente válida para continuar."
+                });
+            }
+            catch (JsonException)
+            {
+                return StatusCode(500, new
+                {
+                    mensaje = "El estado de producción no tiene un formato válido."
+                });
+            }
+
+            int? idAutorizante =
+                await _autorizacion.ValidarSegundoAdministradorAsync(
+                    idSolicitante,
+                    credenciales);
+
+            if (idAutorizante == null)
+            {
+                return BadRequest(new
+                {
+                    mensaje = "La autorización cruzada no es válida."
+                });
+            }
+
+            var ahora = DateTime.UtcNow;
+
+            var payload =
+                new SkyPlus.Domain.Backup.RestoreAuthorizationPayload
+                {
+                    OperationId = request.OperationId,
+                    BackupId = request.BackupId,
+                    FirstAdministratorId = idSolicitante,
+                    SecondAdministratorId = idAutorizante.Value,
+                    ApprovedAtUtc = ahora,
+                    ExpiresAtUtc = ahora.AddMinutes(10),
+                    Purpose = "ProductionRestoreContinuation",
+                    TargetDatabase = "skyplus"
+                };
+
+            string autorizacionFirmada =
+                signingService.Firmar(payload);
+
+            return Ok(new
+            {
+                mensaje = "Autorización de continuación firmada.",
+                operationId = payload.OperationId,
+                backupId = payload.BackupId,
+                expiresAtUtc = payload.ExpiresAtUtc,
+                autorizacionFirmada
+            });
         }
     }
 }
