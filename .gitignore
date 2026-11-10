@@ -361,3 +361,8 @@ MigrationBackup/
 
 # Fody - auto-generated XML schema
 FodyWeavers.xsd
+
+# Incluir el contrato de autorización de restauración.
+!/SkyPlus.Domain/Backup/
+/SkyPlus.Domain/Backup/*
+!/SkyPlus.Domain/Backup/RestoreAuthorizationPayload.cs
