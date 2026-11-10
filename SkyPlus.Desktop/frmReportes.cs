@@ -60,13 +60,18 @@ namespace SkyPlus.Desktop
         {
             Text = texto,
             AutoSize = true,
-            Font = new Font("Segoe UI", 10, FontStyle.Bold),
-            Margin = new Padding(0, 8, 0, 2)
+            Font = AppEstilos.FuenteSubtitulo,
+            ForeColor = AppEstilos.ColorTextoOscuro,
+            Margin = new Padding(0, 14, 0, 8)
         };
 
+        // Las tablas tienen la altura de sus filas: lo que se desplaza es TODA la pantalla (como en Inicio)
         private static DataGridView CrearGrid() => new DataGridView
         {
-            Dock = DockStyle.Fill,
+            Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top,
+            Height = 160,
+            Margin = new Padding(0, 0, 0, 10),
+            ScrollBars = ScrollBars.Both,
             ReadOnly = true,
             AllowUserToAddRows = false,
             AllowUserToDeleteRows = false,
@@ -77,19 +82,19 @@ namespace SkyPlus.Desktop
 
         private void ArmarPantalla()
         {
-            _tabla.Dock = DockStyle.Fill;
+            _tabla.Dock = DockStyle.Top;
+            _tabla.AutoSize = true;
+            _tabla.AutoSizeMode = AutoSizeMode.GrowAndShrink;
             _tabla.ColumnCount = 1;
             _tabla.RowCount = 6;
-            _tabla.Padding = new Padding(8);
+            _tabla.Padding = new Padding(16, 8, 16, 16);
+            pnlResultados.AutoScroll = true;
+            pnlResultados.BackColor = AppEstilos.ColorSecundario;
 
             _tabla.ColumnStyles.Add(new ColumnStyle(SizeType.Percent, 100));
 
-            _tabla.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            _tabla.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            _tabla.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            _tabla.RowStyles.Add(new RowStyle(SizeType.Percent, 60));
-            _tabla.RowStyles.Add(new RowStyle(SizeType.AutoSize));
-            _tabla.RowStyles.Add(new RowStyle(SizeType.Percent, 40));
+            for (int i = 0; i < 6; i++)
+                _tabla.RowStyles.Add(new RowStyle(SizeType.AutoSize));
             _tabla.BackColor = AppEstilos.ColorSecundario;
             _pnlResumen.BackColor = AppEstilos.ColorSecundario;
 
@@ -101,7 +106,18 @@ namespace SkyPlus.Desktop
             _tabla.Controls.Add(_dgvDetalle2, 0, 5);
 
             foreach (var grid in new[] { _dgvDetalle1, _dgvDetalle2 })
+            {
                 AppEstilos.EstilizarGrid(grid);
+
+                // Si la tabla se ve completa, la ruedita del mouse desplaza la pantalla entera
+                grid.MouseWheel += (s, e) =>
+                {
+                    if (grid.Rows.Count > 0 && grid.DisplayedRowCount(false) < grid.Rows.Count) return;
+                    int y = -pnlResultados.AutoScrollPosition.Y - e.Delta;
+                    pnlResultados.AutoScrollPosition = new Point(0, Math.Max(0, y));
+                    if (e is HandledMouseEventArgs h) h.Handled = true;
+                };
+            }
 
             pnlResultados.Controls.Add(_tabla);
         }
@@ -128,6 +144,10 @@ namespace SkyPlus.Desktop
             }
 
             grid.DataSource = datos;
+
+            // Alto según la cantidad de filas (con un máximo); el resto se ve desplazando la pantalla
+            int filas = Math.Max(grid.Rows.Count, 2);
+            grid.Height = Math.Min(grid.ColumnHeadersHeight + filas * grid.RowTemplate.Height + 4, 520);
         }
 
         private void Presentar(
@@ -149,17 +169,9 @@ namespace SkyPlus.Desktop
             {
                 _lblDetalle2.Text = titulo2!;
                 Cargar(_dgvDetalle2, detalle2!, columnas2!);
+            }
 
-                _tabla.RowStyles[3] = new RowStyle(SizeType.Percent, 60);
-                _tabla.RowStyles[4] = new RowStyle(SizeType.AutoSize);
-                _tabla.RowStyles[5] = new RowStyle(SizeType.Percent, 40);
-            }
-            else
-            {
-                _tabla.RowStyles[3] = new RowStyle(SizeType.Percent, 100);
-                _tabla.RowStyles[4] = new RowStyle(SizeType.Absolute, 0);
-                _tabla.RowStyles[5] = new RowStyle(SizeType.Absolute, 0);
-            }
+            pnlResultados.AutoScrollPosition = new Point(0, 0); // cada informe nuevo arranca arriba
         }
 
         // Una tarjeta por indicador: título chico arriba y el valor grande abajo

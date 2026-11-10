@@ -250,6 +250,97 @@ namespace SkyPlus.API.Services
             return await ObtenerPorIdAsync(id);
         }
 
+        // ---------------------------------------------------------------------
+        // Cancelación de un vuelo por la aerolínea (Administrador / Gerente).
+        // En una sola transacción:
+        //   - cada reserva activa se cancela y se le REEMBOLSA todo lo pagado
+        //     (pasaje, equipaje y excesos), con motivo "Cancelación del vuelo por la aerolínea";
+        //   - los asientos quedan libres, el equipaje se cancela y los cargos se marcan reembolsados;
+        //   - el vuelo queda Cancelado (se conserva como historial).
+        // La aeronave NO se da de baja: un vuelo cancelado no la ocupa, así que queda libre
+        // para asignarla a otro vuelo en ese horario.
+        // ---------------------------------------------------------------------
+        public async Task<(int Reservas, decimal TotalReembolsado)> CancelarConReembolsosAsync(int id, int idUsuario)
+        {
+            var vuelo = await _context.Vuelos.FirstOrDefaultAsync(v => v.IdVuelo == id);
+            if (vuelo == null)
+                throw new ValidacionNegocioException("El vuelo no existe.");
+            if (vuelo.EstadoVuelo == "Cancelado" || vuelo.EstadoVuelo == "Finalizado")
+                throw new ValidacionNegocioException("El vuelo ya está cancelado o finalizado.");
+            if (vuelo.Salida <= DateTime.Now)
+                throw new ValidacionNegocioException("El vuelo ya salió: no se puede cancelar.");
+
+            var usuario = await _context.Usuarios.FindAsync(idUsuario);
+            if (usuario == null)
+                throw new ValidacionNegocioException("No se pudo identificar al usuario que cancela el vuelo.");
+
+            await using var transaccion = await _context.Database.BeginTransactionAsync();
+
+            var reservas = await _context.Reservas
+                .Where(r => r.IdVuelo == id &&
+                            (r.EstadoReserva == "Confirmada" || r.EstadoReserva == "PendientePago"))
+                .ToListAsync();
+            var idsReservas = reservas.Select(r => r.IdReserva).ToList();
+
+            var pagos = await _context.Pagos
+                .Where(p => idsReservas.Contains(p.IdReserva) && p.EstadoPago == "Registrado")
+                .ToListAsync();
+            var idsPagos = pagos.Select(p => p.IdPago).ToList();
+            var yaReembolsados = await _context.Reembolsos
+                .Where(r => idsPagos.Contains(r.IdPago))
+                .Select(r => r.IdPago)
+                .ToListAsync();
+
+            var ahora = DateTime.UtcNow;
+            decimal total = 0;
+
+            foreach (var pago in pagos.Where(p => !yaReembolsados.Contains(p.IdPago) && p.Monto > 0))
+            {
+                _context.Reembolsos.Add(new Domain.Entities.Reembolso
+                {
+                    IdPago = pago.IdPago,
+                    IdUsuarioAgente = idUsuario,
+                    MontoReembolsado = pago.Monto,
+                    Motivo = "Cancelación del vuelo por la aerolínea",
+                    FechaReembolso = ahora,
+                    EstadoReembolso = "Registrado"
+                });
+                total += pago.Monto;
+            }
+
+            foreach (var reserva in reservas)
+            {
+                reserva.EstadoReserva = "Cancelada";
+                reserva.FechaCancelacion = ahora;
+            }
+
+            var asientos = await _context.Asientos.Where(a => a.IdVuelo == id).ToListAsync();
+            foreach (var asiento in asientos)
+                asiento.Estado = "Libre";
+
+            var equipajes = await _context.EquipajesReserva
+                .Where(e => idsReservas.Contains(e.IdReserva) && e.Estado != "Cancelado")
+                .ToListAsync();
+            foreach (var equipaje in equipajes)
+                equipaje.Estado = "Cancelado";
+
+            var cargos = await _context.CargosAdicionales
+                .Where(c => idsReservas.Contains(c.IdReserva))
+                .ToListAsync();
+            foreach (var cargo in cargos)
+            {
+                if (cargo.Estado == "Pagado") cargo.Estado = "Reembolsado";
+                else if (cargo.Estado == "Pendiente") cargo.Estado = "Cancelado";
+            }
+
+            vuelo.EstadoVuelo = "Cancelado";
+
+            await _context.SaveChangesAsync();
+            await transaccion.CommitAsync();
+
+            return (reservas.Count, total);
+        }
+
         public async Task<bool> EliminarAsync(int id)
         {
             var vuelo = await _context.Vuelos

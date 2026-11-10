@@ -3,6 +3,7 @@ using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
 using SkyPlus.API.Exceptions;
 using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
 
 namespace SkyPlus.API.Controllers
 {
@@ -141,19 +142,20 @@ namespace SkyPlus.API.Controllers
         {
             try
             {
-                var resultado = await _vueloService.EliminarAsync(id);
+                if (!int.TryParse(User.FindFirstValue(ClaimTypes.NameIdentifier), out int idUsuario))
+                    return Unauthorized(new { mensaje = "No se pudo identificar al usuario." });
 
-                if (!resultado)
-                {
-                    return BadRequest(new
-                    {
-                        mensaje = "No se pudo cancelar el vuelo. Puede que no exista, ya esté cancelado o finalizado, o tenga reservas activas."
-                    });
-                }
+                // Cancela el vuelo y reembolsa automáticamente todas sus reservas activas
+                var (reservas, total) = await _vueloService.CancelarConReembolsosAsync(id, idUsuario);
 
                 return Ok(new
                 {
-                    mensaje = "Vuelo cancelado correctamente. Se conservaron sus datos históricos."
+                    mensaje = reservas == 0
+                        ? "Vuelo cancelado correctamente. No tenía reservas activas."
+                        : $"Vuelo cancelado. Se cancelaron {reservas} reservas y se reembolsaron {total:C0} a sus pasajeros. " +
+                          "Los asientos quedaron libres y la aeronave quedó disponible para otros vuelos.",
+                    reservasCanceladas = reservas,
+                    totalReembolsado = total
                 });
             }
             catch (ValidacionNegocioException ex)

@@ -22,7 +22,8 @@ namespace SkyPlus.API.Controllers
 
         // CONSULTAR TODAS LAS RESERVAS
         [HttpGet]
-        [Authorize(Roles = "Agente de Reservas,Agente de Check-in")]
+        // Administrador y Gerente solo consultan (pantalla de Vuelos: reservas de cada vuelo)
+        [Authorize(Roles = "Agente de Reservas,Agente de Check-in,Administrador,Gerente")]
         public async Task<IActionResult> ObtenerTodos()
         {
             var reservas = await _reservaService.ObtenerTodosAsync();

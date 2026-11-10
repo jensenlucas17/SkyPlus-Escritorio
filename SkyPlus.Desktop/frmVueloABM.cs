@@ -37,11 +37,31 @@ namespace SkyPlus.Desktop
             object sender,
             EventArgs e)
         {
-            lblMensaje.Visible = false;
-
             Text = _vueloEdicion == null
                 ? "Nuevo vuelo"
                 : "Editar vuelo";
+
+            // Diseño nuevo (mismo estilo que Nuevo pasajero)
+            foreach (var dtp in new[] { dtpSalida, dtpLlegada })
+            {
+                dtp.Format = DateTimePickerFormat.Custom;
+                dtp.CustomFormat = "dd/MM/yyyy  HH:mm";
+            }
+            FormularioDialogo.Disenar(this,
+                Text,
+                _vueloEdicion == null
+                    ? "La aeronave tiene que estar libre (60 min de escala entre vuelos)."
+                    : $"{_vueloEdicion.NumeroVuelo} · {_vueloEdicion.LugarOrigen} → {_vueloEdicion.LugarDestino}",
+                lblMensaje, btnGuardar, _vueloEdicion == null ? "Crear vuelo" : "Guardar cambios", btnCancelar,
+                (label1, "Número de vuelo", txtNumeroVuelo, 0, 0, "Ej.: SP312"),
+                (label4, "Aeronave", cmbAeronave, 1, 0, ""),
+                (label2, "Origen", cmbOrigen, 0, 1, ""),
+                (label3, "Destino", cmbDestino, 1, 1, ""),
+                (label5, "Salida", dtpSalida, 0, 2, ""),
+                (label6, "Llegada", dtpLlegada, 1, 2, ""),
+                (label7, "Estado", cmbEstado, 0, 3, ""),
+                (label8, "Tarifa (ARS)", txtTarifa, 1, 3, "Ej.: 125000"));
+            lblMensaje.Visible = false;
 
             try
             {
@@ -102,8 +122,6 @@ namespace SkyPlus.Desktop
                     "Ocurrió un error al cargar los datos: " +
                     ex.Message);
             }
-            AppEstilos.EstilizarBotonPrimario(btnGuardar);
-            AppEstilos.EstilizarBotonSecundario(btnCancelar);
         }
 
         private async Task CargarCombos()
@@ -401,11 +419,7 @@ namespace SkyPlus.Desktop
         private void MostrarError(
             string mensaje)
         {
-            lblMensaje.Text =
-                mensaje;
-
-            lblMensaje.Visible =
-                true;
+            FormularioDialogo.MostrarError(lblMensaje, mensaje);
         }
     }
 }
