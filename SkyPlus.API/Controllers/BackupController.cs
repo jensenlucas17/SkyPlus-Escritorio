@@ -3,7 +3,6 @@ using Microsoft.AspNetCore.Mvc;
 using SkyPlus.API.DTOs;
 using SkyPlus.API.Services;
 using System.Security.Claims;
-using System.Text.Json;
 
 namespace SkyPlus.API.Controllers
 {
@@ -382,7 +381,6 @@ namespace SkyPlus.API.Controllers
         public async Task<IActionResult> AutorizarContinuacionProduccion(
             [FromBody] AutorizarContinuacionProduccionRequest request,
             [FromServices] RestoreAuthorizationSigningService signingService,
-            [FromServices] ProductionRestorePendingStateService pendingStateService,
             CancellationToken cancellationToken)
         {
             var idClaim = User.FindFirstValue(
@@ -416,27 +414,11 @@ namespace SkyPlus.API.Controllers
                     request.PasswordSegundoAdministrador
             };
 
-            try
-            {
-                await pendingStateService.ValidarPendienteAsync(
-                    request.OperationId,
-                    request.BackupId,
-                    cancellationToken);
-            }
-            catch (InvalidOperationException)
-            {
-                return BadRequest(new
-                {
-                    mensaje = "No existe una operación pendiente válida para continuar."
-                });
-            }
-            catch (JsonException)
-            {
-                return StatusCode(500, new
-                {
-                    mensaje = "El estado de producción no tiene un formato válido."
-                });
-            }
+            // La autorización puede emitirse ANTES del backup preventivo.
+            // Esta firma no autoriza por sí sola la importación: RestoreWorker
+            // debe validar el estado PreventiveBackupVerified, los hashes,
+            // el aislamiento y la vigencia de la autorización al continuar.
+            cancellationToken.ThrowIfCancellationRequested();
 
             int? idAutorizante =
                 await _autorizacion.ValidarSegundoAdministradorAsync(
@@ -471,7 +453,7 @@ namespace SkyPlus.API.Controllers
 
             return Ok(new
             {
-                mensaje = "Autorización de continuación firmada.",
+                mensaje = "Autorización anticipada de continuación firmada. La restauración sigue sujeta a las verificaciones de RestoreWorker.",
                 operationId = payload.OperationId,
                 backupId = payload.BackupId,
                 expiresAtUtc = payload.ExpiresAtUtc,

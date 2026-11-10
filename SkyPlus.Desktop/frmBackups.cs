@@ -1,7 +1,11 @@
-﻿using SkyPlus.Desktop.Models;
+using SkyPlus.Desktop.Models;
 using SkyPlus.Desktop.Services;
 using System.Drawing;
+using System.Diagnostics;
 using System.Net.Http;
+using System.Security.Cryptography;
+using System.Text;
+using System.Text.Json;
 
 namespace SkyPlus.Desktop
 {
@@ -57,6 +61,7 @@ namespace SkyPlus.Desktop
             btnGenerar.Visible = _esAdministrador;
             btnEliminar.Visible = _esAdministrador;
             btnRestaurar.Visible = _esAdministrador;
+            btnRestaurarProduccion.Visible = _esAdministrador;
         }
 
         private void ConfigurarEventos()
@@ -75,6 +80,9 @@ namespace SkyPlus.Desktop
 
             btnRestaurar.Click += async (_, _) =>
                 await RestaurarBackupAsync();
+
+            btnRestaurarProduccion.Click += async (_, _) =>
+                await IniciarRestauracionProduccionAsync();
         }
 
         private void CambiarOcupado(bool ocupado)
@@ -85,6 +93,7 @@ namespace SkyPlus.Desktop
             btnGenerar.Enabled = !ocupado;
             btnEliminar.Enabled = !ocupado;
             btnRestaurar.Enabled = !ocupado;
+            btnRestaurarProduccion.Enabled = !ocupado;
 
             UseWaitCursor = ocupado;
         }
@@ -398,6 +407,205 @@ namespace SkyPlus.Desktop
             finally
             {
                 password = string.Empty;
+                CambiarOcupado(false);
+            }
+        }
+
+        // Transferencia diagnóstica de una autorización firmada.
+        // La autorización NO habilita la importación real en esta etapa.
+        private async Task IniciarRestauracionProduccionAsync()
+        {
+            if (_ocupado || !_esAdministrador) return;
+
+            var backup = ObtenerSeleccionado();
+            if (backup == null) return;
+            if (!string.Equals(backup.Estado, "Disponible", StringComparison.OrdinalIgnoreCase))
+            {
+                MessageBox.Show("El backup seleccionado no está disponible.");
+                return;
+            }
+
+            var confirmar = MessageBox.Show(
+                "INICIAR RESTAURACIÓN DE PRODUCCIÓN\n\n" +
+                $"Backup: {backup.Archivo}\n" +
+                "Destino: skyplus (producción)\n\n" +
+                "Se solicitará autorización de un segundo Administrador.\n" +
+                "La API generará una autorización firmada de 10 minutos.\n" +
+                "RestoreLauncher cerrará Desktop y API automáticamente.\n" +
+                "Generará un backup preventivo y restaurará los datos seleccionados.\n" +
+                "Si todo se verifica correctamente, reiniciará API y Desktop.\n" +
+                "Si falla, mantendrá el estado de recuperación para revisión.\n\n" +
+                "¿Solicitar autorizaciones para iniciar el proceso?",
+                "SkyPlus - Restauración de producción",
+                MessageBoxButtons.YesNo, MessageBoxIcon.Warning);
+            if (confirmar != DialogResult.Yes) return;
+
+            using var ventana = new Form
+            {
+                Text = "Segunda autorización administrativa (producción)",
+                Size = new Size(465, 310),
+                StartPosition = FormStartPosition.CenterParent,
+                FormBorderStyle = FormBorderStyle.FixedDialog,
+                MaximizeBox = false,
+                MinimizeBox = false
+            };
+            var lbl = new Label
+            {
+                Text = "Ingresá las credenciales de OTRO Administrador activo:",
+                Location = new Point(22, 18),
+                Size = new Size(410, 35)
+            };
+            var emailLabel = new Label { Text = "Correo:", Location = new Point(22, 64), AutoSize = true };
+            var emailInput = new TextBox { Location = new Point(22, 87), Width = 400 };
+            var passLabel = new Label { Text = "Contraseña:", Location = new Point(22, 127), AutoSize = true };
+            var passInput = new TextBox
+            {
+                Location = new Point(22, 150),
+                Width = 400,
+                UseSystemPasswordChar = true
+            };
+            var aceptar = new Button
+            {
+                Text = "Autorizar inicio",
+                DialogResult = DialogResult.OK,
+                Location = new Point(224, 205),
+                Size = new Size(198, 35)
+            };
+            var cancelar = new Button
+            {
+                Text = "Cancelar",
+                DialogResult = DialogResult.Cancel,
+                Location = new Point(105, 205),
+                Size = new Size(110, 35)
+            };
+            ventana.Controls.AddRange(new Control[]
+            {
+                lbl, emailLabel, emailInput, passLabel, passInput, aceptar, cancelar
+            });
+            ventana.AcceptButton = aceptar;
+            ventana.CancelButton = cancelar;
+            if (ventana.ShowDialog(this) != DialogResult.OK) return;
+
+            string correo = emailInput.Text.Trim();
+            string password = passInput.Text;
+            passInput.Clear();
+            if (string.IsNullOrWhiteSpace(correo) || string.IsNullOrWhiteSpace(password))
+            {
+                MessageBox.Show("Ingresá el correo y la contraseña.");
+                return;
+            }
+
+            string? rutaTemporal = null;
+            string? rutaContinuacion = null;
+            CambiarOcupado(true);
+            lblEstado.Text = "Solicitando autorización firmada de producción...";
+            try
+            {
+                var respuesta = await _backupClient.AutorizarRestauracionProduccionAsync(
+                    backup.Id, correo, password);
+
+                if (respuesta is null || respuesta.OperationId == Guid.Empty ||
+                    respuesta.BackupId != backup.Id ||
+                    string.IsNullOrWhiteSpace(respuesta.AutorizacionFirmada) ||
+                    respuesta.ExpiresAtUtc <= DateTime.UtcNow)
+                    throw new InvalidOperationException("Respuesta de autorización inválida o vencida.");
+
+                lblEstado.Text = "Solicitando autorización anticipada de continuación...";
+                // Se solicita una segunda aprobación independiente para la misma operación.
+                var respuestaContinuacion = await _backupClient.AutorizarContinuacionProduccionAsync(
+                    respuesta.OperationId, respuesta.BackupId, correo, password);
+                if (respuestaContinuacion is null ||
+                    respuestaContinuacion.OperationId != respuesta.OperationId ||
+                    respuestaContinuacion.BackupId != respuesta.BackupId ||
+                    respuestaContinuacion.ExpiresAtUtc <= DateTime.UtcNow ||
+                    string.IsNullOrWhiteSpace(respuestaContinuacion.AutorizacionFirmada))
+                    throw new InvalidOperationException("Autorización anticipada de continuación inválida.");
+
+                // El Launcher descifra con DPAPI bajo el MISMO usuario de Windows.
+                // No se pasan firmas ni contraseñas por la línea de comandos.
+                byte[] contenido = JsonSerializer.SerializeToUtf8Bytes(new
+                {
+                    respuesta.OperationId,
+                    respuesta.BackupId,
+                    respuesta.ExpiresAtUtc,
+                    respuesta.AutorizacionFirmada
+                });
+                byte[] cifrado = ProtectedData.Protect(
+                    contenido, null, DataProtectionScope.CurrentUser);
+                CryptographicOperations.ZeroMemory(contenido);
+
+                string directorio = Path.Combine(
+                    Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                    "SkyPlus", "RestoreHandoffs");
+                Directory.CreateDirectory(directorio);
+                rutaTemporal = Path.Combine(directorio, Guid.NewGuid().ToString("N") + ".bin");
+                using (var archivo = new FileStream(rutaTemporal, FileMode.CreateNew,
+                    FileAccess.Write, FileShare.None))
+                    archivo.Write(cifrado);
+                CryptographicOperations.ZeroMemory(cifrado);
+
+                byte[] contenidoContinuacion = JsonSerializer.SerializeToUtf8Bytes(new
+                {
+                    respuestaContinuacion.OperationId,
+                    respuestaContinuacion.BackupId,
+                    respuestaContinuacion.ExpiresAtUtc,
+                    respuestaContinuacion.AutorizacionFirmada
+                });
+                byte[] cifradoContinuacion = ProtectedData.Protect(
+                    contenidoContinuacion, null, DataProtectionScope.CurrentUser);
+                CryptographicOperations.ZeroMemory(contenidoContinuacion);
+                rutaContinuacion = Path.Combine(directorio, Guid.NewGuid().ToString("N") + ".bin");
+                using (var archivo = new FileStream(rutaContinuacion, FileMode.CreateNew,
+                    FileAccess.Write, FileShare.None))
+                    archivo.Write(cifradoContinuacion);
+                CryptographicOperations.ZeroMemory(cifradoContinuacion);
+                password = string.Empty;
+
+                // Estructura de Visual Studio: <solución>/Desktop/bin/Debug/net10.0-windows/
+                string raiz = Path.GetFullPath(Path.Combine(
+                    AppContext.BaseDirectory, "..", "..", "..", ".."));
+                string dirLauncher = Path.Combine(raiz, "SkyPlus.RestoreLauncher", "bin");
+                if (!Directory.Exists(dirLauncher))
+                    throw new FileNotFoundException("No se encontró RestoreLauncher. Compilá la solución.");
+
+                string exe = Directory.GetFiles(dirLauncher, "SkyPlus.RestoreLauncher.exe",
+                    SearchOption.AllDirectories)
+                    .OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault()
+                    ?? throw new FileNotFoundException("No se encontró RestoreLauncher.exe.");
+
+                var inicio = new System.Diagnostics.ProcessStartInfo
+                {
+                    FileName = exe,
+                    WorkingDirectory = Path.GetDirectoryName(exe)!,
+                    UseShellExecute = true
+                };
+                inicio.ArgumentList.Add("--flujo-completo");
+                inicio.ArgumentList.Add(rutaTemporal);
+                inicio.ArgumentList.Add(rutaContinuacion);
+
+                using var proceso = System.Diagnostics.Process.Start(inicio)
+                    ?? throw new InvalidOperationException("No se inició RestoreLauncher.");
+                rutaTemporal = null; // El Launcher borra ambas transferencias.
+                rutaContinuacion = null;
+                Application.Exit();
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show("No se pudo transferir la autorización.\n\n" + ex.Message,
+                    "SkyPlus - Error", MessageBoxButtons.OK, MessageBoxIcon.Error);
+                lblEstado.Text = "No se inició la restauración de producción.";
+            }
+            finally
+            {
+                password = string.Empty;
+                if (rutaTemporal is not null)
+                {
+                    try { File.Delete(rutaTemporal); } catch { /* Permisos del sistema */ }
+                }
+                if (rutaContinuacion is not null)
+                {
+                    try { File.Delete(rutaContinuacion); } catch { /* Permisos del sistema */ }
+                }
                 CambiarOcupado(false);
             }
         }

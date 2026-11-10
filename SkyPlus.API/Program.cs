@@ -31,6 +31,7 @@ builder.Services.AddScoped<IReservaService, ReservaService>();
 builder.Services.AddScoped<IPagoService, PagoService>();
 builder.Services.AddHostedService<ReservasExpirationService>();
 builder.Services.AddHostedService<VuelosFinalizacionService>();
+builder.Services.AddHostedService<LocalShutdownService>();
 builder.Services.AddScoped<IReembolsoService, ReembolsoService>();
 builder.Services.AddScoped<IEquipajeService, EquipajeService>();
 builder.Services.AddScoped<ICheckInService, CheckInService>();

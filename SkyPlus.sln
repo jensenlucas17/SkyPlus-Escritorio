@@ -15,6 +15,10 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkyPlus.BackupWorker", "Sky
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkyPlus.RestoreWorker", "SkyPlus.RestoreWorker\SkyPlus.RestoreWorker.csproj", "{15D2D165-5AD3-49E5-9E39-C62DE262FD81}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkyPlus.RestoreLauncher", "SkyPlus.RestoreLauncher\SkyPlus.RestoreLauncher.csproj", "{B54F4D33-EB0A-46E6-897C-AD12958410B5}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "SkyPlus.RestoreSecurityTests", "SkyPlus.RestoreSecurityTests\SkyPlus.RestoreSecurityTests.csproj", "{6ECED2F2-C633-4454-81E4-D07F1B99CF28}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -97,6 +101,30 @@ Global
 		{15D2D165-5AD3-49E5-9E39-C62DE262FD81}.Release|x64.Build.0 = Release|Any CPU
 		{15D2D165-5AD3-49E5-9E39-C62DE262FD81}.Release|x86.ActiveCfg = Release|Any CPU
 		{15D2D165-5AD3-49E5-9E39-C62DE262FD81}.Release|x86.Build.0 = Release|Any CPU
+		{B54F4D33-EB0A-46E6-897C-AD12958410B5}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{B54F4D33-EB0A-46E6-897C-AD12958410B5}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{B54F4D33-EB0A-46E6-897C-AD12958410B5}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{B54F4D33-EB0A-46E6-897C-AD12958410B5}.Debug|x64.Build.0 = Debug|Any CPU
+		{B54F4D33-EB0A-46E6-897C-AD12958410B5}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{B54F4D33-EB0A-46E6-897C-AD12958410B5}.Debug|x86.Build.0 = Debug|Any CPU
+		{B54F4D33-EB0A-46E6-897C-AD12958410B5}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{B54F4D33-EB0A-46E6-897C-AD12958410B5}.Release|Any CPU.Build.0 = Release|Any CPU
+		{B54F4D33-EB0A-46E6-897C-AD12958410B5}.Release|x64.ActiveCfg = Release|Any CPU
+		{B54F4D33-EB0A-46E6-897C-AD12958410B5}.Release|x64.Build.0 = Release|Any CPU
+		{B54F4D33-EB0A-46E6-897C-AD12958410B5}.Release|x86.ActiveCfg = Release|Any CPU
+		{B54F4D33-EB0A-46E6-897C-AD12958410B5}.Release|x86.Build.0 = Release|Any CPU
+		{6ECED2F2-C633-4454-81E4-D07F1B99CF28}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6ECED2F2-C633-4454-81E4-D07F1B99CF28}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6ECED2F2-C633-4454-81E4-D07F1B99CF28}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{6ECED2F2-C633-4454-81E4-D07F1B99CF28}.Debug|x64.Build.0 = Debug|Any CPU
+		{6ECED2F2-C633-4454-81E4-D07F1B99CF28}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{6ECED2F2-C633-4454-81E4-D07F1B99CF28}.Debug|x86.Build.0 = Debug|Any CPU
+		{6ECED2F2-C633-4454-81E4-D07F1B99CF28}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6ECED2F2-C633-4454-81E4-D07F1B99CF28}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6ECED2F2-C633-4454-81E4-D07F1B99CF28}.Release|x64.ActiveCfg = Release|Any CPU
+		{6ECED2F2-C633-4454-81E4-D07F1B99CF28}.Release|x64.Build.0 = Release|Any CPU
+		{6ECED2F2-C633-4454-81E4-D07F1B99CF28}.Release|x86.ActiveCfg = Release|Any CPU
+		{6ECED2F2-C633-4454-81E4-D07F1B99CF28}.Release|x86.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

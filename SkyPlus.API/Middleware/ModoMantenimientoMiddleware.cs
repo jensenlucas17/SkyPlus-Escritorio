@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿
+using Microsoft.AspNetCore.Http;
 
 namespace SkyPlus.API.Middleware
 {
@@ -23,17 +24,34 @@ namespace SkyPlus.API.Middleware
             if (string.IsNullOrWhiteSpace(rutaEstado))
             {
                 context.Response.StatusCode = 503;
+
                 await context.Response.WriteAsJsonAsync(new
                 {
                     mensaje = "No está configurado el estado de mantenimiento."
                 });
+
                 return;
             }
 
-            // El archivo es una señal de mantenimiento.
-            // Si existe, la API no procesa operaciones.
             if (File.Exists(rutaEstado))
             {
+                bool esAutorizacionContinuacion =
+                    HttpMethods.IsPost(context.Request.Method) &&
+                    string.Equals(
+                        context.Request.Path.Value,
+                        "/api/backups/autorizar-continuacion-produccion",
+                        StringComparison.OrdinalIgnoreCase);
+
+                if (esAutorizacionContinuacion)
+                {
+                    // Solo permite llegar al endpoint.
+                    // La autenticación JWT, el rol Administrador,
+                    // la segunda autorización y el estado pendiente
+                    // deben seguir validándose normalmente.
+                    await _next(context);
+                    return;
+                }
+
                 context.Response.StatusCode =
                     StatusCodes.Status503ServiceUnavailable;
 

@@ -35,6 +35,7 @@
             btnGenerar = new Button();
             btnActualizar = new Button();
             btnRestaurar = new Button();
+            btnRestaurarProduccion = new Button();
             btnEliminar = new Button();
             dgvBackups = new DataGridView();
             colArchivo = new DataGridViewTextBoxColumn();
@@ -87,6 +88,7 @@
             pnlBotones.Controls.Add(btnGenerar);
             pnlBotones.Controls.Add(btnActualizar);
             pnlBotones.Controls.Add(btnRestaurar);
+            pnlBotones.Controls.Add(btnRestaurarProduccion);
             pnlBotones.Controls.Add(btnEliminar);
             pnlBotones.Dock = DockStyle.Top;
             pnlBotones.Location = new Point(0, 90);
@@ -137,6 +139,20 @@
             btnRestaurar.Text = "Restaurar prueba";
             btnRestaurar.UseVisualStyleBackColor = false;
             // 
+            // btnRestaurarProduccion
+            // 
+            btnRestaurarProduccion.BackColor = Color.FromArgb(174, 112, 33);
+            btnRestaurarProduccion.FlatAppearance.BorderSize = 0;
+            btnRestaurarProduccion.FlatStyle = FlatStyle.Flat;
+            btnRestaurarProduccion.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
+            btnRestaurarProduccion.ForeColor = Color.White;
+            btnRestaurarProduccion.Location = new Point(456, 3);
+            btnRestaurarProduccion.Name = "btnRestaurarProduccion";
+            btnRestaurarProduccion.Size = new Size(165, 36);
+            btnRestaurarProduccion.TabIndex = 3;
+            btnRestaurarProduccion.Text = "Restaurar producción";
+            btnRestaurarProduccion.UseVisualStyleBackColor = false;
+            // 
             // btnEliminar
             // 
             btnEliminar.BackColor = Color.FromArgb(185, 65, 65);
@@ -144,10 +160,10 @@
             btnEliminar.FlatStyle = FlatStyle.Flat;
             btnEliminar.Font = new Font("Segoe UI", 9F, FontStyle.Bold, GraphicsUnit.Point, 0);
             btnEliminar.ForeColor = Color.White;
-            btnEliminar.Location = new Point(456, 3);
+            btnEliminar.Location = new Point(627, 3);
             btnEliminar.Name = "btnEliminar";
             btnEliminar.Size = new Size(145, 36);
-            btnEliminar.TabIndex = 3;
+            btnEliminar.TabIndex = 4;
             btnEliminar.Text = "Eliminar";
             btnEliminar.UseVisualStyleBackColor = false;
             // 
@@ -254,6 +270,7 @@
         private Button btnActualizar;
         private Label lblEstado;
         private Button btnRestaurar;
+        private Button btnRestaurarProduccion;
         private Button btnEliminar;
         private DataGridView dgvBackups;
         private DataGridViewTextBoxColumn colArchivo;

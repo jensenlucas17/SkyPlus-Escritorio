@@ -269,9 +269,10 @@ try
             "production-restore-state.json");
 
     bool verificarContinuacionSolicitada =
-        args.Length == 3 &&
+        (args.Length == 3 &&
         (args[0] == "--verificar-continuacion" ||
-         args[0] == "--continuar-produccion");
+         args[0] == "--continuar-produccion")) ||
+        (args.Length == 2 && args[0] == "--continuar-produccion-stdin");
 
     if (!verificarContinuacionSolicitada)
     {
@@ -345,13 +346,25 @@ try
         args.Length == 3 &&
         args[0] == "--preparar-produccion";
 
+    // Diagnóstico entre procesos: recibe autorización RSA por stdin,
+    // sin escribirla en un archivo sin cifrar y sin modificar producción.
+    bool prepararProduccionStdin =
+        args.Length == 2 &&
+        args[0] == "--preparar-produccion-stdin";
+
     bool verificarContinuacion =
         args.Length == 3 &&
         args[0] == "--verificar-continuacion";
 
+    bool continuarProduccionStdin =
+        args.Length == 2 && args[0] == "--continuar-produccion-stdin";
+
     bool continuarProduccion =
-        args.Length == 3 &&
-        args[0] == "--continuar-produccion";
+        (args.Length == 3 && args[0] == "--continuar-produccion") ||
+        continuarProduccionStdin;
+
+    bool backupPreventivoStdin =
+        args.Length == 2 && args[0] == "--backup-preventivo-stdin";
 
     bool backupPreventivoProduccion =
         args.Length == 3 &&
@@ -364,7 +377,9 @@ try
         !verificarContinuacion &&
         !continuarProduccion &&
         !prepararProduccion &&
-        !backupPreventivoProduccion)
+        !prepararProduccionStdin &&
+        !backupPreventivoProduccion &&
+        !backupPreventivoStdin)
     {
         throw new InvalidOperationException(
             "Uso: RestoreWorker <ID_BACKUP>, " +
@@ -372,7 +387,10 @@ try
             "RestoreWorker --test-app-lock, " +
             "RestoreWorker --autorizar-produccion <ID_BACKUP> <ARCHIVO>, " +
             "RestoreWorker --preparar-produccion <ID_BACKUP> <ARCHIVO>, " +
-            "RestoreWorker --backup-preventivo <ID_BACKUP> <ARCHIVO>");
+            "RestoreWorker --preparar-produccion-stdin <ID_BACKUP>, " +
+            "RestoreWorker --backup-preventivo <ID_BACKUP> <ARCHIVO>, " +
+             "RestoreWorker --backup-preventivo-stdin <ID_BACKUP>, " +
+            "RestoreWorker --continuar-produccion-stdin <ID_BACKUP>");
     }
 
     Guid idBackup = Guid.Empty;
@@ -509,13 +527,20 @@ try
         Console.WriteLine();
         Console.WriteLine("=== CONTINUACIÓN DE PRODUCCIÓN ===");
 
-        string rutaAutorizacion = args[2];
-        if (!File.Exists(rutaAutorizacion))
-            throw new FileNotFoundException(
-                "No existe el archivo de autorización.", rutaAutorizacion);
-
-        string documentoFirmado =
-            await File.ReadAllTextAsync(rutaAutorizacion);
+        string documentoFirmado;
+        if (continuarProduccionStdin)
+        {
+            documentoFirmado = await Console.In.ReadLineAsync() ?? "";
+            if (string.IsNullOrWhiteSpace(documentoFirmado) || documentoFirmado.Length > 65536)
+                throw new InvalidOperationException("Autorización de entrada estándar inválida.");
+        }
+        else
+        {
+            string rutaAutorizacion = args[2];
+            if (!File.Exists(rutaAutorizacion))
+                throw new FileNotFoundException("No existe el archivo de autorización.", rutaAutorizacion);
+            documentoFirmado = await File.ReadAllTextAsync(rutaAutorizacion);
+        }
 
         var estadoPendiente =
             await ProductionRestoreStateService.LeerAsync(
@@ -557,6 +582,7 @@ try
         if (Console.ReadLine() != "RESTAURAR SKYPLUS")
         {
             Console.WriteLine("Operación cancelada. No se modificó producción.");
+            Environment.ExitCode = 2;
             return;
         }
 
@@ -629,6 +655,40 @@ try
     }
 
     // =========================================
+    // 9.1.1 DIAGNÓSTICO EXTERNO DE SOLO LECTURA
+    // Autorización por stdin, SIN archivos de autorización en claro.
+    // =========================================
+
+    if (prepararProduccionStdin)
+    {
+        string? documentoFirmado = await Console.In.ReadLineAsync();
+        if (string.IsNullOrWhiteSpace(documentoFirmado) ||
+            documentoFirmado.Length > 65536)
+        {
+            throw new InvalidOperationException(
+                "La autorización de entrada estándar es inválida.");
+        }
+
+        // La verificación de ejecución exclusiva, mantenimiento,
+        // aislamiento, MariaDB y read_only ya ocurrió arriba.
+        var autorizacion = RestoreAuthorizationValidationService.Validar(
+            documentoFirmado, authorizationPublicKeyFile, idBackup);
+
+        await ProductionRestoreOrchestrator.PrepararAsync(
+            autorizacion.OperationId,
+            idBackup,
+            backupDirectory,
+            auditDirectory,
+            productionRestoreStateFile,
+            documentoFirmado,
+            authorizationPublicKeyFile);
+
+        Console.WriteLine("RESTOREWORKER: preparación de solo lectura APROBADA.");
+        Console.WriteLine("No se registró una operación ni se importó SQL.");
+        return;
+    }
+
+    // =========================================
     // 9.2 PREPARAR RESTAURACIÓN DE PRODUCCIÓN
     // =========================================
 
@@ -681,21 +741,27 @@ try
     // 9.3 BACKUP PREVENTIVO DE PRODUCCIÓN
     // =========================================
 
-    if (backupPreventivoProduccion)
+    if (backupPreventivoProduccion || backupPreventivoStdin)
     {
         Console.WriteLine();
         Console.WriteLine(
             "=== BACKUP PREVENTIVO DE PRODUCCIÓN ===");
 
-        string rutaAutorizacion = args[2];
-
-        if (!File.Exists(rutaAutorizacion))
-            throw new FileNotFoundException(
-                "No existe el archivo de autorización.",
-                rutaAutorizacion);
-
-        string documentoFirmado =
-            await File.ReadAllTextAsync(rutaAutorizacion);
+        string documentoFirmado;
+        if (backupPreventivoStdin)
+        {
+            // Transferencia privada desde Launcher: nunca colocar la firma en argumentos.
+            documentoFirmado = await Console.In.ReadLineAsync() ?? "";
+            if (string.IsNullOrWhiteSpace(documentoFirmado) || documentoFirmado.Length > 65536)
+                throw new InvalidOperationException("Autorización de entrada estándar inválida.");
+        }
+        else
+        {
+            string rutaAutorizacion = args[2];
+            if (!File.Exists(rutaAutorizacion))
+                throw new FileNotFoundException("No existe el archivo de autorización.", rutaAutorizacion);
+            documentoFirmado = await File.ReadAllTextAsync(rutaAutorizacion);
+        }
 
         // Validar la firma y la vigencia ANTES de iniciar
         // cualquier registro persistente.
@@ -723,12 +789,16 @@ try
         Console.WriteLine(
             "No se importará SQL ni se consumirá la autorización.");
         Console.WriteLine();
-        Console.Write("Escribí CONFIRMAR para continuar: ");
-
-        if (Console.ReadLine() != "CONFIRMAR")
+        // En modo stdin, Launcher ya solicitó confirmación explícita antes
+        // de crear el proceso. El stdin está reservado para la firma RSA.
+        if (!backupPreventivoStdin)
         {
-            Console.WriteLine("Operación cancelada.");
-            return;
+            Console.Write("Escribí CONFIRMAR para continuar: ");
+            if (Console.ReadLine() != "CONFIRMAR")
+            {
+                Console.WriteLine("Operación cancelada.");
+                return;
+            }
         }
 
         string rutaPreventiva =
