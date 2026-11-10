@@ -16,5 +16,6 @@ namespace SkyPlus.API.Services
             ActualizarVueloRequest request);
 
         Task<bool> EliminarAsync(int id);
+        Task<(int Reservas, decimal TotalReembolsado)> CancelarConReembolsosAsync(int id, int idUsuario);
     }
 }

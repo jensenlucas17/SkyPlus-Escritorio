@@ -26,26 +26,51 @@ namespace SkyPlus.Desktop
             object sender,
             EventArgs e)
         {
-            await CargarAeronaves();
             AppEstilos.EstilizarGrid(dgvAeronaves);
             AppEstilos.EstilizarBotonPrimario(btnNuevo);
             AppEstilos.EstilizarBotonSecundario(btnEditar);
             AppEstilos.EstilizarBotonSecundario(btnEliminar);
-            AppEstilos.EstilizarBotonSecundario(btnBuscar);
             AppEstilos.EstilizarBotonSecundario(btnReactivar);
-            AppEstilos.ConfigurarBusqueda(txtBuscar, btnBuscar,
-                "Buscar por matrícula o modelo",
-                AplicarFiltro, CargarAeronaves,
-                label1);
+
+            // Filtros (el botón del diseñador "btnBuscar" pasa a ser Refrescar)
+            _cmbEstado = Listados.Combo(130, new[] { "Activo", "Inactivo" }, AplicarFiltro);
+            _cmbModelo = Listados.Combo(190, Array.Empty<string>(), AplicarFiltro);
+            Listados.ArmarFiltros(pnlFiltros, txtBuscar, btnBuscar,
+                "Matrícula o modelo",
+                ("Estado", _cmbEstado),
+                ("Modelo", _cmbModelo));
+            Listados.ConectarBusqueda(txtBuscar, btnBuscar, AplicarFiltro, CargarAeronaves, () =>
+            {
+                _cmbEstado.SelectedIndex = 0;
+                _cmbModelo.SelectedIndex = 0;
+            });
+            _lblResumen = Listados.CrearResumen(this, dgvAeronaves);
+
+            await CargarAeronaves();
         }
+
+        private ComboBox _cmbEstado = null!;
+        private ComboBox _cmbModelo = null!;
+        private Label _lblResumen = null!;
 
         private void AplicarFiltro()
         {
+            if (_lblResumen == null) return;
+
             var texto = txtBuscar.Text.Trim();
-            dgvAeronaves.DataSource = null;
-            dgvAeronaves.DataSource = _aeronaves
+            var lista = _aeronaves
                 .Where(a => AppEstilos.Coincide(texto, a.Matricula, a.Modelo))
+                .Where(a => Listados.Pasa(_cmbEstado, a.Estado))
+                .Where(a => Listados.Pasa(_cmbModelo, a.Modelo))
                 .ToList();
+
+            dgvAeronaves.DataSource = null;
+            dgvAeronaves.DataSource = lista;
+
+            _lblResumen.Text =
+                $"{lista.Count} aeronaves   |   {lista.Count(a => a.Estado == "Activo")} activas   |   " +
+                $"{lista.Count(a => a.Estado != "Activo")} inactivas   |   " +
+                "Cada aeronave tiene 180 asientos (30 filas × 6)";
         }
 
         private async Task CargarAeronaves()
@@ -58,6 +83,7 @@ namespace SkyPlus.Desktop
                 _aeronaves = aeronaves ??
                     new List<AeronaveResponse>();
 
+                Listados.CargarOpciones(_cmbModelo, _aeronaves.Select(a => a.Modelo).OrderBy(m => m));
                 AplicarFiltro();
             }
             catch (HttpRequestException)
@@ -195,7 +221,7 @@ namespace SkyPlus.Desktop
             }
         }
 
-        // El botón Buscar filtra (lo configura AppEstilos.ConfigurarBusqueda)
+        // Este botón ahora es "Refrescar" (lo maneja Listados.ConectarBusqueda)
         private void btnActualizar_Click(
             object sender,
             EventArgs e)

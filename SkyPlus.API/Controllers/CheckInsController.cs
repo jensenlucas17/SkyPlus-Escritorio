@@ -9,10 +9,10 @@ namespace SkyPlus.API.Controllers
 {
     [ApiController]
     [Route("api/[controller]")]
-    // El Agente de Reservas solo puede CONSULTAR la lista de check-ins
+    // Agente de Reservas, Administrador y Gerente solo pueden CONSULTAR la lista de check-ins
     // (para saber qué reservas ya no se pueden cancelar ni reembolsar).
     // Todo lo demás es exclusivo del Agente de Check-in.
-    [Authorize(Roles = "Agente de Check-in,Agente de Reservas")]
+    [Authorize(Roles = "Agente de Check-in,Agente de Reservas,Administrador,Gerente")]
     public class CheckInsController : ControllerBase
     {
         private readonly ICheckInService _checkInService;

@@ -17,6 +17,19 @@ namespace SkyPlus.Desktop.Services
                 "api/Vuelos");
         }
 
+        public class ResultadoCancelacion
+        {
+            public string Mensaje { get; set; } = string.Empty;
+            public int ReservasCanceladas { get; set; }
+            public decimal TotalReembolsado { get; set; }
+        }
+
+        // Cancela el vuelo: la API cancela y reembolsa todas sus reservas activas
+        public async Task<ResultadoCancelacion?> CancelarAsync(int id)
+        {
+            return await _apiClient.DeleteAsync<ResultadoCancelacion>($"api/Vuelos/{id}");
+        }
+
         public async Task<VueloResponse?> ObtenerPorIdAsync(int id)
         {
             return await _apiClient.GetAsync<VueloResponse>(

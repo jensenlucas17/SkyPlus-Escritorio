@@ -46,11 +46,23 @@ namespace SkyPlus.Desktop
 
         private async void frmUsuarioABM_Load(object sender, EventArgs e)
         {
-            lblMensaje.Visible = false;
-
             bool esEdicion = _idUsuarioEdicion.HasValue;
 
             Text = esEdicion ? "Editar usuario" : "Nuevo usuario";
+
+            // Diseño nuevo (mismo estilo que Nuevo pasajero)
+            FormularioDialogo.Disenar(this,
+                esEdicion ? "Editar usuario" : "Nuevo usuario",
+                esEdicion ? "Modificá los datos o el estado de la cuenta." : "Cuenta de acceso al sistema para un empleado.",
+                lblMensaje, btnGuardar, esEdicion ? "Guardar cambios" : "Crear usuario", btnCancelar,
+                (label1, "Nombre", txtNombre, 0, 0, ""),
+                (label2, "Apellido", txtApellido, 1, 0, ""),
+                (lblDNI, "DNI", txtDni, 0, 1, "Sin puntos"),
+                (label3, "Email corporativo", txtEmail, 1, 1, "nombre@skyplus.com"),
+                (label4, "Rol", cmbRol, 0, 2, ""),
+                (lblPassword, "Contraseña inicial", txtPassword, 1, 2, "12+ caracteres, mayúscula y número"),
+                (lblEstado, "Estado de la cuenta", cmbEstado, 1, 2, ""));
+            lblMensaje.Visible = false;
 
             // Contraseña solo al crear
             lblPassword.Visible = !esEdicion;
@@ -71,8 +83,6 @@ namespace SkyPlus.Desktop
 
             await CargarRolesAsync();
 
-            AppEstilos.EstilizarBotonPrimario(btnGuardar);
-            AppEstilos.EstilizarBotonSecundario(btnCancelar);
         }
 
         private async System.Threading.Tasks.Task CargarRolesAsync()
@@ -233,21 +243,7 @@ namespace SkyPlus.Desktop
 
         private void MostrarError(string mensaje)
         {
-            lblMensaje.Text = mensaje;
-            lblMensaje.ForeColor = Color.Red;
-
-            lblMensaje.AutoSize = false;
-            lblMensaje.TextAlign = ContentAlignment.MiddleCenter;
-
-            lblMensaje.Width = ClientSize.Width - 40;
-            lblMensaje.Height = 48;
-
-            lblMensaje.Left = 20;
-            lblMensaje.Top =
-                btnGuardar.Top - lblMensaje.Height - 12;
-
-            lblMensaje.Visible = true;
-            lblMensaje.BringToFront();
+            FormularioDialogo.MostrarError(lblMensaje, mensaje);
         }
     }
 }

@@ -61,6 +61,15 @@ namespace SkyPlus.Desktop.Services
             await VerificarRespuestaAsync(response);
         }
 
+        // DELETE que devuelve un cuerpo (por ejemplo, un mensaje con el resultado)
+        public async Task<TResponse?> DeleteAsync<TResponse>(string endpoint)
+        {
+            ConfigurarAutorizacion();
+            using var response = await _httpClient.DeleteAsync(endpoint);
+            await VerificarRespuestaAsync(response);
+            return await response.Content.ReadFromJsonAsync<TResponse>();
+        }
+
         public async Task PatchAsync(string endpoint)
         {
             ConfigurarAutorizacion();
