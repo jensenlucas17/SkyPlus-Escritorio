@@ -5,7 +5,7 @@ using SkyPlus.Infrastructure.Data;
 
 namespace SkyPlus.API.Services
 {
-    public class ReporteService : IReporteService
+    public partial class ReporteService : IReporteService
     {
         private readonly SkyPlusDbContext _context;
 

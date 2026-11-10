@@ -184,5 +184,7 @@
         public decimal PorcentajeOcupacionGeneral { get; set; }
         public List<VueloPorEstadoResponse> VuelosPorEstado { get; set; } = new();
         public List<VueloDetalleReporteResponse> DetalleVuelos { get; set; } = new();
+        public List<RutaRankingResponse> RankingRutas { get; set; } = new();
+        public ComparacionPeriodosVuelosResponse? Comparacion { get; set; }
     }
 }

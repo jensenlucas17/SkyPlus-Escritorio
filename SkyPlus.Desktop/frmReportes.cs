@@ -1,4 +1,5 @@
-﻿using SkyPlus.Desktop.Estilos;
+﻿
+using SkyPlus.Desktop.Estilos;
 using SkyPlus.Desktop.Models;
 using SkyPlus.Desktop.Services;
 using SkyPlus.Desktop.Utilidades;
@@ -14,7 +15,7 @@ namespace SkyPlus.Desktop
 
         private readonly TableLayoutPanel _tabla = new TableLayoutPanel();
         private readonly Label _lblResumen = CrearTitulo("Resumen");
-        // Resumen: tarjetas con número grande (antes era una grilla chica y se cortaba)
+
         private readonly FlowLayoutPanel _pnlResumen = new FlowLayoutPanel
         {
             AutoSize = true,
@@ -23,6 +24,7 @@ namespace SkyPlus.Desktop
             Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top,
             Margin = new Padding(0, 0, 0, 6)
         };
+
         private readonly Label _lblDetalle1 = CrearTitulo(string.Empty);
         private readonly DataGridView _dgvDetalle1 = CrearGrid();
         private readonly Label _lblDetalle2 = CrearTitulo(string.Empty);
@@ -31,6 +33,7 @@ namespace SkyPlus.Desktop
         public frmReportes()
         {
             InitializeComponent();
+            InicializarExportacion();
         }
 
         private void frmReportes_Load(object sender, EventArgs e)
@@ -49,6 +52,11 @@ namespace SkyPlus.Desktop
             dtpHasta.Value = DateTime.Today;
 
             ArmarPantalla();
+            InicializarFiltrosAvanzados();
+            InicializarGraficos();
+            InicializarGraficosBarras();
+            InicializarRankingRutas();
+            InicializarComparacionPeriodos();
 
             AppEstilos.EstilizarBotonPrimario(btnGenerar);
             lblResultado.Text = "Elegí un informe y un rango de fechas, y presioná Generar.";
@@ -65,7 +73,6 @@ namespace SkyPlus.Desktop
             Margin = new Padding(0, 14, 0, 8)
         };
 
-        // Las tablas tienen la altura de sus filas: lo que se desplaza es TODA la pantalla (como en Inicio)
         private static DataGridView CrearGrid() => new DataGridView
         {
             Anchor = AnchorStyles.Left | AnchorStyles.Right | AnchorStyles.Top,
@@ -88,6 +95,7 @@ namespace SkyPlus.Desktop
             _tabla.ColumnCount = 1;
             _tabla.RowCount = 6;
             _tabla.Padding = new Padding(16, 8, 16, 16);
+
             pnlResultados.AutoScroll = true;
             pnlResultados.BackColor = AppEstilos.ColorSecundario;
 
@@ -95,6 +103,7 @@ namespace SkyPlus.Desktop
 
             for (int i = 0; i < 6; i++)
                 _tabla.RowStyles.Add(new RowStyle(SizeType.AutoSize));
+
             _tabla.BackColor = AppEstilos.ColorSecundario;
             _pnlResumen.BackColor = AppEstilos.ColorSecundario;
 
@@ -109,20 +118,28 @@ namespace SkyPlus.Desktop
             {
                 AppEstilos.EstilizarGrid(grid);
 
-                // Si la tabla se ve completa, la ruedita del mouse desplaza la pantalla entera
                 grid.MouseWheel += (s, e) =>
                 {
-                    if (grid.Rows.Count > 0 && grid.DisplayedRowCount(false) < grid.Rows.Count) return;
+                    if (grid.Rows.Count > 0 &&
+                        grid.DisplayedRowCount(false) < grid.Rows.Count)
+                        return;
+
                     int y = -pnlResultados.AutoScrollPosition.Y - e.Delta;
-                    pnlResultados.AutoScrollPosition = new Point(0, Math.Max(0, y));
-                    if (e is HandledMouseEventArgs h) h.Handled = true;
+                    pnlResultados.AutoScrollPosition =
+                        new Point(0, Math.Max(0, y));
+
+                    if (e is HandledMouseEventArgs h)
+                        h.Handled = true;
                 };
             }
 
             pnlResultados.Controls.Add(_tabla);
         }
 
-        private static void Cargar(DataGridView grid, object datos, IEnumerable<Col> columnas)
+        private static void Cargar(
+            DataGridView grid,
+            object datos,
+            IEnumerable<Col> columnas)
         {
             grid.DataSource = null;
             grid.Columns.Clear();
@@ -145,22 +162,32 @@ namespace SkyPlus.Desktop
 
             grid.DataSource = datos;
 
-            // Alto según la cantidad de filas (con un máximo); el resto se ve desplazando la pantalla
             int filas = Math.Max(grid.Rows.Count, 2);
-            grid.Height = Math.Min(grid.ColumnHeadersHeight + filas * grid.RowTemplate.Height + 4, 520);
+            grid.Height = Math.Min(
+                grid.ColumnHeadersHeight +
+                filas * grid.RowTemplate.Height + 4,
+                520);
         }
 
         private void Presentar(
             List<Indicador> resumen,
-            string titulo1, object detalle1, Col[] columnas1,
-            string? titulo2 = null, object? detalle2 = null, Col[]? columnas2 = null)
+            string titulo1,
+            object detalle1,
+            Col[] columnas1,
+            string? titulo2 = null,
+            object? detalle2 = null,
+            Col[]? columnas2 = null)
         {
             MostrarResumen(resumen);
+            OcultarComparacionPeriodos();
 
             _lblDetalle1.Text = titulo1;
             Cargar(_dgvDetalle1, detalle1, columnas1);
 
-            bool hayDetalle2 = titulo2 != null && detalle2 != null && columnas2 != null;
+            bool hayDetalle2 =
+                titulo2 != null &&
+                detalle2 != null &&
+                columnas2 != null;
 
             _lblDetalle2.Visible = hayDetalle2;
             _dgvDetalle2.Visible = hayDetalle2;
@@ -171,15 +198,22 @@ namespace SkyPlus.Desktop
                 Cargar(_dgvDetalle2, detalle2!, columnas2!);
             }
 
-            pnlResultados.AutoScrollPosition = new Point(0, 0); // cada informe nuevo arranca arriba
+            pnlResultados.AutoScrollPosition = new Point(0, 0);
+
+            // Habilitar exportación del informe generado.
+            _indicadoresExportacion = resumen.ToList();
+            _reporteGenerado = true;
+            _btnPdf.Enabled = true;
+            _btnExcel.Enabled = true;
         }
 
-        // Una tarjeta por indicador: título chico arriba y el valor grande abajo
         private void MostrarResumen(List<Indicador> resumen)
         {
             _pnlResumen.SuspendLayout();
+
             foreach (Control c in _pnlResumen.Controls.Cast<Control>().ToList())
                 c.Dispose();
+
             _pnlResumen.Controls.Clear();
 
             foreach (var indicador in resumen)
@@ -197,6 +231,7 @@ namespace SkyPlus.Desktop
                     ForeColor = AppEstilos.ColorTextoOscuro,
                     AutoEllipsis = true
                 };
+
                 var lblNombre = new Label
                 {
                     Text = indicador.Nombre,
@@ -206,35 +241,50 @@ namespace SkyPlus.Desktop
                     ForeColor = AppEstilos.ColorTextoSuave,
                     AutoEllipsis = true
                 };
-                tarjeta.Controls.Add(lblValor);
-                tarjeta.Controls.Add(lblNombre); // el último agregado queda arriba
 
-                // Si el valor no entra, se ve completo al pasar el mouse
+                tarjeta.Controls.Add(lblValor);
+                tarjeta.Controls.Add(lblNombre);
+
                 var ayuda = new ToolTip();
-                ayuda.SetToolTip(lblValor, $"{indicador.Nombre}: {indicador.Valor}");
-                ayuda.SetToolTip(lblNombre, $"{indicador.Nombre}: {indicador.Valor}");
+                ayuda.SetToolTip(lblValor,
+                    $"{indicador.Nombre}: {indicador.Valor}");
+                ayuda.SetToolTip(lblNombre,
+                    $"{indicador.Nombre}: {indicador.Valor}");
 
                 _pnlResumen.Controls.Add(tarjeta);
             }
+
             _pnlResumen.ResumeLayout();
         }
 
-        private static string Moneda(decimal valor) => valor.ToString("C0");
-        private static string Porcentaje(decimal valor) => $"{valor:0.##} %";
+        private static string Moneda(decimal valor) =>
+            valor.ToString("C0");
+
+        private static string Porcentaje(decimal valor) =>
+            $"{valor:0.##} %";
 
         // ---------- Botones ----------
 
+
         private async void btnGenerar_Click(object sender, EventArgs e)
         {
-            var desde = dtpDesde.Value.Date;
-            var hasta = dtpHasta.Value.Date;
+            var filtros = ObtenerFiltros();
 
-            if (hasta < desde)
+            if (filtros.Hasta < filtros.Desde)
             {
-                MessageBox.Show("La fecha 'Hasta' no puede ser anterior a 'Desde'.",
-                    "Reportes", MessageBoxButtons.OK, MessageBoxIcon.Warning);
+                MessageBox.Show(
+                    "La fecha 'Hasta' no puede ser anterior a 'Desde'.",
+                    "Reportes",
+                    MessageBoxButtons.OK,
+                    MessageBoxIcon.Warning);
                 return;
             }
+
+            // Deshabilitar las exportaciones mientras
+            // se genera el nuevo informe.
+            _reporteGenerado = false;
+            _btnPdf.Enabled = false;
+            _btnExcel.Enabled = false;
 
             try
             {
@@ -244,27 +294,52 @@ namespace SkyPlus.Desktop
                 switch (cmbTipoReporte.SelectedItem?.ToString())
                 {
                     case "Ventas":
-                        MostrarVentas(await _reporteClient.ObtenerVentasAsync(desde, hasta) ?? new ReporteVentasResponse());
+                        MostrarVentas(
+                            await _reporteClient.ObtenerVentasAsync(filtros)
+                            ?? new ReporteVentasResponse());
                         break;
+
                     case "Reservas":
-                        MostrarReservas(await _reporteClient.ObtenerReservasAsync(desde, hasta) ?? new ReporteReservasResponse());
+                        MostrarReservas(
+                            await _reporteClient.ObtenerReservasAsync(filtros)
+                            ?? new ReporteReservasResponse());
                         break;
+
                     case "Vuelos":
-                        MostrarVuelos(await _reporteClient.ObtenerVuelosAsync(desde, hasta) ?? new ReporteVuelosResponse());
+                        MostrarVuelos(
+                            await _reporteClient.ObtenerVuelosAsync(filtros)
+                            ?? new ReporteVuelosResponse());
                         break;
+
                     case "Pasajeros":
-                        MostrarPasajeros(await _reporteClient.ObtenerPasajerosAsync(desde, hasta) ?? new ReportePasajerosResponse());
+                        MostrarPasajeros(
+                            await _reporteClient.ObtenerPasajerosAsync(filtros)
+                            ?? new ReportePasajerosResponse());
                         break;
+
                     case "Equipajes":
-                        MostrarEquipajes(await _reporteClient.ObtenerEquipajesAsync(desde, hasta) ?? new ReporteEquipajesResponse());
+                        MostrarEquipajes(
+                            await _reporteClient.ObtenerEquipajesAsync(filtros)
+                            ?? new ReporteEquipajesResponse());
                         break;
+
                     case "Check-ins":
-                        MostrarCheckIns(await _reporteClient.ObtenerCheckInsAsync(desde, hasta) ?? new ReporteCheckInsResponse());
+                        MostrarCheckIns(
+                            await _reporteClient.ObtenerCheckInsAsync(filtros)
+                            ?? new ReporteCheckInsResponse());
                         break;
                 }
 
                 lblResultado.Text =
-                    $"Informe de {cmbTipoReporte.SelectedItem} del {desde:dd/MM/yyyy} al {hasta:dd/MM/yyyy}.";
+                    $"Informe de {cmbTipoReporte.SelectedItem} del " +
+                    $"{filtros.Desde:dd/MM/yyyy} al " +
+                    $"{filtros.Hasta:dd/MM/yyyy}.";
+
+                if (filtros.Agrupacion != "Dia")
+                {
+                    lblResultado.Text +=
+                        $" Agrupación: {filtros.Agrupacion}.";
+                }
             }
             catch (HttpRequestException ex)
             {
@@ -277,20 +352,40 @@ namespace SkyPlus.Desktop
             }
         }
 
-        // Si tenés un botón btnLimpiar, este método lo atiende; si no, queda sin usar.
         private void btnLimpiar_Click(object sender, EventArgs e)
         {
             cmbTipoReporte.SelectedIndex = 0;
+
             dtpDesde.Value = DateTime.Today.AddDays(-30);
             dtpHasta.Value = DateTime.Today;
 
+            _chkCompararPeriodoAnterior.Checked = false;
+            OcultarComparacionPeriodos();
+
+            LimpiarFiltrosAvanzados();
+
             MostrarResumen(new List<Indicador>());
+
             _dgvDetalle1.DataSource = null;
             _dgvDetalle2.DataSource = null;
+
             _lblDetalle1.Text = string.Empty;
             _lblDetalle2.Text = string.Empty;
-            lblResultado.Text = "Elegí un informe y un rango de fechas, y presioná Generar.";
+
+            _indicadoresExportacion.Clear();
+            _reporteGenerado = false;
+
+            _btnPdf.Enabled = false;
+            _btnExcel.Enabled = false;
+
+            lblResultado.Text =
+                "Elegí un informe y un rango de fechas, " +
+                "y presioná Generar.";
+            OcultarGrafico();
+            OcultarBarras();
+            OcultarRankingRutas();
         }
+
 
         // ---------- Un método por informe ----------
 
@@ -315,6 +410,9 @@ namespace SkyPlus.Desktop
                     new Col("Reembolsado", nameof(VentaDiariaResponse.TotalReembolsado), "C0"),
                     new Col("Ingreso neto", nameof(VentaDiariaResponse.IngresoNeto), "C0")
                 });
+            GraficarVentas(r);
+            OcultarBarras();
+            OcultarRankingRutas();
         }
 
         private void MostrarReservas(ReporteReservasResponse r)
@@ -341,6 +439,9 @@ namespace SkyPlus.Desktop
                     new Col("Fecha", nameof(ReservaDiariaResponse.Fecha), "dd/MM/yyyy"),
                     new Col("Reservas", nameof(ReservaDiariaResponse.CantidadReservas))
                 });
+            GraficarReservas(r);
+            OcultarBarras();
+            OcultarRankingRutas();
         }
 
         private void MostrarVuelos(ReporteVuelosResponse r)
@@ -379,6 +480,10 @@ namespace SkyPlus.Desktop
                     new Col("Estado", nameof(VueloPorEstadoResponse.Estado)),
                     new Col("Cantidad", nameof(VueloPorEstadoResponse.Cantidad))
                 });
+            OcultarGrafico();
+            GraficarVuelos(r);
+            MostrarRankingRutas(r);
+            MostrarComparacionPeriodos(r.Comparacion);
         }
 
         private void MostrarPasajeros(ReportePasajerosResponse r)
@@ -410,6 +515,9 @@ namespace SkyPlus.Desktop
                     new Col("Reservas", nameof(PasajeroFrecuenteResponse.TotalReservas)),
                     new Col("Confirmadas", nameof(PasajeroFrecuenteResponse.ReservasConfirmadas))
                 });
+            OcultarGrafico();
+            GraficarPasajeros(r);
+            OcultarRankingRutas();
         }
 
         private void MostrarEquipajes(ReporteEquipajesResponse r)
@@ -441,6 +549,9 @@ namespace SkyPlus.Desktop
                     new Col("Peso total (kg)", nameof(EquipajePorTipoResponse.PesoTotalKg), "0.##"),
                     new Col("Importe contratado", nameof(EquipajePorTipoResponse.ImporteContratado), "C0")
                 });
+            OcultarGrafico();
+            GraficarEquipajes(r);
+            OcultarRankingRutas();
         }
 
         private void MostrarCheckIns(ReporteCheckInsResponse r)
@@ -470,6 +581,9 @@ namespace SkyPlus.Desktop
                     new Col("Fecha", nameof(CheckInsPorDiaResponse.Fecha), "dd/MM/yyyy"),
                     new Col("Check-ins", nameof(CheckInsPorDiaResponse.CantidadCheckIns))
                 });
+            OcultarGrafico();
+            GraficarCheckIns(r);
+            OcultarRankingRutas();
         }
     }
 }

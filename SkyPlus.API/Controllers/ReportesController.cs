@@ -1,7 +1,9 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using SkyPlus.API.DTOs.Reportes;
 using SkyPlus.API.Exceptions;
 using SkyPlus.API.Services;
-using Microsoft.AspNetCore.Authorization;
 
 namespace SkyPlus.API.Controllers
 {
@@ -17,177 +19,135 @@ namespace SkyPlus.API.Controllers
             _reporteService = reporteService;
         }
 
+        // =========================================
+        // VENTAS
+        // GET api/Reportes/ventas
+        // =========================================
+
         [HttpGet("ventas")]
-        public async Task<IActionResult> ObtenerVentas(
-            [FromQuery] DateTime desde,
-            [FromQuery] DateTime hasta)
+        public async Task<ActionResult<ReporteVentasResponse>> Ventas(
+            [FromQuery] ReporteFiltrosRequest filtros)
         {
             try
             {
-                if (desde == default || hasta == default)
-                {
-                    return BadRequest(new
-                    {
-                        mensaje = "Debés indicar las fechas desde y hasta."
-                    });
-                }
+                var resultado =
+                    await _reporteService.ObtenerVentasAsync(filtros);
 
-                var reporte = await _reporteService
-                    .ObtenerVentasAsync(desde, hasta);
-
-                return Ok(reporte);
+                return Ok(resultado);
             }
             catch (ValidacionNegocioException ex)
             {
-                return BadRequest(new
-                {
-                    mensaje = ex.Message
-                });
+                return BadRequest(new { mensaje = ex.Message });
             }
         }
+
+        // =========================================
+        // RESERVAS
+        // GET api/Reportes/reservas
+        // =========================================
 
         [HttpGet("reservas")]
-        public async Task<IActionResult> ObtenerReservas(
-            [FromQuery] DateTime desde,
-            [FromQuery] DateTime hasta)
+        public async Task<ActionResult<ReporteReservasResponse>> Reservas(
+            [FromQuery] ReporteFiltrosRequest filtros)
         {
             try
             {
-                if (desde == default || hasta == default)
-                {
-                    return BadRequest(new
-                    {
-                        mensaje = "Debés indicar las fechas desde y hasta."
-                    });
-                }
+                var resultado =
+                    await _reporteService.ObtenerReservasAsync(filtros);
 
-                var reporte = await _reporteService
-                    .ObtenerReservasAsync(desde, hasta);
-
-                return Ok(reporte);
+                return Ok(resultado);
             }
             catch (ValidacionNegocioException ex)
             {
-                return BadRequest(new
-                {
-                    mensaje = ex.Message
-                });
+                return BadRequest(new { mensaje = ex.Message });
             }
         }
+
+        // =========================================
+        // VUELOS
+        // GET api/Reportes/vuelos
+        // =========================================
 
         [HttpGet("vuelos")]
-        public async Task<IActionResult> ObtenerVuelos(
-            [FromQuery] DateTime desde,
-            [FromQuery] DateTime hasta)
+        public async Task<ActionResult<ReporteVuelosResponse>> Vuelos(
+            [FromQuery] ReporteFiltrosRequest filtros)
         {
             try
             {
-                if (desde == default || hasta == default)
-                {
-                    return BadRequest(new
-                    {
-                        mensaje = "Debés indicar las fechas desde y hasta."
-                    });
-                }
+                var resultado =
+                    await _reporteService.ObtenerVuelosAsync(filtros);
 
-                var reporte = await _reporteService
-                    .ObtenerVuelosAsync(desde, hasta);
-
-                return Ok(reporte);
+                return Ok(resultado);
             }
             catch (ValidacionNegocioException ex)
             {
-                return BadRequest(new
-                {
-                    mensaje = ex.Message
-                });
+                return BadRequest(new { mensaje = ex.Message });
             }
         }
+
+        // =========================================
+        // PASAJEROS
+        // GET api/Reportes/pasajeros
+        // =========================================
 
         [HttpGet("pasajeros")]
-        public async Task<IActionResult> ObtenerPasajeros(
-            [FromQuery] DateTime desde,
-            [FromQuery] DateTime hasta)
+        public async Task<ActionResult<ReportePasajerosResponse>> Pasajeros(
+            [FromQuery] ReporteFiltrosRequest filtros)
         {
             try
             {
-                if (desde == default || hasta == default)
-                {
-                    return BadRequest(new
-                    {
-                        mensaje = "Debés indicar las fechas desde y hasta."
-                    });
-                }
+                var resultado =
+                    await _reporteService.ObtenerPasajerosAsync(filtros);
 
-                var reporte = await _reporteService
-                    .ObtenerPasajerosAsync(desde, hasta);
-
-                return Ok(reporte);
+                return Ok(resultado);
             }
             catch (ValidacionNegocioException ex)
             {
-                return BadRequest(new
-                {
-                    mensaje = ex.Message
-                });
+                return BadRequest(new { mensaje = ex.Message });
             }
         }
+
+        // =========================================
+        // EQUIPAJES
+        // GET api/Reportes/equipajes
+        // =========================================
 
         [HttpGet("equipajes")]
-        public async Task<IActionResult> ObtenerEquipajes(
-            [FromQuery] DateTime desde,
-            [FromQuery] DateTime hasta)
+        public async Task<ActionResult<ReporteEquipajesResponse>> Equipajes(
+            [FromQuery] ReporteFiltrosRequest filtros)
         {
             try
             {
-                if (desde == default || hasta == default)
-                {
-                    return BadRequest(new
-                    {
-                        mensaje = "Debés indicar las fechas desde y hasta."
-                    });
-                }
+                var resultado =
+                    await _reporteService.ObtenerEquipajesAsync(filtros);
 
-                var reporte = await _reporteService
-                    .ObtenerEquipajesAsync(desde, hasta);
-
-                return Ok(reporte);
+                return Ok(resultado);
             }
             catch (ValidacionNegocioException ex)
             {
-                return BadRequest(new
-                {
-                    mensaje = ex.Message
-                });
+                return BadRequest(new { mensaje = ex.Message });
             }
         }
 
+        // =========================================
+        // CHECK-INS
+        // GET api/Reportes/checkins
+        // =========================================
+
         [HttpGet("checkins")]
-        public async Task<IActionResult> ObtenerCheckIns(
-            [FromQuery] DateTime desde,
-            [FromQuery] DateTime hasta)
+        public async Task<ActionResult<ReporteCheckInsResponse>> CheckIns(
+            [FromQuery] ReporteFiltrosRequest filtros)
         {
             try
             {
-                if (desde == default || hasta == default)
-                {
-                    return BadRequest(new
-                    {
-                        mensaje = "Debés indicar las fechas desde y hasta."
-                    });
-                }
+                var resultado =
+                    await _reporteService.ObtenerCheckInsAsync(filtros);
 
-                var reporte = await _reporteService
-                    .ObtenerCheckInsAsync(desde, hasta);
-
-                return Ok(reporte);
+                return Ok(resultado);
             }
             catch (ValidacionNegocioException ex)
             {
-                return BadRequest(new
-                {
-                    mensaje = ex.Message
-                });
+                return BadRequest(new { mensaje = ex.Message });
             }
         }
     }
