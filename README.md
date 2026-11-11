@@ -1,487 +1,232 @@
 # SkyPlus
 
-**Sistema de gestión de operaciones para una aerolínea**
+Sistema de gestión de operaciones de una aerolínea, desarrollado como proyecto académico para Ingeniería de Software I.
 
-SkyPlus es una aplicación desarrollada como proyecto académico para la
-materia **Ingeniería de Software I**. El sistema centraliza operaciones
-relacionadas con usuarios, vuelos, aeropuertos, aeronaves, pasajeros,
-reservas, ventas, reembolsos y procesos de check-in.
+SkyPlus permite administrar vuelos, pasajeros, reservas, pagos, equipajes, check-in y embarque. Incluye reportes gerenciales y herramientas de respaldo y restauración de la base de datos.
 
-La solución está compuesta por una aplicación de escritorio desarrollada
-con Windows Forms y una API REST encargada de la lógica de negocio y del
-acceso a los datos.
+Es una aplicación de uso interno del personal, con cuatro roles: Administrador, Gerente, Agente de Reservas y Agente de Check-in.
 
-------------------------------------------------------------------------
+## Documentación
 
-## Descripción general
+| Documento | PDF | Word editable |
+| --- | --- | --- |
+| Especificación de Requisitos de Software | [Consultar ERS](docs/ERS_SkyPlus.pdf) | [Descargar Word](docs/ERS_SkyPlus.docx) |
+| Manual de usuario | [Consultar manual](docs/Manual_Usuario_SkyPlus.pdf) | [Descargar Word](docs/Manual_Usuario_SkyPlus.docx) |
 
-SkyPlus fue diseñado siguiendo una arquitectura por capas con el
-objetivo de separar responsabilidades y facilitar el mantenimiento y la
-evolución del sistema.
-
-La aplicación de escritorio no accede directamente a la base de datos.
-Las operaciones se realizan a través de clientes HTTP que consumen los
-endpoints expuestos por la API.
-
-``` text
-Usuario
-   |
-   v
-SkyPlus.Desktop
-   |
-   v
-Clients HTTP
-   |
-   v
-SkyPlus.API
-   |
-   v
-Services
-   |
-   v
-Entity Framework Core
-   |
-   v
-Base de datos
-```
-
-------------------------------------------------------------------------
-
-## Arquitectura de la solución
-
-La solución se encuentra organizada en cuatro proyectos principales:
-
-``` text
-SkyPlus
-|
-+-- SkyPlus.Desktop
-|   +-- Models
-|   +-- Services
-|   +-- Estilos
-|   +-- Formularios
-|
-+-- SkyPlus.API
-|   +-- Controllers
-|   +-- DTOs
-|   +-- Services
-|
-+-- SkyPlus.Domain
-|   +-- Entities
-|
-+-- SkyPlus.Infrastructure
-    +-- Data
-```
-
-### SkyPlus.Desktop
-
-Contiene la interfaz de usuario desarrollada con Windows Forms. Los
-formularios utilizan clases Client para comunicarse con la API mediante
-HTTP.
-
-### SkyPlus.API
-
-Expone los endpoints REST utilizados por Desktop. Contiene los
-controladores, DTOs y servicios encargados de procesar las operaciones
-solicitadas por los clientes.
-
-### SkyPlus.Domain
-
-Contiene las entidades que representan el dominio del sistema, como
-usuarios, vuelos, pasajeros, reservas, asientos, pagos y reembolsos.
-
-### SkyPlus.Infrastructure
-
-Contiene la configuración de persistencia, incluyendo `SkyPlusDbContext`
-y la integración con Entity Framework Core.
-
-------------------------------------------------------------------------
-
-## Tecnologías utilizadas
-
--   C#
--   .NET
--   ASP.NET Core Web API
--   Windows Forms
--   Entity Framework Core
--   SQL Server
--   Swagger / OpenAPI
--   Git
--   GitHub
--   Visual Studio
-
-------------------------------------------------------------------------
+La ERS describe el alcance actual, las reglas de negocio y las funcionalidades pendientes. El manual explica los procedimientos de uso según el rol.
 
 ## Funcionalidades principales
 
-### Gestión de usuarios
+- Administración de usuarios, aeronaves y aeropuertos.
+- Gestión de vuelos, disponibilidad de aeronaves y distribución de asientos.
+- Registro de pasajeros y venta de pasajes con equipaje opcional.
+- Validación de disponibilidad de asientos y viajes superpuestos.
+- Registro de pagos, cancelaciones y reembolsos.
+- Pesaje de equipajes, cobro de adicionales, check-in y embarque.
+- Generación de boarding pass en PDF con código QR.
+- Reportes con filtros, gráficos, ranking de rutas y comparación de períodos.
+- Exportación de resúmenes y tablas principales a PDF y Excel.
+- Copias de seguridad y restauración con controles de autorización.
 
-El sistema permite registrar y modificar usuarios, asignar roles,
-activar o desactivar cuentas y consultar usuarios mediante filtros.
+## Arquitectura
 
-El acceso a los diferentes módulos depende del rol del usuario
-autenticado.
+La aplicación de escritorio consume una API REST. El servidor valida permisos y reglas de negocio y accede a MariaDB mediante Entity Framework Core.
 
-### Gestión de lugares
+```text
+Desktop — Windows Forms
+          |
+          | HTTPS / JSON / JWT
+          v
+API — ASP.NET Core
+          |
+          v
+Servicios de negocio
+          |
+          v
+Entity Framework Core
+          |
+          v
+MariaDB
+```
 
-Permite administrar los aeropuertos utilizados como origen y destino de
-los vuelos.
+Desktop no accede directamente a la base de datos.
 
-Cada lugar contiene, entre otros datos:
+### Proyectos de la solución
 
--   Código IATA
--   Nombre
--   Ciudad
--   País
+| Proyecto | Responsabilidad |
+| --- | --- |
+| `SkyPlus.Desktop` | Interfaz Windows Forms, clientes HTTP, gráficos y exportaciones. |
+| `SkyPlus.API` | Endpoints, autenticación, autorización y reglas de negocio. |
+| `SkyPlus.Domain` | Entidades y contratos compartidos. |
+| `SkyPlus.Infrastructure` | Contexto de datos, mapeos y migraciones. |
+| `SkyPlus.BackupWorker` | Generación de un backup automático por ejecución. |
+| `SkyPlus.RestoreWorker` | Verificaciones y procedimientos de restauración. |
+| `SkyPlus.RestoreLauncher` | Coordinación de la restauración en Windows. |
+| `SkyPlus.RestoreSecurityTests` | Pruebas de seguridad de restauración. |
 
-### Gestión de aeronaves
+## Tecnologías
 
-Permite administrar las aeronaves disponibles en el sistema mediante su
-matrícula y modelo.
+- C# y .NET 10.
+- Windows Forms y ASP.NET Core.
+- Entity Framework Core 9, Pomelo y MariaDB.
+- JWT para autenticación y autorización por roles.
+- PBKDF2 para almacenamiento de contraseñas.
+- Swagger para consulta y prueba de endpoints.
+- QuestPDF, ClosedXML y QRCoder.
+- Git y GitHub.
 
-### Gestión de vuelos
-
-Permite crear, modificar, consultar y administrar vuelos.
-
-Cada vuelo contiene información como:
-
--   Número de vuelo
--   Aeronave
--   Lugar de origen
--   Lugar de destino
--   Fecha y hora de salida
--   Fecha y hora de llegada
--   Estado
--   Tarifa
--   Usuario operador
-
-Los estados utilizados actualmente son:
-
--   Programado
--   Confirmado
--   Cancelado
--   Finalizado
-
-Al crear un nuevo vuelo, el sistema genera automáticamente **180
-asientos**, distribuidos en 30 filas y seis posiciones por fila (`A` a
-`F`). Los asientos se crean inicialmente con estado `Libre`.
-
-### Gestión de pasajeros
-
-Permite registrar y administrar los pasajeros que posteriormente pueden
-ser asociados a una reserva.
-
-### Gestión de reservas
-
-El flujo de creación de una reserva permite:
-
-1.  Buscar y seleccionar un pasajero.
-2.  Registrar un nuevo pasajero durante el proceso si todavía no existe.
-3.  Seleccionar un lugar de origen.
-4.  Seleccionar un destino disponible.
-5.  Consultar los vuelos correspondientes a la ruta elegida.
-6.  Seleccionar un vuelo.
-7.  Consultar los asientos asociados al vuelo.
-8.  Seleccionar un asiento disponible.
-9.  Visualizar la tarifa correspondiente.
-10. Confirmar la reserva.
-
-El módulo también permite consultar y cancelar reservas existentes.
-
-### Ventas y reembolsos
-
-El proyecto incluye interfaces para los módulos de ventas y reembolsos.
-Su integración funcional completa continúa formando parte del desarrollo
-incremental del sistema.
-
-### Check-in y Boarding Pass
-
-El sistema contempla módulos destinados al proceso de check-in y a la
-gestión de tarjetas de embarque.
-
-### Reportes
-
-Módulo destinado a la consulta de información y estadísticas del
-sistema.
-
-### Configuración
-
-El sistema dispone de un módulo de configuración. Las opciones
-disponibles dependen del rol del usuario. Los usuarios no
-administradores pueden acceder al apartado de seguridad correspondiente.
-
-------------------------------------------------------------------------
-
-## Roles y permisos
-
-El Dashboard habilita los módulos según el rol del usuario autenticado.
-
-  -----------------------------------------------------------------------
-  Rol                                 Módulos principales
-  ----------------------------------- -----------------------------------
-  Administrador                       Usuarios, Vuelos, Lugares,
-                                      Aeronaves, Reportes, Configuración
-
-  Gerente                             Usuarios, Vuelos, Lugares,
-                                      Aeronaves, Reportes, Configuración
-
-  Agente de Reservas                  Pasajeros, Reservas, Ventas,
-                                      Cancelaciones, Reembolsos,
-                                      Configuración
-
-  Agente de Check-in                  Check-in, Boarding Pass,
-                                      Configuración
-  -----------------------------------------------------------------------
-
-Los permisos y funcionalidades continúan evolucionando de acuerdo con
-los requerimientos de las distintas entregas.
-
-------------------------------------------------------------------------
-
-## Configuración del entorno
+## Preparación del entorno
 
 ### Requisitos
 
-Para ejecutar el proyecto se recomienda contar con:
+- Windows compatible con .NET 10.
+- SDK de .NET 10.
+- Visual Studio con soporte para Windows Forms y ASP.NET Core, o herramientas equivalentes.
+- MariaDB disponible.
+- Git.
+- Certificado HTTPS de desarrollo confiable.
 
--   Visual Studio con soporte para desarrollo .NET.
--   SDK de .NET correspondiente a la solución.
--   SQL Server disponible localmente o en un servidor accesible.
--   Git para clonar y mantener actualizado el repositorio.
+Los componentes de backup y restauración requieren además las herramientas de MariaDB, carpetas, claves y archivos de credenciales configurados por el responsable técnico.
 
-------------------------------------------------------------------------
+### 1. Obtener el proyecto
 
-## Configuración de la base de datos
+```powershell
+git clone https://github.com/jensenlucas17/SkyPlus-Escritorio.git
+cd SkyPlus-Escritorio
+dotnet restore SkyPlus.sln
+```
 
-Antes de ejecutar la API es necesario configurar la conexión a la base
-de datos utilizada por SkyPlus.
+### 2. Configurar la API
 
-### 1. Localizar la configuración de conexión
+La configuración base se encuentra en:
 
-Dentro del proyecto `SkyPlus.API`, revisar el archivo:
-
-``` text
+```text
 SkyPlus.API/appsettings.json
 ```
 
-La configuración normalmente contiene una sección similar a:
+La instalación local debe proporcionar:
 
-``` json
-{
-  "ConnectionStrings": {
-    "DefaultConnection": "Server=SERVIDOR;Database=SkyPlus;User Id=USUARIO;Password=CONTRASEÑA;TrustServerCertificate=True;"
-  }
-}
+| Clave | Contenido |
+| --- | --- |
+| `ConnectionStrings:SkyPlusConnection` | Conexión a la base MariaDB. |
+| `Jwt:Key` | Clave aleatoria de firma codificada en Base64. |
+| `Jwt:Issuer` | Emisor del token. |
+| `Jwt:Audience` | Audiencia del token. |
+| `Jwt:ExpirationMinutes` | Duración de la sesión autenticada. |
+
+Para valores sensibles, utilizá **Administrar secretos de usuario** sobre `SkyPlus.API` en Visual Studio o variables de entorno.
+
+No subas contraseñas, claves privadas ni archivos de credenciales al repositorio.
+
+### 3. Preparar la base y los datos iniciales
+
+El modelo y las migraciones se encuentran en `SkyPlus.Infrastructure`.
+
+Para aplicar las migraciones se necesita una herramienta `dotnet-ef` compatible con EF Core 9. Con la conexión configurada:
+
+```powershell
+dotnet ef database update `
+  --project SkyPlus.Infrastructure `
+  --startup-project SkyPlus.API
 ```
 
-> El nombre exacto de la cadena de conexión debe coincidir con el
-> utilizado por `SkyPlusDbContext` en la configuración de la API.
+Verificá el servidor y la base de destino antes de ejecutar el comando.
 
-### 2. Modificar los datos para el entorno local
+**Aplicar las migraciones no garantiza que existan cuentas para ingresar.**
 
-Cada integrante del equipo debe adaptar la cadena de conexión a su
-propia instalación de SQL Server.
+Después de aplicar las migraciones, se puede cargar el conjunto
+de demostración disponible en `database/seed_demo.sql`.
 
-Los valores que normalmente deben modificarse son:
+El script crea los roles, cuentas y registros necesarios para
+probar los principales módulos. Las credenciales están documentadas
+en [Accesos de demostración](docs/ACCESOS_DEMO.md).
 
-  -----------------------------------------------------------------------
-  Valor                               Qué configurar
-  ----------------------------------- -----------------------------------
-  `Server`                            Nombre o dirección de la instancia
-                                      local de SQL Server
+**El script reemplaza todos los datos de negocio de `skyplus`.**
+Antes de ejecutarlo, guardá un respaldo y cerrá Desktop, la API
+y los workers. Utilizalo únicamente sobre una base de pruebas.
 
-  `Database`                          Nombre de la base de datos
-                                      utilizada por SkyPlus
+En DBeaver, abrí el archivo en un editor SQL conectado al servidor
+correspondiente y ejecutá el script completo con Alt + X.
 
-  `User Id`                           Usuario de SQL Server, si se
-                                      utiliza autenticación SQL
+El script necesita que el esquema ya exista y conserva el historial
+de migraciones.
 
-  `Password`                          Contraseña correspondiente al
-                                      usuario anterior
+### 4. Preparar HTTPS y compilar
 
-  `TrustServerCertificate`            Puede mantenerse en `True` para el
-                                      entorno local cuando corresponda
-  -----------------------------------------------------------------------
-
-Por ejemplo, si la instancia local es `localhost`, la base se llama
-`SkyPlus`, el usuario es `sa` y se utiliza autenticación SQL, la
-estructura sería:
-
-``` text
-Server=localhost;Database=SkyPlus;User Id=sa;Password=TU_CONTRASEÑA;TrustServerCertificate=True;
+```powershell
+dotnet dev-certs https --trust
+dotnet build SkyPlus.sln
 ```
 
-La contraseña del ejemplo debe reemplazarse por la correspondiente al
-entorno local.
+Los pasos de instalación deben verificarse en el equipo Windows de destino, incluyendo conexión, datos iniciales y certificado.
 
-### 3. Autenticación integrada de Windows
+## Ejecución
 
-Si SQL Server está configurado para utilizar autenticación de Windows,
-la cadena puede utilizar una estructura similar a:
+Primero iniciá la API:
 
-``` text
-Server=SERVIDOR;Database=SkyPlus;Trusted_Connection=True;TrustServerCertificate=True;
+```powershell
+dotnet run --project SkyPlus.API --launch-profile https
 ```
 
-En ese caso no es necesario indicar `User Id` ni `Password`.
+El perfil de desarrollo utiliza:
 
-### 4. Credenciales y seguridad
-
-No se deben subir contraseñas reales, credenciales personales ni otros
-secretos al repositorio.
-
-Si el proyecto utiliza `appsettings.json` compartido entre integrantes,
-se recomienda mantener allí únicamente configuración no sensible y
-almacenar las credenciales locales mediante mecanismos de configuración
-apropiados para desarrollo, como User Secrets.
-
-Cada integrante debe verificar que la API esté utilizando su propia
-configuración antes de ejecutarla.
-
-### 5. Verificar la conexión
-
-Una vez configurada la cadena:
-
-1.  Ejecutar `SkyPlus.API`.
-2.  Confirmar que la aplicación inicia sin errores de conexión.
-3.  Abrir Swagger.
-4.  Ejecutar un endpoint de consulta, por ejemplo un `GET`.
-5.  Verificar que la API pueda recuperar información de la base de
-    datos.
-
-Si la API inicia pero los endpoints devuelven errores relacionados con
-la conexión, revisar principalmente el nombre del servidor, nombre de la
-base, usuario, contraseña y permisos del usuario configurado.
-
-------------------------------------------------------------------------
-
-## Ejecución del proyecto
-
-### 1. Clonar el repositorio
-
-``` bash
-git clone <URL_DEL_REPOSITORIO>
+```text
+HTTPS:  https://localhost:7198
+HTTP:   http://localhost:5004
+Swagger: https://localhost:7198/swagger
 ```
 
-### 2. Abrir la solución
+Después iniciá Desktop:
 
-Abrir el archivo:
-
-``` text
-SkyPlus.sln
+```powershell
+dotnet run --project SkyPlus.Desktop
 ```
 
-con Visual Studio.
+También pueden configurarse ambos proyectos como proyectos de inicio en Visual Studio.
 
-### 3. Configurar la conexión
+Desktop apunta actualmente a `https://localhost:7198/`. Para utilizar varias estaciones, es necesario configurar el endpoint, los certificados y el acceso al servidor.
 
-Adaptar la configuración de base de datos del proyecto `SkyPlus.API`
-siguiendo las instrucciones de la sección anterior.
+## Roles y permisos
 
-### 4. Ejecutar la API
+| Rol | Funciones principales |
+| --- | --- |
+| Administrador | Usuarios, vuelos, catálogos, reportes y acciones privilegiadas de backups y restauración. |
+| Gerente | Vuelos, catálogos, reportes y consulta de backups. |
+| Agente de Reservas | Pasajeros, reservas, ventas, cancelaciones y reembolsos. |
+| Agente de Check-in | Equipajes, cobros adicionales, check-in, boarding pass y embarque. |
 
-Iniciar el proyecto:
-
-``` text
-SkyPlus.API
-```
-
-Swagger permite consultar y probar los endpoints disponibles.
-
-### 5. Ejecutar Desktop
-
-Con la API en funcionamiento, iniciar:
-
-``` text
-SkyPlus.Desktop
-```
-
-La aplicación Desktop utilizará sus clases Client para comunicarse con
-la API.
-
-------------------------------------------------------------------------
+Los permisos se comprueban en la API. El acceso a un módulo no implica autorización para todas las operaciones del sistema.
 
 ## Pruebas
 
-Durante el desarrollo se realizan pruebas de los endpoints mediante
-Swagger y pruebas de integración desde la aplicación Desktop.
+Para ejecutar el runner de seguridad de restauración:
 
-Se verifican operaciones HTTP como:
-
--   GET
--   POST
--   PUT
--   DELETE
-
-El objetivo de las pruebas de integración es comprobar el flujo
-completo:
-
-``` text
-Desktop -> API -> Services -> Entity Framework Core -> Base de datos
+```powershell
+dotnet run --project SkyPlus.RestoreSecurityTests
 ```
 
-También se verifica el comportamiento inverso al recuperar y mostrar los
-datos en los formularios.
+El resultado esperado para sus 39 comprobaciones es:
 
-------------------------------------------------------------------------
-
-## Control de versiones
-
-El proyecto utiliza Git y GitHub para el trabajo colaborativo.
-
-Flujo básico:
-
-``` bash
-git status
-git add .
-git commit -m "Descripción del cambio"
-git push
+```text
+Pruebas aprobadas: 39
+Pruebas fallidas:  0
 ```
 
-Para funcionalidades nuevas se recomienda trabajar en ramas separadas y
-mantener actualizada la rama local antes de integrar cambios realizados
-por otros integrantes.
+Estas comprobaciones no sustituyen las pruebas de interfaz, ventas, concurrencia ni restauraciones reales en el entorno definitivo. Los escenarios de aceptación están documentados en la ERS.
 
-------------------------------------------------------------------------
+## Alcance y limitaciones
 
-## Estado del proyecto
+- El sistema registra pagos y reembolsos, pero no ejecuta operaciones bancarias ni se integra directamente con un POS.
+- El flujo de venta utiliza varias solicitudes; no constituye una única transacción global.
+- No incluye operación offline, envío de correos ni actualización en vivo de todos los listados.
+- Quedan pendientes el bloqueo por intentos fallidos, el cierre por inactividad, 2FA y la unificación de la política de contraseña inicial.
+- La comparación de períodos está disponible para Vuelos y utiliza los estados actuales de los registros.
+- Las exportaciones tienen limitaciones de contenido y deben generarse nuevamente después de cambiar filtros.
 
-SkyPlus se encuentra en desarrollo activo. Las funcionalidades se
-implementan de manera incremental de acuerdo con los requisitos y
-entregas definidos para el proyecto académico.
-
-Algunos módulos se encuentran completamente conectados a la API,
-mientras que otros poseen interfaces preparadas para continuar su
-implementación en próximas iteraciones.
-
-------------------------------------------------------------------------
+La ERS detalla las restricciones y mejoras futuras. Los procedimientos de restauración deben ejecutarse únicamente con el entorno y las autorizaciones correspondientes.
 
 ## Contexto académico
 
-Proyecto desarrollado para la materia **Ingeniería de Software I**.
+Proyecto desarrollado para Ingeniería de Software I, aplicando relevamiento de requisitos, arquitectura por capas, persistencia, reglas de negocio, control de acceso, pruebas y documentación.
 
-El desarrollo busca aplicar conceptos relacionados con:
-
--   Ingeniería de requisitos
--   Historias de usuario
--   Requisitos funcionales
--   Arquitectura por capas
--   Diseño de software
--   Persistencia de datos
--   APIs REST
--   Interfaces de usuario
--   Pruebas
--   Control de versiones
--   Trabajo colaborativo
-
-------------------------------------------------------------------------
-
-## Equipo
-
-Proyecto desarrollado de forma colaborativa por estudiantes de
-Ingeniería de Software I.
-
-------------------------------------------------------------------------
-
-## Licencia
-
-Proyecto desarrollado con fines académicos y educativos.
+La documentación y el código deben actualizarse juntos cuando cambie el alcance de una entrega.
