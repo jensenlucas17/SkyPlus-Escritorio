@@ -227,6 +227,6 @@ La ERS detalla las restricciones y mejoras futuras. Los procedimientos de restau
 
 ## Contexto académico
 
-Proyecto desarrollado para Ingeniería de Software I, aplicando relevamiento de requisitos, arquitectura por capas, persistencia, reglas de negocio, control de acceso, pruebas y documentación.
+Proyecto desarrollado para Ingeniería de Software II, aplicando relevamiento de requisitos, arquitectura por capas, persistencia, reglas de negocio, control de acceso, pruebas y documentación.
 
 La documentación y el código deben actualizarse juntos cuando cambie el alcance de una entrega.
